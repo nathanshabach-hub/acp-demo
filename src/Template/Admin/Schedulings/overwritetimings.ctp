@@ -334,6 +334,12 @@
 						</div>
 						<?php endif; ?>
 
+						<div class="overwrite-step-row">
+							<div class="overwrite-step"><b>Step 1:</b> Add one row per event</div>
+							<div class="overwrite-step"><b>Step 2:</b> Pick date and start time for each row</div>
+							<div class="overwrite-step"><b>Step 3:</b> Set students per block and gap, then preview/apply</div>
+						</div>
+
 						<div class="overwrite-card" style="margin-bottom:15px;">
 							<div class="overwrite-panel-title">Per-Event Scheduler (Recommended)</div>
 							<p class="overwrite-help" style="margin-bottom:8px;">Set each event with its own date, start time, students per block, and gap. Example: Spelling OPEN and Spelling U16 on the same date with different times.</p>
@@ -378,12 +384,6 @@
 								<div class="overwrite-panel-title" style="margin-bottom:6px;color:#8a6d3b;">Row Warnings</div>
 								<ul id="row_warning_list" style="margin:0 0 0 18px;padding:0;"></ul>
 							</div>
-						</div>
-
-						<div class="overwrite-step-row">
-							<div class="overwrite-step"><b>Step 1:</b> Add one row per event</div>
-							<div class="overwrite-step"><b>Step 2:</b> Pick date and start time for each row</div>
-							<div class="overwrite-step"><b>Step 3:</b> Set students per block and gap, then preview/apply</div>
 						</div>
 
 						<div class="overwrite-preview">
