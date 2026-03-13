@@ -690,7 +690,7 @@ function smart_resize_image( $file, $width = 0, $height = 0, $proportional = fal
 
 
 
-function upload_for_multiple($fileArray, $folder="", $types="",$index) {
+function upload_for_multiple($fileArray, $folder = "", $types = "", $index = 0) {
 //    echo $this->data[$model][$file_id]['name'];
 //    exit;
 
@@ -704,7 +704,7 @@ function upload_for_multiple($fileArray, $folder="", $types="",$index) {
 
     //Get file extension
 
-    $ext_arr = split("\.",basename($file_title));
+	$ext_arr = explode('.', basename($file_title));
 
     $ext = strtolower($ext_arr[count($ext_arr)-1]); //Get the last extension
 
