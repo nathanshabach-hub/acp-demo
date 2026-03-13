@@ -5,6 +5,7 @@ namespace App\Controller\Admin;
 use App\Controller\AppController;
 use Cake\Core\Configure;
 use Cake\Core\Configure\Engine\PhpConfig;
+use Cake\Datasource\ConnectionManager;
 
 class SchedulingsController extends AppController {
 
@@ -36,6 +37,66 @@ class SchedulingsController extends AppController {
 		$this->loadModel("Schedulingtimings");
 		$this->loadModel("Crstudentevents");
     }
+
+	private function ensureOverwriteAuditTable() {
+		$connection = ConnectionManager::get('default');
+		$connection->execute(
+			"CREATE TABLE IF NOT EXISTS overwrite_timings_audits (
+				id INT AUTO_INCREMENT PRIMARY KEY,
+				conventionseason_id INT NOT NULL,
+				admin_id INT NULL,
+				affected_records INT NOT NULL DEFAULT 0,
+				payload LONGTEXT NOT NULL,
+				is_undone TINYINT(1) NOT NULL DEFAULT 0,
+				undone_at DATETIME NULL,
+				undo_admin_id INT NULL,
+				created DATETIME NOT NULL,
+				INDEX idx_ota_conventionseason (conventionseason_id),
+				INDEX idx_ota_undone (is_undone)
+			) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
+		);
+	}
+
+	private function getLatestOverwriteAudit($conventionSeasonId) {
+		$this->ensureOverwriteAuditTable();
+		$connection = ConnectionManager::get('default');
+		$statement = $connection->execute(
+			"SELECT * FROM overwrite_timings_audits WHERE conventionseason_id = :csid AND is_undone = 0 ORDER BY id DESC LIMIT 1",
+			['csid' => (int)$conventionSeasonId]
+		);
+		$latest = $statement->fetch('assoc');
+		return $latest ?: null;
+	}
+
+	private function insertOverwriteAudit($conventionSeasonId, $adminId, $affectedRecords, $payloadArray) {
+		$this->ensureOverwriteAuditTable();
+		$connection = ConnectionManager::get('default');
+		$connection->execute(
+			"INSERT INTO overwrite_timings_audits (conventionseason_id, admin_id, affected_records, payload, created)
+			 VALUES (:csid, :admin_id, :affected_records, :payload, :created)",
+			[
+				'csid' => (int)$conventionSeasonId,
+				'admin_id' => $adminId ? (int)$adminId : null,
+				'affected_records' => (int)$affectedRecords,
+				'payload' => json_encode($payloadArray),
+				'created' => date('Y-m-d H:i:s'),
+			]
+		);
+	}
+
+	private function markOverwriteAuditUndone($auditId, $adminId) {
+		$connection = ConnectionManager::get('default');
+		$connection->execute(
+			"UPDATE overwrite_timings_audits
+			 SET is_undone = 1, undone_at = :undone_at, undo_admin_id = :undo_admin_id
+			 WHERE id = :id",
+			[
+				'undone_at' => date('Y-m-d H:i:s'),
+				'undo_admin_id' => $adminId ? (int)$adminId : null,
+				'id' => (int)$auditId,
+			]
+		);
+	}
 
     public function precheck($convention_season_slug=null) {
         $this->set('title', ADMIN_TITLE . 'Scheduling Pre-check');
@@ -76,6 +137,10 @@ class SchedulingsController extends AppController {
 		// to fetch scheduling data and send to template
 		$schedulingD = $this->Schedulings->find()->where(['Schedulings.conventionseasons_id' => $conventionSD->id])->first();
 		$this->set('schedulingD', $schedulingD);
+		$this->set('schedulings', $schedulingD);
+
+		$latestOverwriteAudit = $this->getLatestOverwriteAudit($conventionSD->id);
+		$this->set('latestOverwriteAudit', $latestOverwriteAudit);
     }
 	
 	public function precheckevents($convention_season_slug=null) {
@@ -650,6 +715,29 @@ class SchedulingsController extends AppController {
 				return;
 			}
 
+			$overwriteSnapshot = [];
+			foreach ($event_ids as $snapshotEventId) {
+				$existingRows = $this->Schedulingtimings->find()
+					->select(['id', 'event_id', 'conventionseasons_id', 'sch_date_time', 'day', 'start_time', 'finish_time'])
+					->where([
+						'Schedulingtimings.conventionseasons_id' => $conventionSD->id,
+						'Schedulingtimings.event_id' => $snapshotEventId,
+					])
+					->order(['Schedulingtimings.id' => 'ASC'])
+					->all();
+				foreach ($existingRows as $row) {
+					$overwriteSnapshot[] = [
+						'id' => (int)$row->id,
+						'event_id' => (int)$row->event_id,
+						'conventionseasons_id' => (int)$row->conventionseasons_id,
+						'sch_date_time' => (string)$row->sch_date_time,
+						'day' => (string)$row->day,
+						'start_time' => (string)$row->start_time,
+						'finish_time' => (string)$row->finish_time,
+					];
+				}
+			}
+
 			$selectedScheduledRecords = 0;
 			$selectedStudentRecords = 0;
 			foreach ($event_ids as $event_id) {
@@ -717,6 +805,22 @@ class SchedulingsController extends AppController {
 			}
 
 			if ($cntrTotRec > 0) {
+				$loggedAdminId = $this->request->session()->read('admin_id');
+				$this->insertOverwriteAudit(
+					$conventionSD->id,
+					$loggedAdminId,
+					$cntrTotRec,
+					[
+						'conventionseason_slug' => $convention_season_slug,
+						'event_ids' => $event_ids,
+						'day_slots' => $daySlots,
+						'max_students' => $max_students,
+						'time_gap_mins' => $time_gap_mins,
+						'created_at' => date('Y-m-d H:i:s'),
+						'records' => $overwriteSnapshot,
+					]
+				);
+
 				$this->Flash->success('Scheduling date/time overwrite successfully. Total '.$cntrTotRec.' record(s) modified across '.count($event_ids).' event(s) and '.count($daySlots).' day slot(s).');
 			} else {
 				$this->Flash->error('Sorry, no records updated.');
@@ -726,6 +830,64 @@ class SchedulingsController extends AppController {
 		}
 		
     }
+
+	public function undooverwritetimings($convention_season_slug=null) {
+		if (!$this->request->is(['post', 'put'])) {
+			return $this->redirect(['controller' => 'schedulings', 'action' => 'overwritetimings', $convention_season_slug]);
+		}
+
+		$conventionSD = $this->Conventionseasons->find()
+			->where(['Conventionseasons.slug' => $convention_season_slug])
+			->contain(["Conventions"])
+			->first();
+
+		if (!$conventionSD) {
+			$this->Flash->error('Invalid convention season.');
+			return $this->redirect(['controller' => 'schedulings', 'action' => 'precheck', $convention_season_slug]);
+		}
+
+		$latestAudit = $this->getLatestOverwriteAudit($conventionSD->id);
+		if (empty($latestAudit)) {
+			$this->Flash->error('No overwrite batch found to undo.');
+			return $this->redirect(['controller' => 'schedulings', 'action' => 'overwritetimings', $convention_season_slug]);
+		}
+
+		$payload = json_decode($latestAudit['payload'], true);
+		if (empty($payload) || empty($payload['records']) || !is_array($payload['records'])) {
+			$this->Flash->error('Undo data is invalid for the latest overwrite batch.');
+			return $this->redirect(['controller' => 'schedulings', 'action' => 'overwritetimings', $convention_season_slug]);
+		}
+
+		$restored = 0;
+		foreach ($payload['records'] as $record) {
+			if (empty($record['id'])) {
+				continue;
+			}
+
+			$this->Schedulingtimings->updateAll(
+				[
+					'sch_date_time' => $record['sch_date_time'],
+					'day' => $record['day'],
+					'start_time' => $record['start_time'],
+					'finish_time' => $record['finish_time'],
+					'modified' => date('Y-m-d H:i:s'),
+				],
+				['id' => (int)$record['id'], 'conventionseasons_id' => $conventionSD->id]
+			);
+			$restored++;
+		}
+
+		$loggedAdminId = $this->request->session()->read('admin_id');
+		$this->markOverwriteAuditUndone($latestAudit['id'], $loggedAdminId);
+
+		if ($restored > 0) {
+			$this->Flash->success('Undo completed. Restored '.$restored.' schedule record(s) from the latest overwrite batch.');
+		} else {
+			$this->Flash->error('Undo ran but no records were restored.');
+		}
+
+		return $this->redirect(['controller' => 'schedulings', 'action' => 'overwritetimings', $convention_season_slug]);
+	}
 	
 	public function resolveconflicts($convention_season_slug=null) {
 		

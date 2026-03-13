@@ -141,6 +141,7 @@
 	.overwrite-preview { border: 1px solid #d6e9c6; border-radius: 4px; background: #f8fff3; padding: 10px 12px; margin-top: 10px; }
 	.overwrite-preview .row { margin-bottom: 4px; }
 	.overwrite-preview .label { font-size: 12px; }
+	.overwrite-undo { border: 1px solid #f2dede; border-radius: 4px; background: #fff8f8; padding: 10px 12px; margin-bottom: 12px; }
 </style>
 
 <div class="content-wrapper">
@@ -168,6 +169,21 @@
             <?php echo $this->Form->create($schedulings, ['id'=>'schedulingWizardForm', 'type' => 'file', 'autocomplete' => 'off']); ?>
                 <div class="form-horizontal">
                     <div class="box-body">
+						<?php if(!empty($latestOverwriteAudit)): ?>
+						<div class="overwrite-undo">
+							<div class="overwrite-panel-title" style="color:#a94442;">Undo Last Overwrite</div>
+							<div class="row"><strong>Last batch ID:</strong> <?php echo h($latestOverwriteAudit['id']); ?></div>
+							<div class="row"><strong>Affected records:</strong> <?php echo h($latestOverwriteAudit['affected_records']); ?></div>
+							<div class="row"><strong>Created:</strong> <?php echo h($latestOverwriteAudit['created']); ?></div>
+							<div class="overwrite-help">Use this only if the most recent overwrite was a mistake. This restores the previous timing values for that batch.</div>
+							<div style="margin-top:8px;">
+								<?php echo $this->Form->create(null, ['url' => ['controller' => 'schedulings', 'action' => 'undooverwritetimings', $convention_season_slug], 'style' => 'display:inline-block;', 'onsubmit' => "return confirm('Undo the latest overwrite batch? This action will restore previous timings.');"]); ?>
+								<?php echo $this->Form->button('Undo Last Overwrite', ['type' => 'submit', 'class' => 'btn btn-danger btn-sm']); ?>
+								<?php echo $this->Form->end(); ?>
+							</div>
+						</div>
+						<?php endif; ?>
+
 						<div class="overwrite-step-row">
 							<div class="overwrite-step"><b>Step 1:</b> Select event(s)</div>
 							<div class="overwrite-step"><b>Step 2:</b> Select day(s) and start time(s)</div>
