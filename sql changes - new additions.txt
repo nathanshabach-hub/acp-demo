@@ -1,0 +1,282 @@
+Sql changes - new additions
+
+
+1. created a new table "eventcategories" to manage one top level of divisions
+
+Import it as it is
+
+
+
+
+2. Did some changes in divisions table, changed some divisions name
+
+like
+
+changed Exhibits - Manual Arts to Manual Arts
+
+because we have created event categories table and relate divisions with that
+
+
+
+
+
+3. created a new field in divisions table to relate divisions with event category
+
+ALTER TABLE `divisions` ADD `eventcategory_id` INT(10) NULL DEFAULT NULL AFTER `slug`;
+
+
+
+
+
+4. created a new field in divisions table to save max_events per divisions
+
+ALTER TABLE `divisions` ADD `max_events` INT(4) NULL DEFAULT NULL AFTER `name`;
+
+
+
+
+5. import division table as it is.
+
+
+
+
+6. created two new fields in settings table to save minimum and maximum events for a student
+
+ALTER TABLE `settings` ADD `min_events_student` INT(4) NULL DEFAULT NULL AFTER `scripture_trophy_discount`, ADD `max_events_student` INT(4) NULL DEFAULT NULL AFTER `min_events_student`;
+
+
+
+
+7. created 2 new fields in convention season table to save min and max events for a convention season
+
+ALTER TABLE `conventionseasons` ADD `min_events_student` INT(4) NULL DEFAULT NULL AFTER `supervisor_registration_fees`, ADD `max_events_student` INT(4) NULL DEFAULT NULL AFTER `min_events_student`;
+
+
+
+
+
+8. query to update all existing convention season for min and max events
+
+UPDATE `conventionseasons` SET `min_events_student`=2,`max_events_student`=20 WHERE 1;
+
+
+9. deactivate seasons 2025 and 2026. make status = 0 of these two seasons
+
+
+
+
+10. created a new field in events to manage submission_type
+
+ALTER TABLE `events` ADD `auto_submission` SMALLINT(4) NOT NULL DEFAULT '0' COMMENT '1=yes' AFTER `certificate_print`;
+
+
+
+11. Query to set auto_submission - this query is for individual events
+
+11.1 firstly make all events auto submit =0;
+
+update events set auto_submission =0;
+
+
+11.2 then make it accordingly
+
+update events set auto_submission =1,upload_type='Nil' where event_id_number IN 
+(
+001, 002, 003, 051, 052, 053, 100, 101, 102, 103, 104, 106, 109, 111, 112, 113, 130, 131, 132, 133, 134, 136, 137, 138, 139, 141, 142, 143, 160, 161, 162, 163, 164, 166, 167, 168, 169, 171, 172, 173, 175, 200, 201, 202, 203, 204, 206, 209, 211, 212, 213, 230, 231, 232, 233, 234, 234, 237, 238, 239, 241, 242, 243, 260, 261, 262, 263, 264, 266, 267, 268, 269, 271, 272, 273, 275
+);
+
+
+12. Query to set auto_submission - this query is for group events
+
+
+update events set auto_submission =1,upload_type='Nil' where event_id_number IN 
+(
+054,105,110,135,140,165,170,174,176,177,205,210,235,240,265,270,274,276,277 
+);
+
+
+13. changes in my_const.php file
+
+
+
+14. changes for submit new events page in front end - 2 new fields added
+
+ALTER TABLE `eventsubmissions` ADD `title` VARCHAR(255) NULL DEFAULT NULL AFTER `book_ids`, ADD `bible` VARCHAR(255) NULL DEFAULT NULL AFTER `title`;
+
+--- No need of these fields - Do not run this query --- I ahve dropped fields:
+ALTER TABLE `eventsubmissions`
+  DROP `title`,
+  DROP `bible`;
+
+
+15.. Need to create a new field in events table to define that this event_judging_type is general or time/distance/score
+
+ALTER TABLE `events` ADD `event_judging_type` ENUM('general','times','distances','scores') NOT NULL DEFAULT 'general' AFTER `auto_submission`;
+
+
+16.. In reference to point 15, we need to define event judging type by default like we did for auto submission types
+
+---- first lets do for times
+update events set event_judging_type = 'times' where event_id_number IN 
+(100,130,160,101,131,161,102,132,162,103,133,163,104,134, 164,105,135,165,200,230,260,201,231,261,202,232,262,203,233,263,204,234,264,205,235);
+
+
+--- now do for distances
+update events set event_judging_type = 'distances' where event_id_number IN 
+(106,136,166,137,167,138,168,111,141,171,112,142,172,206,236,266,237,267,238,268,211,241,271,212,242,272);
+
+
+--- now do for scores
+update events set event_judging_type = 'scores' where event_id_number IN 
+(003,053,054,113,143,173,213,243,273,1056,1057);
+
+
+
+17.. Created new fields in judges evaluation table to define times scores
+
+
+ALTER TABLE `judgeevaluations` ADD `time_score` TIME NULL DEFAULT NULL AFTER `comments`, ADD `place` INT(4) NULL DEFAULT NULL AFTER `time_score`, ADD `withdraw_yes_no` SMALLINT(4) NULL DEFAULT NULL AFTER `place`;
+ALTER TABLE `judgeevaluations` CHANGE `time_score` `time_score` TIME(3) NULL DEFAULT NULL;
+
+
+
+18.. 13. changes in my_const.php file
+
+
+
+19.. New record in email template for judge email notification for events added
+
+record id = 25 in email templates
+
+
+
+
+20.. created a new table visitors 
+
+21.. changes in css of admin
+
+22.. Added a new logo file in webroot/img/front/scce_logo_tags.jpg
+
+
+
+
+23.. New field in settings table to set password for low score notification
+
+ALTER TABLE `settings` ADD `judges_low_score_saving_pin` VARCHAR(255) NULL DEFAULT NULL AFTER `max_events_student`;
+
+
+
+24.. new field in judges evaluation table to save did not attend
+
+ALTER TABLE `judgeevaluations` ADD `did_not_attend` SMALLINT NOT NULL DEFAULT '0' COMMENT '0=attended\r\n1=not attended' AFTER `withdraw_yes_no`;
+
+
+
+25.. New fields for start date
+
+ALTER TABLE `schedulings` ADD `start_date` DATE NULL DEFAULT NULL AFTER `total_students_found`;
+
+
+26... New field in schedulingtimings table to save date time
+
+ALTER TABLE `schedulingtimings` ADD `sch_date_time` DATETIME NULL DEFAULT NULL AFTER `room_id`;
+
+
+
+
+27.. Created a new field in judges evaluation table to save distance score
+
+ALTER TABLE `judgeevaluations` ADD `distance_score` DOUBLE(16,2) NULL DEFAULT NULL AFTER `time_score`;
+
+
+28.. Created 3 new fields in judges evaluation table to save three attempts
+
+ALTER TABLE `judgeevaluations` ADD `distance_attempt_1` DOUBLE(16,2) NULL DEFAULT NULL AFTER `distance_score`, ADD `distance_attempt_2` DOUBLE(16,2) NULL DEFAULT NULL AFTER `distance_attempt_1`, ADD `distance_attempt_3` DOUBLE(16,2) NULL DEFAULT NULL AFTER `distance_attempt_2`;
+
+
+
+29. New fields in judges evaluation to save position scores
+
+
+ALTER TABLE `judgeevaluations` ADD `pos_1_yes_no` SMALLINT NULL DEFAULT NULL AFTER `distance_attempt_3`, ADD `pos_1_score` INT NULL DEFAULT NULL AFTER `pos_1_yes_no`, ADD `pos_2_yes_no` SMALLINT NULL DEFAULT NULL AFTER `pos_1_score`, ADD `pos_2_score` INT NULL DEFAULT NULL AFTER `pos_2_yes_no`, ADD `pos_3_yes_no` SMALLINT NULL DEFAULT NULL AFTER `pos_2_score`, ADD `pos_3_score` INT NULL DEFAULT NULL AFTER `pos_3_yes_no`, ADD `pos_4_yes_no` SMALLINT NULL DEFAULT NULL AFTER `pos_3_score`, ADD `pos_4_score` INT NULL DEFAULT NULL AFTER `pos_4_yes_no`, ADD `pos_5_yes_no` SMALLINT NULL DEFAULT NULL AFTER `pos_4_score`, ADD `pos_5_score` INT NULL DEFAULT NULL AFTER `pos_5_yes_no`, ADD `pos_6_yes_no` SMALLINT NULL DEFAULT NULL AFTER `pos_5_score`, ADD `pos_6_score` INT NULL DEFAULT NULL AFTER `pos_6_yes_no`, ADD `pos_7_yes_no` SMALLINT NULL DEFAULT NULL AFTER `pos_6_score`, ADD `pos_7_score` INT NULL DEFAULT NULL AFTER `pos_7_yes_no`, ADD `pos_8_yes_no` SMALLINT NULL DEFAULT NULL AFTER `pos_7_score`, ADD `pos_8_score` INT NULL DEFAULT NULL AFTER `pos_8_yes_no`, ADD `pos_9_yes_no` SMALLINT NULL DEFAULT NULL AFTER `pos_8_score`, ADD `pos_9_score` INT NULL DEFAULT NULL AFTER `pos_9_yes_no`, ADD `choice_pos_1` INT NULL DEFAULT NULL AFTER `pos_9_score`, ADD `choice_pos_1_score` INT NULL DEFAULT NULL AFTER `choice_pos_1`, ADD `choice_pos_2` INT NULL DEFAULT NULL AFTER `choice_pos_1_score`, ADD `choice_pos_2_score` INT NULL DEFAULT NULL AFTER `choice_pos_2`, ADD `choice_pos_3` INT NULL DEFAULT NULL AFTER `choice_pos_2_score`, ADD `choice_pos_3_score` INT NULL DEFAULT NULL AFTER `choice_pos_3`, ADD `all_pos_score` INT NULL DEFAULT NULL AFTER `choice_pos_3_score`;
+
+
+changes in above fields
+
+ALTER TABLE `judgeevaluations` CHANGE `choice_pos_1` `comp_choice_pos_1_yes_no` SMALLINT NULL DEFAULT NULL, CHANGE `choice_pos_1_score` `comp_choice_pos_1_score` INT NULL DEFAULT NULL, CHANGE `choice_pos_2` `comp_choice_pos_2_yes_no` SMALLINT NULL DEFAULT NULL, CHANGE `choice_pos_2_score` `comp_choice_pos_2_score` INT NULL DEFAULT NULL, CHANGE `choice_pos_3` `comp_choice_pos_3_yes_no` SMALLINT NULL DEFAULT NULL, CHANGE `choice_pos_3_score` `comp_choice_pos_3_score` INT NULL DEFAULT NULL;
+
+
+
+Changes in above fields
+
+ALTER TABLE `judgeevaluations` CHANGE `comp_choice_pos_1_yes_no` `comp_choice_pos_1` INT NULL DEFAULT NULL, CHANGE `comp_choice_pos_2_yes_no` `comp_choice_pos_2` INT NULL DEFAULT NULL, CHANGE `comp_choice_pos_3_yes_no` `comp_choice_pos_3` INT NULL DEFAULT NULL;
+
+
+30.. Define qualifying time/distance/score for convention season
+
+ALTER TABLE `conventionseasonevents` ADD `qualifying_time_score` TIME(3) NULL DEFAULT NULL AFTER `judging_ends`, ADD `qualifying_distance` DOUBLE(16,2) NULL DEFAULT NULL COMMENT 'in meters' AFTER `qualifying_time_score`, ADD `qualifying_score` INT NULL DEFAULT NULL AFTER `qualifying_distance`;
+
+
+31.. new event judging type
+
+ALTER TABLE `events` CHANGE `event_judging_type` `event_judging_type` ENUM('general','times','distances','scores','soccer_kick') CHARACTER SET latin1 COLLATE latin1_swedish_ci NOT NULL DEFAULT 'general';
+ 
+ UPDATE `events` SET `event_judging_type` = 'soccer_kick' WHERE `event_id_number` IN (112, 142, 172, 212, 242, 272);
+
+
+32. New fields for soccer kicks event
+
+ALTER TABLE `judgeevaluations` ADD `soccer_kick_best_kick` INT NULL DEFAULT NULL AFTER `did_not_attend`, ADD `soccer_kick_all_kicks` TEXT NULL DEFAULT NULL AFTER `soccer_kick_best_kick`;
+
+
+
+33. new event type - this is extra work
+
+ALTER TABLE `events` CHANGE `event_judging_type` `event_judging_type` ENUM('general','times','distances','scores','soccer_kick','spellings') CHARACTER SET latin1 COLLATE latin1_swedish_ci NOT NULL DEFAULT 'general';
+
+
+update events set event_judging_type = 'spellings' where event_id_number IN 
+(003, 053, 053, 1056, 1057);
+
+ALTER TABLE `judgeevaluations` ADD `spelling_score` INT NULL DEFAULT NULL AFTER `soccer_kick_all_kicks`;
+
+
+=========till here uploaded on acp_live on 25 june 2025=========
+
+
+========================
+
+34.. changes in divisions table
+
+upload it as it is
+
+
+35. Changes in events table
+
+UPDATE `events` SET  division_id='12' WHERE event_id_number IN(400,450,401,451,402,452,403,453,404,454,405,455,406,456,407,457);
+
+UPDATE `events` SET  division_id='13' WHERE event_id_number IN(411,461,412,462,413,463,414,464,415,465,466,467,468);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

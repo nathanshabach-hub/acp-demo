@@ -1,0 +1,3 @@
+<?php echo $this->Html->link('Register', ['controller'=>'homes', 'action' => 'checkcode', $convention_slug,$season_id], ['escape'=>false, 'type'=>'button', 'class'=>'btn btn-secondary px-3']); ?>
+							
+<?php echo $this->Html->link('Login', ['controller'=>'users', 'action' => 'login', $convention_slug,$season_id], ['escape'=>false, 'type'=>'button', 'class'=>'btn btn-secondary px-3 float-end']); ?>

@@ -1,0 +1,61 @@
+<script type="text/javascript">
+    $(document).ready(function() {
+        $("#adminForm").validate();
+    });
+
+</script>
+<div class="content-wrapper">
+    <section class="content-header">
+      <h1>
+        Edit Visitor
+      </h1>
+      <ol class="breadcrumb">
+          <li><?php echo $this->Html->link('<i class="fa fa-dashboard"></i> <span>Dashboard</span> ', ['controller'=>'admins', 'action'=>'dashboard'], ['escape'=>false]);?></li>
+          <li><?php echo $this->Html->link('<i class="fa fa-tasks"></i> Visitors Name Tags ', ['controller'=>'nametags', 'action'=>'visitors'], ['escape'=>false]);?></li>
+          <li class="active">Edit Visitor </li>
+      </ol>
+    </section>
+
+    <section class="content">
+     <div class="box box-info">
+            <div class="box-header with-border">
+                <h3 class="box-title">&nbsp;</h3>
+            </div>
+            <div class="ersu_message"> <?php echo $this->Flash->render() ?> </div>
+            <?php echo $this->Form->create($visitors, ['id'=>'adminForm', 'type' => 'file']); ?>
+                <div class="form-horizontal">
+                    <div class="box-body">
+					
+					<div class="form-group">
+                      <label class="col-sm-2 control-label">First Name <span class="require">*</span></label>
+                      <div class="col-sm-10">
+                          <?php echo $this->Form->input('Visitors.first_name', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required', 'placeholder'=>'First Name', 'autocomplete'=>'off']); ?>
+                      </div>
+                    </div>
+					
+					<div class="form-group">
+                      <label class="col-sm-2 control-label">Last Name <span class="require">*</span></label>
+                      <div class="col-sm-10">
+                          <?php echo $this->Form->input('Visitors.last_name', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required', 'placeholder'=>'Last Name', 'autocomplete'=>'off']); ?>
+                      </div>
+                    </div>
+					
+					<div class="form-group">
+                      <label class="col-sm-2 control-label">School/Company <span class="require">*</span></label>
+                      <div class="col-sm-10">
+                          <?php echo $this->Form->input('Visitors.school_company', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required', 'placeholder'=>'School/Company', 'autocomplete'=>'off']); ?>
+                      </div>
+                    </div>
+                    
+                    <div class="box-footer">
+                        <label class="col-sm-2 control-label" for="inputPassword3">&nbsp;</label>
+                        <?php echo $this->Form->input('Visitors.id', ['label'=>false, 'type'=>'hidden']); ?>
+                        <?php echo $this->Form->button('Save', ['type'=>'submit', 'class' => 'btn btn-info', 'div'=>false]); ?>
+                        <?php echo $this->Html->link('Cancel', ['controller'=>'nametags', 'action' => 'visitors'], ['class'=>'btn btn-default canlcel_le']); ?>
+                    </div>
+                  </div>
+                </div>
+            <?php echo $this->Form->end(); ?>
+          </div>
+    </section>
+  </div>

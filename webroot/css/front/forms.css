@@ -1,0 +1,420 @@
+.form-group .error {
+  border-color: #f00 !important;
+}
+
+.form-group label.error {
+  /*display: none !important;*/
+  font-size: 12px;
+  color: #f00;
+  font-weight: normal;
+}
+
+.halfcom label.error {
+  /*display: none !important;*/
+  font-size: 12px;
+  color: #f00;
+  font-weight: normal;
+}
+
+.input-field .error {
+  border-color: #f00 !important;
+}
+
+.input-field label.error {
+  /* display: none !important; */
+  font-size: 12px;
+  color: #f00;
+  font-weight: normal;
+}
+
+.error-message {
+  color: #f00;
+  font-size: 13px
+}
+
+.require {
+  color: #f00;
+}
+
+.success {
+  background: #5be7c8;
+  border: 1px #00ca6d solid;
+  padding: 3px 10px;
+  width: 100%;
+  display: inline-block;
+  margin-bottom: 10px;
+  color: #fff;
+}
+
+.success- {
+  background: #5be7c8;
+  border: 1px #dd4b39 solid;
+  padding: 3px 10px;
+  width: 100%;
+  display: inline-block;
+  margin-bottom: 10px;
+  color: #dd4b39;
+}
+
+.ersu_message .success {
+  background: #1BAD42;
+  color: #fff;
+  float: left;
+  font-size: 14px;
+  margin: 10px 0;
+  padding: 9px;
+  width: 100%;
+}
+
+.ersu_message .error {
+  background: #D82228;
+  color: #fff;
+  float: left;
+  font-size: 14px;
+  margin: 10px 0;
+  padding: 9px;
+  width: 100%;
+}
+
+/*from admin for listing*/
+.admin_loader {
+  display: none;
+  float: left;
+  margin: 0 auto;
+  position: absolute;
+  text-align: center;
+  width: 100%;
+}
+
+.topn_right .ajshort {
+  display: inline-block;
+  float: right;
+}
+
+.topn_right li {
+  display: inline-block;
+}
+
+.topn_right li a {
+  display: inline-block;
+  background: #f4f4f4;
+  color: #333;
+  font-size: 13px;
+  padding: 2px 9px;
+  margin-right: 2px;
+  border-radius: 3px;
+  border: 1px #ddd solid;
+}
+
+/* .topn_right li.active a {
+  background: #00a7d0;
+  color: #fff;
+  border: 1px #0073b7 solid;
+} */
+/* rajan css start */
+.topn {
+  margin-bottom: 16px !important;
+}
+
+.topn_right li.active a {
+  background: #1c2452;
+  color: #fff !important;
+  border: 1px #0073b7 solid;
+}
+
+.topn_right li a {
+  display: inline-block;
+  background: #f4f4f4;
+  color: #333 !important;
+  font-size: 13px;
+  padding: 2px 9px;
+  margin-right: 2px;
+  border-radius: 3px;
+  border: 1px #ddd solid;
+}
+
+/* rajan css end */
+.topn_right li.disabled a {
+  display: none
+}
+
+.topn_right li:first-child {
+  margin-left: 10px;
+}
+
+
+
+
+.classform-container {
+  width: 100%;
+  display: inline-block;
+}
+
+.classform-container h2 {
+  text-align: center;
+}
+
+.checkboxrow {
+  display: inline-block;
+  width: 100%;
+  text-align: center;
+  padding: 5px 0px;
+}
+
+.singlechecknox {
+  display: inline-block;
+  padding: 0px 10px;
+}
+
+.tableheader {
+  display: inline-block;
+  width: 100%;  
+  border: 1px solid #000;  border-bottom: none;
+  max-width: 80%;
+  margin: 0px 10%;
+}
+
+.singlerow {
+  display: inline-block;
+  width: 100%;
+  border-bottom: 1px solid #000;
+}
+
+.namecolom {
+  width: 15%;
+  display: inline-block;
+  padding: 0px 5px;
+  border-right: 1px solid #000;
+}
+
+.inputfield {
+  display: inline-block;
+  width: 55%;
+}
+
+.dobcolom {
+  width: 13%;
+  display: inline-block;
+  border-right: 1px solid #000;
+  border-left: 1px solid #000;
+  padding: 0px 5px;
+}
+
+.smallinpout {
+  width: 15%;
+  display: inline-block;
+}
+
+.inputfield input[type="text"] {
+  width: 100%;
+  border: none;
+  padding: 0px 10px;
+}
+
+.inputfield input[type="text"]:focus {
+  outline: none;
+}
+p.simpletext {
+  max-width: 80%;
+  margin: auto;
+  text-align: center;
+  padding: 10px 0px;
+}
+
+.EVALUATIONtable {
+  border: 1px solid #000;
+  width: 100%;
+  max-width: 80%;
+  margin: 0px 10%;
+  float: left;
+}
+
+.headerparttable {
+  float: left;
+  width: 100%;
+}
+
+.seventycolom {
+  width: 70%;
+  float: left;
+  border-right: 1px solid #000;
+  padding: 0px 20px 0px 30px;font-size: 14px;line-height: 25px;
+}
+
+.thirtyycolom {
+  width: 30%;
+  float: left;
+  vertical-align: top;
+}
+
+.fullcom {
+  width: 100%;
+  text-align: center;
+  display: inline-block;
+  border-bottom: 1px solid #000;
+}
+
+.halfcom {
+  float: left;
+  width: 50%;
+  text-align: center;
+  border-bottom: 1px solid #000;
+}
+
+.headerparttable .seventycolom {
+  min-height: 50px;
+  text-align: center;
+  padding: 12px 0px;
+  
+}
+
+.thirtyycolom .halfcom:first-child {
+  border-right: 1px solid #000;
+}
+
+.subjectcolom {
+  float: left;
+  width: 100%;
+}
+
+.fulcolm {
+  width: 100%;
+  float: left;
+  border-bottom: 1px solid #000;
+  padding: 0px 5px;border-top: 1px solid #000;
+  font-weight: 600;
+}
+
+.wraprow {
+  float: left;
+  width: 100%;
+}
+
+.halfcom input[type="text"] {
+  width: 100%;
+  border: none;
+  padding: 0px 10px;
+}
+
+
+.borderhide {
+  border-bottom: none;
+}
+.minheightt .halfcom {
+  min-height: 50px;
+  padding: 12px 0px;
+}
+.headerparttable .halfcom {
+  border-bottom: none;
+}
+.borderright {
+  border-right: 1px solid #000;
+}
+.totals {
+  float: left;
+  width: 100%;
+  border-bottom: 1px solid #000;
+}
+
+.comments {
+  float: left;
+  width: 100%;
+  border-bottom: 1px solid #000;
+}
+
+.comments textarea {
+  padding: 0px 10px;
+  border: none;
+  width: 99%;
+  height: 150px;
+  float: left;
+  margin: 10px 0px;
+}
+
+.footerpart {
+  float: left;
+  width: 100%;
+}
+
+.judgename {
+  float: left;
+  width: 50%;
+  padding: 5px 10px;
+}
+
+.student_cp {
+  font-size: 12px;
+  color:#0073cf;
+}
+
+.footerpart .judgename:first-child {
+  border-right: 1px solid #000;
+}
+.comments textarea:focus {
+  outline: none;
+}
+.wraprow .border-bottom {
+  border-color: #000 !important;
+}
+.centertext {
+  font-weight: bold;
+}
+.fwbold {
+  font-weight: bold;
+}
+@media (max-width: 991px){
+  .namecolom {
+    width: 20%;}
+    .inputfield {
+      display: inline-block;
+      width: 35%;
+  }
+  .dobcolom {
+    width: 25%;}
+    .smallinpout {
+      width: 15%;}
+      .EVALUATIONtable {
+        width: 100%;
+        max-width: 100%;
+        margin: 0px;
+    }
+    .seventycolom{font-size: 9px;}
+    .headerparttable .halfcom {
+      font-size: 14px;
+  }
+}
+
+
+@media (max-width: 767px){
+  .EVALUATIONtable {
+    max-width: 100%;
+    margin: 0px;
+}
+.seventycolom{width: 100%;}
+.thirtyycolom {
+  border-top: 1px solid #000;width: 100%;border-right: 1px solid #000;
+}
+.tableheader {
+  max-width: 100%;
+  margin: 0px;
+}
+.namecolom {
+  width: 100%;border: none;
+  float: left;}
+  .inputfield {
+    display: inline-block;
+    width: 100%;
+}
+.dobcolom {
+  width: 100%; border: none;}
+  .smallinpout {
+    width: 100%;
+    display: inline-block;    border: none;
+}
+.singlerow {
+  font-size: 15px;padding: 5px;
+}
+.seventycolom {
+  font-size: 14px;
+}
+}

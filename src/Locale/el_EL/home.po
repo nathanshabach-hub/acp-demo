@@ -1,0 +1,5 @@
+msgid "Post a listing"
+msgstr "Post a listing"
+
+msgid "Check"
+msgstr "Verifyd"

@@ -1,0 +1,342 @@
+msgid "Post a listing"
+msgstr "Post a listing"
+
+msgid "Home"
+msgstr "Home"
+
+msgid "About Us"
+msgstr "About Us"
+
+msgid "Dashboard"
+msgstr "Dashboard"
+
+msgid "Logout"
+msgstr "Logout"
+
+msgid "Registration"
+msgstr "Registration"
+
+msgid "Login"
+msgstr "Login"
+
+msgid "Welcome"
+msgstr "Welcome"
+
+msgid "Don’t be a slug! Find your residence now"
+msgstr "Don’t be a slug! Find your residence now"
+
+msgid "Buy"
+msgstr "Buy"
+
+msgid "Rent"
+msgstr "Rent"
+
+msgid "Search"
+msgstr "Search"
+
+msgid "Register now at caraolos.com"
+msgstr "Register now at caraolos.com"
+
+msgid "Sign up now for free"
+msgstr "Sign up now for free"
+
+msgid "Save the searches that intrest you"
+msgstr "Save the searches that intrest you"
+
+msgid "Get emails with all"
+msgstr "Get emails with all"
+
+msgid "Save the properties Save the properties on your personal list"
+msgstr "Save the properties Save the properties on your personal list"
+
+msgid "Testimonials"
+msgstr "Testimonials"
+
+msgid "Select City"
+msgstr "Select City"
+
+msgid "All Types"
+msgstr "All Types"
+
+msgid "All Condition"
+msgstr "All Condition"
+
+msgid "Bedroom"
+msgstr "Bedroom"
+
+msgid "Advanced filtering"
+msgstr "Advanced filtering"
+
+msgid "Register"
+msgstr "Register"
+
+msgid "Discover"
+msgstr "Discover"
+
+msgid "Contact Us"
+msgstr "Contact Us"
+
+msgid "Follow us"
+msgstr "Follow us"
+
+msgid "All rights reserved"
+msgstr "All rights reserved"
+
+msgid "Terms & Conditions"
+msgstr "Terms & Conditions"
+
+msgid "Privacy Policy"
+msgstr "Privacy Policy"
+
+msgid "Cookies Policy"
+msgstr "Cookies Policy"
+
+msgid "Send Inquiry"
+msgstr "Send Inquiry"
+
+msgid "Error: Please reload the page and try again."
+msgstr "Error: Please reload the page and try again."
+
+msgid "Please login to add this property in your favorites list."
+msgstr "Please login to add this property in your favorites list."
+
+msgid "Latest properties"
+msgstr "Latest properties"
+
+msgid "Register as member"
+msgstr "Register as member"
+
+msgid "Create account and save advertisements to favorites."
+msgstr "Create account and save advertisements to favorites."
+
+msgid "Register as advertiser"
+msgstr "Register as advertiser"
+
+msgid "If you want to post ads, please register as advertiser."
+msgstr "If you want to post ads, please register as advertiser."
+
+msgid "Sign Up"
+msgstr "Sign Up"
+
+msgid "Sign Up with Facebook"
+msgstr "Sign Up with Facebook"
+
+msgid "Sign In with Twitter"
+msgstr "Sign In with Twitter"
+
+msgid "I agree to the"
+msgstr "I agree to the"
+
+msgid "Already Have an account"
+msgstr "Already Have an account"
+
+msgid "Get Started"
+msgstr "Get Started"
+
+msgid "First Name"
+msgstr "First Name"
+
+msgid "Last Name"
+msgstr "Last Name"
+
+msgid "Email Address"
+msgstr "Email Address"
+
+msgid "Password"
+msgstr "Password"
+
+msgid "Confirm Password"
+msgstr "Confirm Password"
+
+msgid "Information"
+msgstr "Information"
+
+msgid "Login_Page_Dummy_Text"
+msgstr "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum."
+
+msgid "Sign In with Facebook"
+msgstr "Sign In with Facebook"
+
+msgid "Sign In with Twitter"
+msgstr "Sign In with Twitter"
+
+msgid "Remember Me"
+msgstr "Remember Me"
+
+msgid "Sign In"
+msgstr "Sign In"
+
+msgid "Forgot Password?"
+msgstr "Forgot Password?"
+
+msgid "Forgot Password"
+msgstr "Forgot Password"
+
+msgid "Enter your email address and you will receive an email with reset password link."
+msgstr "Enter your email address and you will receive an email with reset password link."
+
+msgid "Submit"
+msgstr "Submit"
+
+msgid "Remember Password?"
+msgstr "Remember Password?"
+
+msgid "Advanced Search"
+msgstr "Advanced Search"
+
+msgid "Select city"
+msgstr "Select city"
+
+msgid "Parcel number"
+msgstr "Parcel number"
+
+msgid "Select condition"
+msgstr "Select condition"
+
+msgid "Select furnished type"
+msgstr "Select furnished type"
+
+msgid "Bathroom"
+msgstr "Bathroom"
+
+msgid "Parking"
+msgstr "Parking"
+
+msgid "Search"
+msgstr "Search"
+
+msgid "Price range"
+msgstr "Price range"
+
+msgid "Properties to buy"
+msgstr "Properties to buy"
+
+msgid "Properties for rent"
+msgstr "Properties for rent"
+
+msgid "City"
+msgstr "City"
+
+msgid "Bathrooms"
+msgstr "Bathrooms"
+
+msgid "Bedrooms"
+msgstr "Bedrooms"
+
+msgid "Size"
+msgstr "Size"
+
+msgid "Price low to high"
+msgstr "Price low to high"
+
+msgid "Price high to low"
+msgstr "Price high to low"
+
+msgid "Ad uploaded date ascending"
+msgstr "Ad uploaded date ascending"
+
+msgid "Ad uploaded date descending"
+msgstr "Ad uploaded date descending"
+
+msgid "Size ascending"
+msgstr "Size ascending"
+
+msgid "Size descending"
+msgstr "Size descending"
+
+msgid "Furnishing"
+msgstr "Furnishing"
+
+msgid "Price per m"
+msgstr "Price per m"
+
+msgid "DESCRIPTION"
+msgstr "DESCRIPTION"
+
+msgid "Error: Please reload the page and try again."
+msgstr "Error: Please reload the page and try again."
+
+msgid "Save"
+msgstr "Save"
+
+msgid "Call"
+msgstr "Call"
+
+msgid "Name"
+msgstr "Name"
+
+msgid "Email"
+msgstr "Email"
+
+msgid "Description"
+msgstr "Description"
+
+msgid "Contact"
+msgstr "Contact"
+
+msgid "Contact Advertiser"
+msgstr "Contact Advertiser"
+
+msgid "Sign Up as advertiser"
+msgstr "Sign Up as advertiser"
+
+msgid "Create your account as individuals or company."
+msgstr "Create your account as individuals or company."
+
+msgid "Register as member"
+msgstr "Register as member"
+
+msgid "If you want to post ads, please register as advertiser"
+msgstr "If you want to post ads, please register as advertiser"
+
+msgid "Sign Up as Advertiser"
+msgstr "Sign Up as Advertiser"
+
+msgid "package"
+msgstr "package"
+
+msgid "I agree to the"
+msgstr "I agree to the"
+
+msgid "Choose"
+msgstr "Choose"
+
+msgid "Phone"
+msgstr "Phone"
+
+msgid "Company name"
+msgstr "Company name"
+
+msgid "Company Logo"
+msgstr "Company Logo"
+
+msgid "Website"
+msgstr "Website"
+
+msgid "Already Have an account?"
+msgstr "Already Have an account?"
+
+msgid "Verify"
+msgstr "Verify"
+
+msgid "Verify"
+msgstr "Verify"
+
+msgid "Verify"
+msgstr "Verify"
+
+msgid "Verify"
+msgstr "Verify"
+
+msgid "Verify"
+msgstr "Verify"
+
+msgid "Verify"
+msgstr "Verify"
+
+msgid "Verify"
+msgstr "Verify"
+
+msgid "Verify"
+msgstr "Verify"
+

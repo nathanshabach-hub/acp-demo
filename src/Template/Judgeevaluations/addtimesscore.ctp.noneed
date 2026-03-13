@@ -1,0 +1,66 @@
+<script type="text/javascript">
+$(document).ready(function () {
+	$("#addtimesscore").validate();
+});
+</script>
+<?php
+if($checkEvalJudge->time_score != NULL && !empty($checkEvalJudge->time_score))
+{
+	$tScore = $checkEvalJudge->time_score;
+	$tScoreC = $tScore->format('H:i:s.u');
+	
+	// now remove padded zeros
+	if (strpos($tScoreC, '.') !== false) {
+    list($hms, $micro) = explode('.', $tScoreC);
+    $micro = rtrim($micro, '0'); // remove trailing zeros
+
+    if ($micro === '') {
+        $formattedTime = $hms;
+    } else {
+        $formattedTime = $hms . '.' . $micro;
+    }
+	} else {
+		$formattedTime = $tScoreC;
+	}
+}
+
+if($checkEvalJudge->withdraw_yes_no == 1)
+	$checkedS = 'checked';
+else
+	$checkedS = '';
+?>
+<div class="container-fluid p-0">
+	<div class="row">
+		<?php echo $this->element('user_left_menu'); ?>
+		<main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+			<h2 class="mt-3">Enter Time Score :: <?php echo $stGrpName; ?> (<?php echo $eventsubmissionD->Users['first_name']; ?>)</h2>
+			  
+			<!-- dashboard-section-3 start-->
+			<div class="dashboard-form">
+				<h2 class="form-title"><?php echo $eventD->event_name; ?> (<?php echo $eventD->event_id_number; ?>)</h2>
+				<?php echo $this->Form->create($judgeevaluations, ['id'=>'addtimesscore', 'type' => 'file', 'class' =>' ']); ?>
+					
+					<div class="form-group">
+						<label for="name">Time</label>
+						<?php echo $this->Form->input('Judgeevaluations.time_score', ['id'=>'time_score', 'label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required', 'placeholder'=>'','autocomplete' => 'off', 'value' => $formattedTime]); ?>
+						<span class="help_text" style="padding-left:274px;"><i>Please enter time in format hh:mm:ss.ms</i></span>
+					</div>
+					
+					<div class="form-group">
+						<label for="name">Withdraw</label>
+						<?php echo $this->Form->input('Judgeevaluations.withdraw_yes_no', ['id'=>'withdraw_yes_no', 'label'=>false, 'type'=>'checkbox',  'div'=>false, 'placeholder'=>'','style' => 'width:2%;', $checkedS]); ?>
+					</div>
+					
+					<div class="form-group form-btns">
+						<label></label>
+						<button type="submit" class="btn btn-secondary">Submit</button>
+						<!--<button type="button" class="btn btn-secondary">Cancel</button>-->
+						<?php echo $this->Html->link('Cancel', ['controller'=>'eventsubmissions', 'action' => 'timeseventsentries',$conv_reg_slug,$eventD->slug], ['class'=>'btn btn-secondary']); ?>
+					</div>
+				<?php echo $this->Form->end(); ?>
+			</div>
+			<!-- dashboard-section-3 end-->
+			
+		</main>
+	</div>
+</div>

@@ -1,0 +1,15 @@
+/vendor/*
+/vendors/*
+/config/app.php
+/config/my_const.php
+/tmp/*
+/logs/*
+/.DS_Store
+*.log
+/.ftpquota
+/webroot/error_log
+/webroot/files/events_submissions/*
+/webroot/files/events_heart/*
+/webroot/files/csv_files/*
+/webroot/files/judgingformpdf/*
+!/webroot/files/index.html

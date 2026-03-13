@@ -1,0 +1,304 @@
+<?php
+use Cake\ORM\TableRegistry;
+$this->Users 				= TableRegistry::get('Users');
+$this->Judgeevaluations 	= TableRegistry::get('Judgeevaluations');
+$this->Crstudentevents 		= TableRegistry::get('Crstudentevents');
+?>
+
+<script type="text/javascript">
+	$(document).ready(function () {
+		$("#scoreevent").validate();
+	});
+</script>
+
+<div class="admin_loader" id="loaderID"><?php echo $this->Html->image('loader_large_blue.gif');?></div>
+<?php if (!$eventsubmissions->isEmpty()) { ?> 
+    <div class="panel-body">
+        
+        <?php echo $this->Form->create('Conventionregistrations', ['id'=>'scoreevent', "method" => "Post"]);  ?>
+        <section id="no-more-tables" class="lstng-section">
+             
+
+            <div class="tbl-resp-listing">
+                <table id="group_events_table" class="table table-striped table-bordered" style="width:100%">
+					<thead>
+						<tr>
+							<th class="sorting_paging">
+							<?php
+							if($eventD->group_event_yes_no == 1)
+							{
+								echo 'Group';
+							}
+							else
+							{
+								echo "Student Name";
+							}
+							?>
+							</th>
+							<th class="sorting_paging">School</th>
+							<th class="sorting_paging">Submission Date</th>
+							
+							<th class="sorting_paging">Pos 1 (5)</th>
+							<th class="sorting_paging">Pos 2 (15)</th>
+							<th class="sorting_paging">Pos 3 (20)</th>
+							<th class="sorting_paging">Pos 4 (10)</th>
+							<th class="sorting_paging">Pos 5 (20)</th>
+							<th class="sorting_paging">Pos 6 (30)</th>
+							<th class="sorting_paging">Pos 7 (15)</th>
+							<th class="sorting_paging">Pos 8 (25)</th>
+							<th class="sorting_paging">Pos 9 (5)</th>
+							
+							<th class="sorting_paging">X1</th>
+							<th class="sorting_paging">X2</th>
+							<th class="sorting_paging">X3</th>
+							
+							<th class="sorting_paging">Total Score</th>
+							
+							<th class="sorting_paging">Withdrawn</th>
+						</tr>
+					</thead>
+					<tbody>
+						<?php
+						$cntrES = 0;
+						foreach($eventsubmissions as $datarecord)
+						{
+							$cntrES++;
+							
+						?>
+						<tr>
+						<td data-title="Student Name / Group">
+						<?php
+						if($eventD->group_event_yes_no == 1)
+						{
+							echo $datarecord->group_name.'<br>';
+							
+							// now fetch all name of students of this group
+							//echo '--'.$datarecord->id;
+							$condAllUGroup = array();
+							$condAllUGroup[] = "(Crstudentevents.conventionregistration_id = '".$datarecord->conventionregistration_id."' AND Crstudentevents.event_id = '".$datarecord->event_id."' AND Crstudentevents.group_name = '".$datarecord->group_name."')";
+							
+							$listAllUGroup = $this->Crstudentevents->find()->where($condAllUGroup)->contain(["Students"])->limit(4)->all();
+							
+							$arrNG = array();
+							foreach($listAllUGroup as $datamembgroup)
+							{
+								$nameV =  $datamembgroup->Students['first_name'].' '.$datamembgroup->Students['middle_name'].' '.$datamembgroup->Students['last_name'];
+								$arrNG[] = $nameV;
+							}
+							
+							echo '('.implode(", ",$arrNG).')';
+						?>
+						
+							<a title="View all members of group" href="#" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#exampleModal_<?php echo $datarecord->id; ?>" style="width:45px;">
+								  <i class="fa fa-eye"></i>
+							</a>
+							<div class="modal fade" id="exampleModal_<?php echo $datarecord->id; ?>" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+							  <div class="modal-dialog">
+								<div class="modal-content">
+								
+								  <div class="modal-header">
+									<h5 class="modal-title" id="exampleModalLabel">Group <?php echo $datarecord->group_name; ?></h5>
+									<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+								  </div>
+								  
+								  <div class="modal-body">
+									
+									<table class="table">
+										<thead>
+											<tr>
+												<th scope="col">#</th>
+												<th scope="col">Name</th>
+											</tr>
+										</thead>
+										<tbody>
+											<?php
+											// now fetch all students of this group
+											$listAllUGroup = $this->Crstudentevents->find()->where($condAllUGroup)->contain(["Students"])->all();
+											$cntrMM = 1;
+											foreach($listAllUGroup as $datamembgroup)
+											{
+											?>
+											<tr>
+												<td scope="row"><?php echo $cntrMM; ?></td>
+												<td colspan="2"><?php echo $datamembgroup->Students['first_name'].' '.$datamembgroup->Students['middle_name'].' '.$datamembgroup->Students['last_name']; ?></td>
+											</tr>
+											<?php
+											$cntrMM++;
+											}
+											?>
+										</tbody>
+									</table>
+									
+								  </div>
+								
+								</div>
+							  </div>
+							</div>
+						
+						<?php
+							
+							
+						}
+						else
+						{
+							echo $datarecord->Students['first_name'].' '.$datarecord->Students['middle_name'].' '.$datarecord->Students['last_name'];
+						}
+						?>
+						</td>
+						<td data-title="School"><?php echo $datarecord->Users['first_name']; ?></td>
+						<td data-title="Submission Date"><?php echo date('M d, Y', strtotime($datarecord->created)); ?></td>
+						
+						<?php
+						$judge_id 	= $this->request->session()->read("user_id");
+						
+						$condCheckJudging = array();
+						$condCheckJudging[] = "(Judgeevaluations.eventsubmission_id = '".$datarecord->id."')";
+						$condCheckJudging[] = "(Judgeevaluations.uploaded_by_user_id = '".$judge_id."')";
+						
+						$getJudgeEvalData = $this->Judgeevaluations->find()->where($condCheckJudging)->first();
+						
+						// to check withdrawn
+						if($getJudgeEvalData->withdraw_yes_no == 1)
+							$checkedWithdr = 'checked';
+						else
+							$checkedWithdr = '';
+						?>
+						
+						<td data-title="Pos 1">
+						<input type="checkbox" name="pos_1_<?php echo $cntrES; ?>" id="pos_1_<?php echo $cntrES; ?>" value="1" <?php if($getJudgeEvalData->pos_1_yes_no == 1) { echo 'checked'; } ?> />
+						</td>
+						<td data-title="Pos 2">
+						<input type="checkbox" name="pos_2_<?php echo $cntrES; ?>" id="pos_2_<?php echo $cntrES; ?>" value="2" <?php if($getJudgeEvalData->pos_2_yes_no == 1) { echo 'checked'; } ?> />
+						</td>
+						<td data-title="Pos 3">
+						<input type="checkbox" name="pos_3_<?php echo $cntrES; ?>" id="pos_3_<?php echo $cntrES; ?>" value="3" <?php if($getJudgeEvalData->pos_3_yes_no == 1) { echo 'checked'; } ?> />
+						</td>
+						<td data-title="Pos 4">
+						<input type="checkbox" name="pos_4_<?php echo $cntrES; ?>" id="pos_4_<?php echo $cntrES; ?>" value="4" <?php if($getJudgeEvalData->pos_4_yes_no == 1) { echo 'checked'; } ?> />
+						</td>
+						<td data-title="Pos 5">
+						<input type="checkbox" name="pos_5_<?php echo $cntrES; ?>" id="pos_5_<?php echo $cntrES; ?>" value="5" <?php if($getJudgeEvalData->pos_5_yes_no == 1) { echo 'checked'; } ?> />
+						</td>
+						<td data-title="Pos 6">
+						<input type="checkbox" name="pos_6_<?php echo $cntrES; ?>" id="pos_6_<?php echo $cntrES; ?>" value="6" <?php if($getJudgeEvalData->pos_6_yes_no == 1) { echo 'checked'; } ?> />
+						</td>
+						<td data-title="Pos 7">
+						<input type="checkbox" name="pos_7_<?php echo $cntrES; ?>" id="pos_7_<?php echo $cntrES; ?>" value="7" <?php if($getJudgeEvalData->pos_7_yes_no == 1) { echo 'checked'; } ?> />
+						</td>
+						<td data-title="Pos 8">
+						<input type="checkbox" name="pos_8_<?php echo $cntrES; ?>" id="pos_8_<?php echo $cntrES; ?>" value="8" <?php if($getJudgeEvalData->pos_8_yes_no == 1) { echo 'checked'; } ?> />
+						</td>
+						<td data-title="Pos 9">
+						<input type="checkbox" name="pos_9_<?php echo $cntrES; ?>" id="pos_9_<?php echo $cntrES; ?>" value="9" <?php if($getJudgeEvalData->pos_9_yes_no == 1) { echo 'checked'; } ?> />
+						</td>
+						
+						<td data-title="X1">
+						<input type="number" name="comp_choice_pos_1_<?php echo $cntrES; ?>" id="comp_choice_pos_1_<?php echo $cntrES; ?>" style="width:60px;" min="1" max="9" value="<?php echo $getJudgeEvalData->comp_choice_pos_1; ?>" />
+						</td>
+						<td data-title="X2">
+						<input type="number" name="comp_choice_pos_2_<?php echo $cntrES; ?>" id="comp_choice_pos_2_<?php echo $cntrES; ?>" style="width:60px;" min="1" max="9" value="<?php echo $getJudgeEvalData->comp_choice_pos_2; ?>" />
+						</td>
+						<td data-title="X3">
+						<input type="number" name="comp_choice_pos_3_<?php echo $cntrES; ?>" id="comp_choice_pos_3_<?php echo $cntrES; ?>" style="width:60px;" min="1" max="9" value="<?php echo $getJudgeEvalData->comp_choice_pos_3; ?>" />
+						</td>
+						
+						<td data-title="Total Score">
+						<input type="number" name="all_pos_score_<?php echo $cntrES; ?>" id="all_pos_score_<?php echo $cntrES; ?>" style="width:60px;" value="<?php echo $getJudgeEvalData->all_pos_score; ?>" />
+						</td>
+						
+						<td data-title="Withdrawn">
+						<input type="checkbox" name="withdrawn_<?php echo $cntrES; ?>" id="withdrawn_<?php echo $cntrES; ?>" <?php echo $checkedWithdr; ?> />
+						
+						<input type="hidden" name="submission_id_<?php echo $cntrES; ?>" id="submission_id_<?php echo $datarecord->id; ?>" value="<?php echo $datarecord->id; ?>" />
+						</td>
+					</tr>
+						<?php } ?>
+						
+					</tbody>
+					
+					<tr>
+						<td></td>
+						<td></td>
+						<td></td>
+						<td></td>
+						<td></td>
+						<td></td>
+						<td></td>
+						<td></td>
+						<td></td>
+						<td></td>
+						<td></td>
+						<td></td>
+						<td></td>
+						<td></td>
+						<td></td>
+						<td>
+						<input type="submit" value="Submit" class="btn btn-primary" />
+						<input type="hidden" name="total_records" id="total_records" value="<?php echo $cntrES; ?>" />
+						</td>
+						<td></td>
+					</tr>
+				</table>
+            </div>
+        </section>
+
+         
+        
+        <?php echo $this->Form->end(); ?>
+    
+    </div>
+<?php } else { ?>
+    <div id="listingJS" style="display: none;" class="alert alert-success alert-block fade in"></div>
+    <div class="admin_no_record">No record found.</div>
+<?php }
+?>
+
+<script>
+$(document).ready(function() {
+$('#group_events_table').dataTable({
+    //"bPaginate": false,
+    "bLengthChange": false,
+	"pageLength": 50,
+	order: [[0, 'asc']],
+    //"bFilter": true,
+    //"bInfo": false,
+    //"bAutoWidth": false
+	});
+	/* $('#searchInput').on('keyup', function() {
+        $('#group_events_table').dataTable.search(this.value).draw();
+    }); */
+});
+</script>
+
+<script type="text/javascript" language="javascript" src="https://code.jquery.com/jquery-3.5.1.js"></script>
+<script type="text/javascript" language="javascript" src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
+<script type="text/javascript" language="javascript" src="https://cdn.datatables.net/1.13.4/js/dataTables.bootstrap5.min.js"></script>
+
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.13.4/css/dataTables.bootstrap5.min.css">
+
+<style type="text/css">
+    .page-link {
+        color: #1c2452 !important;
+        background-color: #fff !important;
+    }
+
+    .active>.page-link,
+    .page-link.active {
+        background-color: #1c2452 !important;
+        border-color: #1c2452 !important;
+        color: #fff !important;
+    }
+
+    .pagination {
+        border-radius: 0rem !important;
+    }
+</style>
+
+<style>
+.moretext {display: none;}
+</style>
+
+
+
+
+

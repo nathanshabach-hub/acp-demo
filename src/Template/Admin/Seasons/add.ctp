@@ -1,0 +1,78 @@
+<script type="text/javascript">
+    $(document).ready(function() {
+        $("#adminForm").validate();
+    });
+</script>
+
+<?php echo $this->Html->script('jquery/ui/jquery.ui.core.js'); ?>
+<?php echo $this->Html->script('jquery/ui/jquery.ui.widget.js'); ?>
+<?php echo $this->Html->script('jquery/ui/jquery.ui.position.js'); ?>
+<?php echo $this->Html->script('jquery/ui/jquery.ui.datepicker.js'); ?>
+<?php echo $this->Html->css('themes/ui-lightness/jquery.ui.all.css'); ?>
+<script>
+    $(function() {
+        $( "#registration_start_date" ).datepicker({
+            dateFormat: 'yy-mm-dd',
+            changeMonth : true,
+            changeYear : true,
+            yearRange: '-2y:c+nn',
+            maxDate: '+2y'
+        });
+    });
+</script>
+<script>
+    $(function() {
+        $( "#registration_end_date" ).datepicker({
+            dateFormat: 'yy-mm-dd',
+            changeMonth : true,
+            changeYear : true,
+            yearRange: '-2y:c+nn',
+            maxDate: '+2y'
+        });
+    });
+</script>
+<style>
+    #ui-datepicker-div button.ui-datepicker-current {display: none;}
+</style>
+
+<div class="content-wrapper">
+    <section class="content-header">
+      <h1>
+         Add Season
+      </h1>
+      <ol class="breadcrumb">
+          <li><?php echo $this->Html->link('<i class="fa fa-dashboard"></i> <span>Dashboard</span> ', ['controller'=>'admins', 'action'=>'dashboard'], ['escape'=>false]);?></li>
+          <li><?php echo $this->Html->link('<i class="fa fa-bullhorn"></i> Seasons ', ['controller'=>'seasons', 'action'=>'index'], ['escape'=>false]);?></li>
+          <li class="active">Add Season </li>
+      </ol>
+    </section>
+
+    <section class="content">
+     <div class="box box-info">
+            <div class="box-header with-border">
+                <h3 class="box-title">&nbsp;</h3>
+            </div>
+            <div class="ersu_message"> <?php echo $this->Flash->render() ?> </div>
+            <?php echo $this->Form->create($seasons, ['id'=>'adminForm', 'type' => 'file']); ?>
+                <div class="form-horizontal">
+                    <div class="box-body">
+					
+					<div class="form-group">
+                      <label class="col-sm-2 control-label">Season Year <span class="require">*</span></label>
+                      <div class="col-sm-10">
+                          <?php echo $this->Form->input('Seasons.season_year', ['label'=>false, 'type'=>'number',  'div'=>false, 'class'=>'form-control required', 'placeholder'=>'Season Year', 'autocomplete'=>'off']); ?>
+                      </div>
+                    </div>
+					
+                    <div class="box-footer">
+                        <label class="col-sm-2 control-label" for="inputPassword3">&nbsp;</label>
+                        <?php echo $this->Form->button('Save', ['type'=>'submit', 'class' => 'btn btn-info', 'div'=>false]); ?>
+						<?php echo $this->Html->link('Cancel', ['controller'=>'seasons', 'action' => 'index'], ['class'=>'btn btn-default canlcel_le']); ?>
+                        <?php //echo $this->Form->button('Reset', ['type'=>'reset', 'class' => 'btn btn-default canlcel_le', 'div'=>false]); ?>
+                    </div>
+                  </div>
+                </div>
+            <?php echo $this->Form->end(); ?>
+          </div>
+    </section>
+  </div>

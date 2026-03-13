@@ -1,0 +1,352 @@
+msgid "Welcome"
+msgstr "Welcome"
+
+msgid "First Name"
+msgstr "First Name"
+
+msgid "Last Name"
+msgstr "Last Name"
+
+msgid "Email"
+msgstr "Email"
+
+msgid "Phone"
+msgstr "Phone"
+
+msgid "Company name"
+msgstr "Company name"
+
+msgid "Website"
+msgstr "Website"
+
+msgid "Description"
+msgstr "Description"
+
+msgid "Member Since"
+msgstr "Member Since"
+
+msgid "Edit profile"
+msgstr "Edit profile"
+
+msgid "Company logo"
+msgstr "Company logo"
+
+msgid "Save changes"
+msgstr "Save changes"
+
+msgid "Change Password"
+msgstr "Change Password"
+
+msgid "Old Password"
+msgstr "Old Password"
+
+msgid "New Password"
+msgstr "New Password"
+
+msgid "Confirm Password"
+msgstr "Confirm Password"
+
+msgid "Change Password"
+msgstr "Change Password"
+
+msgid "My Ads"
+msgstr "My Ads"
+
+msgid "Post ad"
+msgstr "Post ad"
+
+msgid "Activity"
+msgstr "Activity"
+
+msgid "Ad Title (EN)"
+msgstr "Ad Title (EN)"
+
+msgid "Location"
+msgstr "Location"
+
+msgid "Date available"
+msgstr "Date available"
+
+msgid "Expiry date"
+msgstr "Expiry date"
+
+msgid "Action"
+msgstr "Action"
+
+msgid "No record found."
+msgstr "No record found."
+
+msgid "Edit"
+msgstr "Edit"
+
+msgid "Pictures"
+msgstr "Pictures"
+
+msgid "Post new ad"
+msgstr "Post new ad"
+
+msgid "Ad Title (English)"
+msgstr "Ad Title (English)"
+
+msgid "Ad Title (Greek)"
+msgstr "Ad Title (Greek)"
+
+msgid "Ad Description (English)"
+msgstr "Ad Description (English)"
+
+msgid "Ad Description (Greek)"
+msgstr "Ad Description (Greek)"
+
+msgid "Location"
+msgstr "Location"
+
+msgid "Date Available"
+msgstr "Date Available"
+
+msgid "Housing type"
+msgstr "Housing type"
+
+msgid "Furnished type"
+msgstr "Furnished type"
+
+msgid "Number of bedrooms"
+msgstr "Number of bedrooms"
+
+msgid "Number of bathrooms"
+msgstr "Number of bathrooms"
+
+msgid "Parking available"
+msgstr "Parking available"
+
+msgid "Monthly price"
+msgstr "Monthly price"
+
+msgid "Deposit"
+msgstr "Deposit"
+
+msgid "Rental period (Months)"
+msgstr "Rental period (Months)"
+
+msgid "Extension possibility"
+msgstr "Extension possibility"
+
+msgid "Amenities"
+msgstr "Amenities"
+
+msgid "Type"
+msgstr "Type"
+
+msgid "Parcel number"
+msgstr "Parcel number"
+
+msgid "Condition"
+msgstr "Condition"
+
+msgid "Furnished type"
+msgstr "Furnished type"
+
+msgid "Price"
+msgstr "Price"
+
+msgid "Discounted Price"
+msgstr "Discounted Price"
+
+msgid "Size"
+msgstr "Size"
+
+msgid "Cancel"
+msgstr "Cancel"
+
+msgid "Save"
+msgstr "Save"
+
+msgid "Choose"
+msgstr "Choose"
+
+msgid "Provide specific address"
+msgstr "Provide specific address"
+
+msgid "Date Available"
+msgstr "Date Available"
+
+msgid "Edit ad details"
+msgstr "Edit ad details"
+
+msgid "My package"
+msgstr "My package"
+
+msgid "Package Name"
+msgstr "Package Name"
+
+msgid "Price Paid"
+msgstr "Price Paid"
+
+msgid "Ads Allowed"
+msgstr "Ads Allowed"
+
+msgid "Ads Duration (Months)"
+msgstr "Ads Duration (Months)"
+
+msgid "Transaction ID"
+msgstr "Transaction ID"
+
+msgid "Purchased date"
+msgstr "Purchased date"
+
+msgid "Expiry date"
+msgstr "Expiry date"
+
+msgid "Unlimited"
+msgstr "Unlimited"
+
+msgid "Upgrade Package"
+msgstr "Upgrade Package"
+
+msgid "Sorry, you dont have any active package."
+msgstr "Sorry, you dont have any active package."
+
+msgid "Purchase Package"
+msgstr "Purchase Package"
+
+msgid "year"
+msgstr "year"
+
+msgid "posts per year"
+msgstr "posts per year"
+
+msgid "month validity"
+msgstr "month validity"
+
+msgid "Upload new picture"
+msgstr "Upload new picture"
+
+msgid "Pictures"
+msgstr "Pictures"
+
+msgid "Upload picture"
+msgstr "Upload picture"
+
+msgid "Picture"
+msgstr "Picture"
+
+msgid "Best fit size (w x h): 700 x 400 pixels"
+msgstr "Best fit size (w x h): 700 x 400 pixels"
+
+msgid "No record found."
+msgstr "No record found."
+
+msgid "Full View"
+msgstr "Full View"
+
+msgid "Date"
+msgstr "Date"
+
+msgid "Remove"
+msgstr "Remove"
+
+msgid "Ad Title"
+msgstr "Ad Title"
+
+msgid "Added date"
+msgstr "Added date"
+
+msgid "Location"
+msgstr "Location"
+
+msgid "Delete"
+msgstr "Delete"
+
+msgid "Saved Searches"
+msgstr "Saved Searches"
+
+msgid "Profile"
+msgstr "Profile"
+
+msgid "Edit Profile"
+msgstr "Edit Profile"
+
+msgid "Change Password"
+msgstr "Change Password"
+
+msgid "Saved Searches"
+msgstr "Saved Searches"
+
+msgid "My Ads"
+msgstr "My Ads"
+
+msgid "My Packages"
+msgstr "My Packages"
+
+msgid "Logout"
+msgstr "Logout"
+
+msgid "Companies"
+msgstr "Companies"
+
+msgid "Subscribers"
+msgstr "Subscribers"
+
+msgid "Contact Us"
+msgstr "Contact Us"
+
+msgid "Address"
+msgstr "Address"
+
+msgid "E-mail"
+msgstr "E-mail"
+
+msgid "Phones"
+msgstr "Phones"
+
+msgid "You can contact us any way that is convenient for you. We are available 24/7 via fax or email."
+msgstr "You can contact us any way that is convenient for you. We are available 24/7 via fax or email."
+
+msgid "You can also use a quick contact form below or visit our salon personally."
+msgstr "You can also use a quick contact form below or visit our salon personally."
+
+msgid "Message"
+msgstr "Message"
+
+msgid "Send Inquiry"
+msgstr "Send Inquiry"
+
+msgid "Search Company"
+msgstr "Search Company"
+
+msgid "Search"
+msgstr "Search"
+
+msgid "Type keyword"
+msgstr "Type keyword"
+
+msgid "Upgrade"
+msgstr "Upgrade"
+
+msgid "No expiration"
+msgstr "No expiration"
+
+msgid "Unlimited posts"
+msgstr "Unlimited posts"
+
+msgid "Sign Up"
+msgstr "Sign Up"
+
+msgid "Saved Searches"
+msgstr "Saved Searches"
+
+msgid "Verify"
+
+msgid "Verify"
+msgstr "Verify"
+
+msgid "Verify"
+msgstr "Verify"
+
+msgid "Verify"
+msgstr "Verify"
+
+msgid "Verify"
+
+msgstr "Verify"
+msgstr "Verify"
+

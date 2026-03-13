@@ -1,0 +1,6 @@
+.git
+vendor
+tmp
+logs
+webroot/files
+*.sql

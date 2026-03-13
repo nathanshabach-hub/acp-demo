@@ -1,0 +1,245 @@
+msgid "Welcome"
+msgstr "Welcome"
+
+msgid "Search"
+msgstr "Search"
+
+msgid "Login"
+msgstr "Login"
+
+msgid "Your account has not yet verified."
+msgstr "Your account has not yet verified."
+
+msgid "Your account got temporary disabled."
+msgstr "Your account got temporary disabled."
+
+msgid "Invalid email or password."
+msgstr "Invalid email or password."
+
+msgid "Invalid email. Account not found in system."
+msgstr "Invalid email. Account not found in system."
+
+msgid "Registration"
+msgstr "Registration"
+
+msgid "Invalid Captcha, try again."
+msgstr "Invalid Captcha, try again."
+
+msgid "Your account has been successfully created. Please check your email for your activation link. If you do not receive it within a few minutes, please check your spam folder or contact our support team."
+msgstr "Your account has been successfully created. Please check your email for your activation link. If you do not receive it within a few minutes, please check your spam folder or contact our support team."
+
+msgid "Logout successfully."
+msgstr "Logout successfully."
+
+msgid "Dashbaord"
+msgstr "Dashbaord"
+
+msgid "Forgot Password"
+msgstr "Forgot Password"
+
+msgid "We have successfully sent you reset password link. Please click that link and reset your password."
+msgstr "We have successfully sent you reset password link. Please click that link and reset your password."
+
+msgid "Invalid email entered."
+msgstr "Invalid email entered."
+
+msgid "Invalid email. Account not found in system."
+msgstr "Invalid email. Account not found in system."
+
+msgid "Your account has been successfully verified. Please login and proceed to account."
+msgstr "Your account has been successfully verified. Please login and proceed to account."
+
+msgid "You have already used this activation link!"
+msgstr "You have already used this activation link!"
+
+msgid "Reset Password"
+msgstr "Reset Password"
+
+msgid "Invalid link."
+msgstr "Invalid link."
+
+msgid "Invalid reset password link."
+msgstr "Invalid reset password link."
+
+msgid "Edit Profile"
+msgstr "Edit Profile"
+
+msgid "Profile details updated successfully."
+msgstr "Profile details updated successfully."
+
+msgid "Change Password"
+msgstr "Change Password"
+
+msgid "Old Password is not correct."
+msgstr "Old Password is not correct."
+
+msgid "You cannot put your old password for the new password."
+msgstr "You cannot put your old password for the new password."
+
+msgid "Your Password has been changed successfully."
+msgstr "Your Password has been changed successfully."
+
+msgid "Choose package"
+msgstr "Choose package"
+
+msgid "Register as poster"
+msgstr "Register as poster"
+
+msgid "Your account has been successfully created. Please check your email for your activation link. If you do not receive it within a few minutes, please check your spam folder or contact our support team."
+msgstr "Your account has been successfully created. Please check your email for your activation link. If you do not receive it within a few minutes, please check your spam folder or contact our support team."
+
+msgid "My Ads"
+msgstr "My Ads"
+
+msgid "Records are activated successfully."
+msgstr "Records are activated successfully."
+
+msgid "Records are deactivated successfully."
+msgstr "Records are deactivated successfully."
+
+msgid "Records are deleted successfully."
+msgstr "Records are deleted successfully."
+
+msgid "Edit Ad"
+msgstr "Edit Ad"
+
+msgid "Post new ad"
+msgstr "Post new ad"
+
+msgid "Sorry, you have posted allowed number of ads. Please upgrade package."
+msgstr "Sorry, you have posted allowed number of ads. Please upgrade package."
+
+msgid "Sorry, there is no active package found. Please upgrade package."
+msgstr "Sorry, there is no active package found. Please upgrade package."
+
+msgid "Advanced Search"
+msgstr "Advanced Search"
+
+msgid "Search Company"
+msgstr "Search Company"
+
+msgid "Contact Us"
+msgstr "Contact Us"
+
+msgid "Your inquiry was sent successfully. Our team will contact you as soon as possible."
+msgstr "Your inquiry was sent successfully. Our team will contact you as soon as possible."
+
+msgid "View Images"
+msgstr "View Images"
+
+msgid "Upload Image"
+msgstr "Upload Image"
+
+msgid "File uploaded successfully."
+msgstr "File uploaded successfully."
+
+msgid "File removed successfully."
+msgstr "File removed successfully."
+
+msgid "My Package"
+msgstr "My Package"
+
+msgid "Upgrade package"
+msgstr "Upgrade package"
+
+msgid "Invalid package."
+msgstr "Invalid package."
+
+msgid "Payment transaction completed successfully."
+msgstr "Payment transaction completed successfully."
+
+msgid "Sorry, payment transaction failed. Please create account again."
+msgstr "Sorry, payment transaction failed. Please create account again."
+
+msgid "Saved Searches"
+msgstr "Saved Searches"
+
+msgid "First name is required"
+msgstr "First name is required"
+
+msgid "Last name is required"
+msgstr "Last name is required"
+
+msgid "Username is required"
+msgstr "Username is required"
+
+msgid "Email address is required"
+msgstr "Email address is required"
+
+msgid "Please enter valid email address."
+msgstr "Please enter valid email address."
+
+msgid "Email address already exist, please try with other email address"
+msgstr "Email address already exist, please try with other email address"
+
+msgid "Password is required"
+msgstr "Password is required"
+
+msgid "Confirm password is required"
+msgstr "Confirm password is required"
+
+msgid "Password and confirm password must be same"
+msgstr "Password and confirm password must be same"
+
+msgid "Old Password is required field"
+msgstr "Old Password is required field"
+
+msgid "New Password is required field."
+msgstr "New Password is required field."
+
+msgid "Confirm Password is required field."
+msgstr "Confirm Password is required field."
+
+msgid "Password and confirm password must be same"
+msgstr "Password and confirm password must be same"
+
+msgid "Email address you have entered is not found in our database. Please enter correct email address."
+msgstr "Email address you have entered is not found in our database. Please enter correct email address."
+
+msgid "Verify"
+msgstr "Verify"
+
+msgid "Verify"
+msgstr "Verify"
+
+msgid "Verify"
+msgstr "Verify"
+
+msgid "Verify"
+msgstr "Verify"
+
+msgid "Verify"
+msgstr "Verify"
+
+msgid "Verify"
+msgstr "Verify"
+
+msgid "Verify"
+msgstr "Verify"
+
+msgid "Verify"
+msgstr "Verify"
+
+msgid "Verify"
+msgstr "Verify"
+
+msgid "Verify"
+msgstr "Verify"
+
+msgid "Verify"
+msgstr "Verify"
+
+msgid "Verify"
+msgstr "Verify"
+
+msgid "Verify"
+msgstr "Verify"
+
+msgid "Verify"
+msgstr "Verify"
+
+msgid "Verify"
+msgstr "Verify"
+
+
+

@@ -1,0 +1,13 @@
+<html>
+    <head>
+    
+    </head>
+    <body>
+        <h1>Accelerate Convention Portal</h1>
+        <br />
+        <p>Convention Portal coming soon</p>
+        <br />
+        <p>Colossians 3:23 And whatever you do, do it heartily, as for the Lord and not for men,</p>
+        <?php phpinfo(); ?>
+    </body>
+</html>
