@@ -1,26 +1,63 @@
-# CakePHP Application Skeleton
+# ACP Demo Portal
 
-[![Build Status](https://img.shields.io/travis/cakephp/app/master.svg?style=flat-square)](https://travis-ci.org/cakephp/app)
-[![License](https://img.shields.io/packagist/l/cakephp/app.svg?style=flat-square)](https://packagist.org/packages/cakephp/app)
+ACP Demo Portal is a legacy CakePHP 3.x application used for convention
+registrations, scheduling, submissions, judging, and reporting.
 
-A skeleton for creating applications with [CakePHP](http://cakephp.org) 3.x.
+## Stack
 
-The framework source code can be found here: [cakephp/cakephp](https://github.com/cakephp/cakephp).
+- PHP 7.4 + Apache
+- CakePHP ~3.2
+- MySQL (expected host name: `mysql-db`)
 
-## Installation
+## Project Layout
 
-1. Download [Composer](http://getcomposer.org/doc/00-intro.md) or update `composer self-update`.
-2. Run `php composer.phar create-project --prefer-dist cakephp/app [app_name]`.
+- `src/` application controllers, models, templates
+- `config/` CakePHP and app constants configuration
+- `plugins/` custom plugin code
+- `webroot/` public assets and uploaded/generated files
 
-If Composer is installed globally, run
+## Local Setup
+
+1. Copy the sample constants file:
+
 ```bash
-composer create-project --prefer-dist cakephp/app [app_name]
+cp config/my_const.example.php config/my_const.php
 ```
 
-You should now be able to visit the path to where you installed the app and see
-the setup traffic lights.
+2. Edit `config/my_const.php` and set your local values:
 
-## Configuration
+- DB host/user/password/name
+- SMTP credentials
+- captcha keys
+- HTTP and base paths
 
-Read and edit `config/app.php` and setup the 'Datasources' and any other
-configuration relevant for your application.
+3. Ensure dependencies are present (this repository already includes `vendors/`).
+
+4. Start with Docker (manual flow):
+
+```bash
+docker network create acp-net
+docker run -d --name mysql-db --network acp-net \
+	-e MYSQL_ROOT_PASSWORD=rootpass \
+	-e MYSQL_DATABASE=convention_acpdemo \
+	-p 3306:3306 mysql:5.7
+
+docker build -t acp-web -f Dockerfile .
+docker run -d --name acp-web --network acp-net \
+	-p 8080:80 -v "$PWD":/var/www/html/acp_demo acp-web
+```
+
+5. Import the schema/data dump:
+
+```bash
+cat convention_acpdemo.sql | docker exec -i mysql-db \
+	mysql -uroot -prootpass convention_acpdemo
+```
+
+6. Open `http://localhost:8080`.
+
+## Security Notes
+
+- Do not commit `config/my_const.php` (contains secrets).
+- Uploaded files and runtime logs are excluded from git by `.gitignore`.
+- If real credentials were used previously, rotate them before production use.
