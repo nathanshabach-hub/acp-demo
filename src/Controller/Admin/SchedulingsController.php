@@ -637,8 +637,10 @@ class SchedulingsController extends AppController {
 				$finalEventArr[$event_id] = $checkEventCS->Events['event_name'].' ('.$checkEventCS->Events['event_id_number'].')'.' ('.$countStudentsEvent.')';
 				$eventStats[$event_id] = [
 					'label' => $checkEventCS->Events['event_name'].' ('.$checkEventCS->Events['event_id_number'].')',
+					'event_id_number' => $checkEventCS->Events['event_id_number'],
 					'students' => $countStudentsEvent,
 					'scheduled_records' => $countScheduledRecords,
+					'duration_minutes' => ((int)$checkEventCS->Events['setup_time']) + ((int)$checkEventCS->Events['round_time']) + ((int)$checkEventCS->Events['judging_time']),
 				];
 			}
 		}

@@ -117,6 +117,115 @@
 			$('#preview_students').text(totalStudents);
 			$('#preview_records').text(totalScheduledRecords);
 			$('#preview_blocks').text(estimatedBlocks);
+			updateRowWarnings();
+		}
+
+		function parseTimeToMinutes(timeStr) {
+			if (!timeStr) return null;
+			timeStr = $.trim(timeStr).toUpperCase();
+			var ampmMatch = timeStr.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/);
+			if (ampmMatch) {
+				var h = parseInt(ampmMatch[1], 10);
+				var m = parseInt(ampmMatch[2], 10);
+				var ap = ampmMatch[3];
+				if (h === 12) h = 0;
+				if (ap === 'PM') h += 12;
+				return (h * 60) + m;
+			}
+
+			var hmsMatch = timeStr.match(/^(\d{1,2}):(\d{2})(?::\d{2})?$/);
+			if (hmsMatch) {
+				return (parseInt(hmsMatch[1], 10) * 60) + parseInt(hmsMatch[2], 10);
+			}
+			return null;
+		}
+
+		function formatMinutes(mins) {
+			if (mins === null || mins < 0) return 'n/a';
+			var h = Math.floor(mins / 60) % 24;
+			var m = mins % 60;
+			var suffix = h >= 12 ? 'PM' : 'AM';
+			var hh = h % 12;
+			if (hh === 0) hh = 12;
+			return hh + ':' + (m < 10 ? '0' + m : m) + ' ' + suffix;
+		}
+
+		function updateRowWarnings(){
+			var warnings = [];
+			var windows = [];
+
+			$('.sched-row').each(function(rowIdx){
+				var $row = $(this);
+				var eventId = $.trim($row.find('.sched-row-event').val());
+				var rowDate = $.trim($row.find('.sched-row-date').val());
+				var rowTime = $.trim($row.find('.sched-row-time').val());
+				var rowMax = parseInt($row.find('.sched-row-max').val(), 10) || 0;
+				var rowGap = parseInt($row.find('.sched-row-gap').val(), 10) || 0;
+
+				if (!eventId || !rowDate || !rowTime || rowMax <= 0) return;
+
+				var st = window.eventStats && window.eventStats[eventId] ? window.eventStats[eventId] : null;
+				if (!st) return;
+
+				var startMins = parseTimeToMinutes(rowTime);
+				if (startMins === null) {
+					warnings.push('Row ' + (rowIdx + 1) + ': invalid start time format.');
+					return;
+				}
+
+				var sourceRecords = parseInt(st.scheduled_records || 0, 10);
+				var participantRows = parseInt(st.students || 0, 10);
+				var effectiveRecords = Math.max(sourceRecords, participantRows);
+				if (effectiveRecords === 0) {
+					warnings.push('Row ' + (rowIdx + 1) + ' (' + st.label + '): no existing records/participants found to schedule.');
+					return;
+				}
+
+				var blocks = Math.ceil(effectiveRecords / rowMax);
+				var duration = parseInt(st.duration_minutes || 0, 10);
+				if (duration <= 0) {
+					warnings.push('Row ' + (rowIdx + 1) + ' (' + st.label + '): event duration is 0; check setup/round/judging times.');
+					return;
+				}
+
+				var totalMins = (blocks * duration) + ((blocks - 1) * Math.max(1, rowGap));
+				var endMins = startMins + totalMins;
+				if (endMins > (24 * 60)) {
+					warnings.push('Row ' + (rowIdx + 1) + ' (' + st.label + '): estimated finish ' + formatMinutes(endMins) + ' crosses midnight.');
+				}
+
+				windows.push({
+					row: rowIdx + 1,
+					date: rowDate,
+					start: startMins,
+					end: endMins,
+					label: st.label
+				});
+			});
+
+			for (var i = 0; i < windows.length; i++) {
+				for (var j = i + 1; j < windows.length; j++) {
+					if (windows[i].date !== windows[j].date) continue;
+					if (windows[i].start < windows[j].end && windows[j].start < windows[i].end) {
+						warnings.push(
+							'Overlap warning: Row ' + windows[i].row + ' (' + windows[i].label + ') and Row '
+							+ windows[j].row + ' (' + windows[j].label + ') overlap on ' + windows[i].date + '.'
+						);
+					}
+				}
+			}
+
+			var $box = $('#row_warning_box');
+			var $list = $('#row_warning_list');
+			$list.empty();
+			if (warnings.length === 0) {
+				$box.hide();
+				return;
+			}
+			$.each(warnings, function(_, msg){
+				$list.append('<li>' + $('<div>').text(msg).html() + '</li>');
+			});
+			$box.show();
 		}
 
 		$('input[name="data[Schedulings][event_ids][]"]').on('change', updateImpactPreview);
@@ -260,6 +369,7 @@
 	.overwrite-preview .label { font-size: 12px; }
 	.overwrite-undo { border: 1px solid #f2dede; border-radius: 4px; background: #fff8f8; padding: 10px 12px; margin-bottom: 12px; }
 	.overwrite-row-table th, .overwrite-row-table td { vertical-align: middle !important; }
+	.overwrite-warning-box { border: 1px solid #faebcc; border-radius: 4px; background: #fffdf2; padding: 8px 10px; margin-top: 8px; }
 </style>
 
 <div class="content-wrapper">
@@ -340,6 +450,10 @@
 								</tbody>
 							</table>
 							<a href="#" class="btn btn-xs btn-default" id="add_sched_row">Add another event row</a>
+							<div id="row_warning_box" class="overwrite-warning-box" style="display:none;">
+								<div class="overwrite-panel-title" style="margin-bottom:6px;color:#8a6d3b;">Row Warnings</div>
+								<ul id="row_warning_list" style="margin:0 0 0 18px;padding:0;"></ul>
+							</div>
 						</div>
 
 						<div class="overwrite-step-row">
