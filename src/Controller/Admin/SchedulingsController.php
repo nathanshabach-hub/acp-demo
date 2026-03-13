@@ -138,6 +138,7 @@ class SchedulingsController extends AppController {
 		$schedulingD = $this->Schedulings->find()->where(['Schedulings.conventionseasons_id' => $conventionSD->id])->first();
 		$this->set('schedulingD', $schedulingD);
 		$this->set('schedulings', $schedulingD);
+		$this->set('schedulings', $schedulingD);
 
 		$latestOverwriteAudit = $this->getLatestOverwriteAudit($conventionSD->id);
 		$this->set('latestOverwriteAudit', $latestOverwriteAudit);
@@ -670,6 +671,165 @@ class SchedulingsController extends AppController {
 			$time_gap_mins = max(0, (int)$this->request->data['Schedulings']['time_gap_mins']);
 			if ($time_gap_mins === 0) {
 				$time_gap_mins = 1;
+			}
+
+			$rowModeRows = [];
+			if (!empty($this->request->data['Schedulings']['sched_rows']) && is_array($this->request->data['Schedulings']['sched_rows'])) {
+				$seenRowEvents = [];
+				foreach ($this->request->data['Schedulings']['sched_rows'] as $row) {
+					$rowEventId = isset($row['event_id']) ? (int)$row['event_id'] : 0;
+					$rowDate = isset($row['date']) ? trim($row['date']) : '';
+					$rowTime = isset($row['time']) ? trim($row['time']) : '';
+					$rowMaxStudents = isset($row['max_students']) ? (int)$row['max_students'] : 0;
+					$rowGapMins = isset($row['time_gap_mins']) ? (int)$row['time_gap_mins'] : 0;
+
+					$rowHasAny = ($rowEventId > 0 || $rowDate !== '' || $rowTime !== '');
+					if (!$rowHasAny) {
+						continue;
+					}
+
+					if ($rowEventId <= 0 || $rowDate === '' || $rowTime === '') {
+						$this->Flash->error('For row mode, each configured row must include event, date, and time.');
+						return;
+					}
+
+					if (isset($seenRowEvents[$rowEventId])) {
+						$this->Flash->error('Please use each event only once in row mode.');
+						return;
+					}
+					$seenRowEvents[$rowEventId] = true;
+
+					$parsedDate = date('Y-m-d', strtotime($rowDate));
+					$parsedTime = date('H:i:s', strtotime($rowTime));
+					if (!$parsedDate || $parsedDate === '1970-01-01' || !$parsedTime) {
+						$this->Flash->error('One or more row dates/times are invalid.');
+						return;
+					}
+
+					if ($rowMaxStudents <= 0) {
+						$rowMaxStudents = $max_students > 0 ? $max_students : 1;
+					}
+					if ($rowGapMins <= 0) {
+						$rowGapMins = $time_gap_mins > 0 ? $time_gap_mins : 1;
+					}
+
+					$rowModeRows[] = [
+						'event_id' => $rowEventId,
+						'date' => $parsedDate,
+						'time' => $parsedTime,
+						'max_students' => $rowMaxStudents,
+						'time_gap_mins' => $rowGapMins,
+					];
+				}
+			}
+
+			if (!empty($rowModeRows)) {
+				$event_ids = array_values(array_unique(array_map(function($r){ return (int)$r['event_id']; }, $rowModeRows)));
+
+				$overwriteSnapshot = [];
+				foreach ($event_ids as $snapshotEventId) {
+					$existingRows = $this->Schedulingtimings->find()
+						->select(['id', 'event_id', 'conventionseasons_id', 'sch_date_time', 'day', 'start_time', 'finish_time'])
+						->where([
+							'Schedulingtimings.conventionseasons_id' => $conventionSD->id,
+							'Schedulingtimings.event_id' => $snapshotEventId,
+						])
+						->order(['Schedulingtimings.id' => 'ASC'])
+						->all();
+					foreach ($existingRows as $row) {
+						$overwriteSnapshot[] = [
+							'id' => (int)$row->id,
+							'event_id' => (int)$row->event_id,
+							'conventionseasons_id' => (int)$row->conventionseasons_id,
+							'sch_date_time' => (string)$row->sch_date_time,
+							'day' => (string)$row->day,
+							'start_time' => (string)$row->start_time,
+							'finish_time' => (string)$row->finish_time,
+						];
+					}
+				}
+
+				$selectedScheduledRecords = 0;
+				$selectedStudentRecords = 0;
+				foreach ($event_ids as $rowEventId) {
+					if (isset($eventStats[$rowEventId])) {
+						$selectedScheduledRecords += (int)$eventStats[$rowEventId]['scheduled_records'];
+						$selectedStudentRecords += (int)$eventStats[$rowEventId]['students'];
+					}
+				}
+
+				if (!empty($this->request->data['Schedulings']['preview_only'])) {
+					$this->Flash->success(
+						'Dry Run: row mode selected '.count($rowModeRows).' row(s), '
+						.count($event_ids).' event(s), '.$selectedScheduledRecords.' existing schedule record(s) would be updated '
+						.'(participant rows found: '.$selectedStudentRecords.').'
+					);
+					return;
+				}
+
+				$cntrTotRec = 0;
+				foreach ($rowModeRows as $cfgRow) {
+					$eventD = $this->Events->find()->where(['Events.id' => $cfgRow['event_id']])->first();
+					if (!$eventD) {
+						continue;
+					}
+
+					$eventSetupRoundJudTime = $eventD->setup_time + $eventD->round_time + $eventD->judging_time;
+					$start_date = $cfgRow['date'];
+					$start_time = $cfgRow['time'];
+					$finish_time = date('H:i:s', strtotime('+ '.$eventSetupRoundJudTime.' minutes', strtotime($start_time)));
+					$cntrSc = 0;
+
+					$schedulingtimings = $this->Schedulingtimings->find()
+						->where([
+							'Schedulingtimings.conventionseasons_id' => $conventionSD->id,
+							'Schedulingtimings.event_id' => $cfgRow['event_id'],
+						])
+						->order(['Schedulingtimings.id' => 'ASC'])
+						->all();
+
+					foreach ($schedulingtimings as $schrecord) {
+						$this->Schedulingtimings->updateAll(
+							[
+								'sch_date_time' => $start_date.' '.$start_time,
+								'day' => date('l', strtotime($start_date)),
+								'start_time' => $start_time,
+								'finish_time' => $finish_time,
+								'modified' => date('Y-m-d H:i:s'),
+							],
+							['id' => $schrecord->id]
+						);
+
+						$cntrSc++;
+						$cntrTotRec++;
+						if ($cntrSc >= $cfgRow['max_students']) {
+							$cntrSc = 0;
+							$start_time = date('H:i:s', strtotime('+ '.$cfgRow['time_gap_mins'].' minutes', strtotime($finish_time)));
+							$finish_time = date('H:i:s', strtotime('+ '.$eventSetupRoundJudTime.' minutes', strtotime($start_time)));
+						}
+					}
+				}
+
+				if ($cntrTotRec > 0) {
+					$loggedAdminId = $this->request->session()->read('admin_id');
+					$this->insertOverwriteAudit(
+						$conventionSD->id,
+						$loggedAdminId,
+						$cntrTotRec,
+						[
+							'conventionseason_slug' => $convention_season_slug,
+							'mode' => 'rows',
+							'rows' => $rowModeRows,
+							'created_at' => date('Y-m-d H:i:s'),
+							'records' => $overwriteSnapshot,
+						]
+					);
+					$this->Flash->success('Row mode overwrite completed. Total '.$cntrTotRec.' record(s) modified across '.count($rowModeRows).' configured row(s).');
+				} else {
+					$this->Flash->error('Sorry, no records updated in row mode.');
+				}
+
+				return $this->redirect(['controller' => 'schedulings', 'action' => 'precheck', $convention_season_slug]);
 			}
 
 			if ($max_students <= 0) {

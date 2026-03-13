@@ -7,6 +7,50 @@
 	$(document).ready(function(){
 		$('.mdtpicker').mdtimepicker(); //Initializes the time picker
 		window._overwriteSubmitMode = 'apply';
+		var rowIndexSeed = 1;
+
+		function bindRowTimePickers() {
+			$('.sched-row-time').mdtimepicker();
+		}
+
+		function addScheduleRow() {
+			var firstRow = $('#sched_rows_body tr.sched-row:first');
+			var newRow = firstRow.clone();
+			newRow.find('input, select').each(function(){
+				var oldName = $(this).attr('name');
+				if (oldName) {
+					var newName = oldName.replace(/\[sched_rows\]\[[0-9]+\]/, '[sched_rows][' + rowIndexSeed + ']');
+					$(this).attr('name', newName);
+				}
+				if ($(this).is('select')) {
+					$(this).val('');
+				} else {
+					var defaultVal = $(this).data('default');
+					$(this).val(typeof defaultVal !== 'undefined' ? defaultVal : '');
+				}
+			});
+			$('#sched_rows_body').append(newRow);
+			rowIndexSeed++;
+			bindRowTimePickers();
+			updateImpactPreview();
+		}
+
+		$('#add_sched_row').on('click', function(e){
+			e.preventDefault();
+			addScheduleRow();
+		});
+
+		$(document).on('click', '.remove_sched_row', function(e){
+			e.preventDefault();
+			if ($('#sched_rows_body tr.sched-row').length === 1) {
+				var onlyRow = $('#sched_rows_body tr.sched-row:first');
+				onlyRow.find('select').val('');
+				onlyRow.find('.sched-row-time').val('');
+				return;
+			}
+			$(this).closest('tr').remove();
+			updateImpactPreview();
+		});
 
 		$('#btn_dry_run').on('click', function(){
 			window._overwriteSubmitMode = 'preview';
@@ -29,18 +73,43 @@
 
 		function updateImpactPreview(){
 			var selectedEvents = $('input[name="data[Schedulings][event_ids][]"]:checked');
+			var rowEventIds = [];
+			$('.sched-row-event').each(function(){
+				var v = $(this).val();
+				if (v) {
+					rowEventIds.push(v);
+				}
+			});
 			var maxStudents = parseInt($('#max_students').val(), 10) || 0;
 			var activeDays = $('input[name^="data[Schedulings][days]"][name$="[active]"]:checked').length;
 			var totalStudents = 0;
 			var totalScheduledRecords = 0;
+			var eventCounter = {};
 
-			selectedEvents.each(function(){
-				var eventId = $(this).val();
-				if(window.eventStats && window.eventStats[eventId]){
-					totalStudents += parseInt(window.eventStats[eventId].students || 0, 10);
-					totalScheduledRecords += parseInt(window.eventStats[eventId].scheduled_records || 0, 10);
-				}
-			});
+			if (rowEventIds.length > 0) {
+				$.each(rowEventIds, function(_, eventId){
+					eventCounter[eventId] = true;
+				});
+				var uniqueRows = Object.keys(eventCounter);
+				$.each(uniqueRows, function(_, eventId){
+					if(window.eventStats && window.eventStats[eventId]){
+						totalStudents += parseInt(window.eventStats[eventId].students || 0, 10);
+						totalScheduledRecords += parseInt(window.eventStats[eventId].scheduled_records || 0, 10);
+					}
+				});
+				selectedEvents = { length: uniqueRows.length };
+				activeDays = $('.sched-row-date').filter(function(){ return $(this).val() !== ''; }).length;
+			}
+
+			if (rowEventIds.length === 0) {
+				selectedEvents.each(function(){
+					var eventId = $(this).val();
+					if(window.eventStats && window.eventStats[eventId]){
+						totalStudents += parseInt(window.eventStats[eventId].students || 0, 10);
+						totalScheduledRecords += parseInt(window.eventStats[eventId].scheduled_records || 0, 10);
+					}
+				});
+			}
 
 			var estimatedBlocks = maxStudents > 0 ? Math.ceil(Math.max(1, totalScheduledRecords) / maxStudents) : 0;
 			$('#preview_selected_events').text(selectedEvents.length);
@@ -52,7 +121,10 @@
 
 		$('input[name="data[Schedulings][event_ids][]"]').on('change', updateImpactPreview);
 		$('input[name^="data[Schedulings][days]"][name$="[active]"]').on('change', updateImpactPreview);
+		$(document).on('change', '.sched-row-event, .sched-row-date', updateImpactPreview);
+		$(document).on('input', '.sched-row-time, .sched-row-max, .sched-row-gap', updateImpactPreview);
 		$('#max_students').on('input', updateImpactPreview);
+		bindRowTimePickers();
 		updateImpactPreview();
 
 		$('#schedulingWizardForm').on('submit', function(e){
@@ -71,6 +143,51 @@
 					}
 				}
 			});
+
+			var validRows = 0;
+			var seenEvent = {};
+			var duplicateEvent = false;
+			var invalidRows = false;
+			$('.sched-row').each(function(){
+				var eventId = $.trim($(this).find('.sched-row-event').val());
+				var dayDate = $.trim($(this).find('.sched-row-date').val());
+				var dayTime = $.trim($(this).find('.sched-row-time').val());
+				var rowHasAny = (eventId !== '' || dayDate !== '' || dayTime !== '');
+				if (!rowHasAny) {
+					return;
+				}
+				if (eventId === '' || dayDate === '' || dayTime === '') {
+					invalidRows = true;
+					return;
+				}
+				if (seenEvent[eventId]) {
+					duplicateEvent = true;
+					return;
+				}
+				seenEvent[eventId] = true;
+				validRows++;
+			});
+
+			if (validRows > 0) {
+				if (invalidRows) {
+					e.preventDefault();
+					alert('For row mode, each filled row must have Event, Date, and Time.');
+					return false;
+				}
+				if (duplicateEvent) {
+					e.preventDefault();
+					alert('Please use each event only once in row mode.');
+					return false;
+				}
+				if(window._overwriteSubmitMode === 'preview'){
+					return true;
+				}
+				if(!confirm('This will overwrite existing timings for the configured event rows. Continue?')){
+					e.preventDefault();
+					return false;
+				}
+				return true;
+			}
 
 			if(selectedEvents === 0){
 				e.preventDefault();
@@ -142,6 +259,7 @@
 	.overwrite-preview .row { margin-bottom: 4px; }
 	.overwrite-preview .label { font-size: 12px; }
 	.overwrite-undo { border: 1px solid #f2dede; border-radius: 4px; background: #fff8f8; padding: 10px 12px; margin-bottom: 12px; }
+	.overwrite-row-table th, .overwrite-row-table td { vertical-align: middle !important; }
 </style>
 
 <div class="content-wrapper">
@@ -177,12 +295,52 @@
 							<div class="row"><strong>Created:</strong> <?php echo h($latestOverwriteAudit['created']); ?></div>
 							<div class="overwrite-help">Use this only if the most recent overwrite was a mistake. This restores the previous timing values for that batch.</div>
 							<div style="margin-top:8px;">
-								<?php echo $this->Form->create(null, ['url' => ['controller' => 'schedulings', 'action' => 'undooverwritetimings', $convention_season_slug], 'style' => 'display:inline-block;', 'onsubmit' => "return confirm('Undo the latest overwrite batch? This action will restore previous timings.');"]); ?>
-								<?php echo $this->Form->button('Undo Last Overwrite', ['type' => 'submit', 'class' => 'btn btn-danger btn-sm']); ?>
-								<?php echo $this->Form->end(); ?>
+								<?php echo $this->Form->postLink('Undo Last Overwrite', ['controller' => 'schedulings', 'action' => 'undooverwritetimings', $convention_season_slug], ['class' => 'btn btn-danger btn-sm', 'confirm' => 'Undo the latest overwrite batch? This action will restore previous timings.']); ?>
 							</div>
 						</div>
 						<?php endif; ?>
+
+						<div class="overwrite-card" style="margin-bottom:15px;">
+							<div class="overwrite-panel-title">Per-Event Scheduler (Recommended)</div>
+							<p class="overwrite-help" style="margin-bottom:8px;">Set each event with its own date, start time, students per block, and gap. Example: Spelling OPEN and Spelling U16 on the same date with different times.</p>
+							<table class="table table-bordered table-condensed overwrite-row-table">
+								<thead>
+									<tr style="background:#eef3f8;">
+										<th>Event</th>
+										<th>Date</th>
+										<th>Start Time</th>
+										<th>Students/Block</th>
+										<th>Gap (mins)</th>
+										<th></th>
+									</tr>
+								</thead>
+								<tbody id="sched_rows_body">
+									<tr class="sched-row">
+										<td>
+											<select name="data[Schedulings][sched_rows][0][event_id]" class="form-control sched-row-event">
+												<option value="">Select event</option>
+												<?php foreach($finalEventArr as $evId => $evLabel): ?>
+												<option value="<?php echo h($evId); ?>"><?php echo h($evLabel); ?></option>
+												<?php endforeach; ?>
+											</select>
+										</td>
+										<td>
+											<select name="data[Schedulings][sched_rows][0][date]" class="form-control sched-row-date">
+												<option value="">Select day</option>
+												<?php foreach($conventionDays as $cd): ?>
+												<option value="<?php echo h($cd['date']); ?>"><?php echo h($cd['display']); ?></option>
+												<?php endforeach; ?>
+											</select>
+										</td>
+										<td><input type="text" name="data[Schedulings][sched_rows][0][time]" class="form-control sched-row-time mdtpicker" placeholder="e.g. 01:30 PM"></td>
+										<td><input type="number" name="data[Schedulings][sched_rows][0][max_students]" class="form-control sched-row-max" min="1" value="6" data-default="6"></td>
+										<td><input type="number" name="data[Schedulings][sched_rows][0][time_gap_mins]" class="form-control sched-row-gap" min="1" value="1" data-default="1"></td>
+										<td><a href="#" class="btn btn-xs btn-danger remove_sched_row">Remove</a></td>
+									</tr>
+								</tbody>
+							</table>
+							<a href="#" class="btn btn-xs btn-default" id="add_sched_row">Add another event row</a>
+						</div>
 
 						<div class="overwrite-step-row">
 							<div class="overwrite-step"><b>Step 1:</b> Select event(s)</div>
