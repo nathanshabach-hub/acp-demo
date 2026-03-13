@@ -579,60 +579,117 @@ class SchedulingsController extends AppController {
 			}
 		}
 		$this->set('conventionDays', $conventionDays);
-		{
-            $event_ids			= isset($this->request->data['Schedulings']['event_ids']) ? (array)$this->request->data['Schedulings']['event_ids'] : [];
-            $overwrite_date		= $this->request->data['Schedulings']['overwrite_date'];
-            $overwrite_time		= $this->request->data['Schedulings']['overwrite_time'];
-            $max_students		= (int)$this->request->data['Schedulings']['max_students'];
-			$time_gap_mins		= max(0, (int)$this->request->data['Schedulings']['time_gap_mins']);
+
+		if ($this->request->is(['post', 'put'])) {
+			$event_ids = isset($this->request->data['Schedulings']['event_ids']) ? (array)$this->request->data['Schedulings']['event_ids'] : [];
+			if (empty($event_ids) && !empty($this->request->data['Schedulings']['event_id'])) {
+				$event_ids = [(int)$this->request->data['Schedulings']['event_id']];
+			}
+
+			$max_students = (int)$this->request->data['Schedulings']['max_students'];
+			$time_gap_mins = max(0, (int)$this->request->data['Schedulings']['time_gap_mins']);
+			if ($time_gap_mins === 0) {
+				$time_gap_mins = 1;
+			}
+
+			if ($max_students <= 0) {
+				$this->Flash->error('Please enter a valid max students value.');
+				return;
+			}
 
 			if (empty($event_ids)) {
 				$this->Flash->error('Please select at least one event.');
-			} else {
-				$start_date = date("Y-m-d", strtotime($overwrite_date));
-				$cntrTotRec = 0;
+				return;
+			}
 
-				foreach ($event_ids as $event_id) {
-					$eventD = $this->Events->find()->where(['Events.id' => $event_id])->first();
-					if (!$eventD) continue;
-
-					// Each selected event independently starts from the chosen time
-					$eventSetupRoundJudTime = $eventD->setup_time + $eventD->round_time + $eventD->judging_time;
-					$start_time = date("H:i:s", strtotime($overwrite_time));
-					$finish_time = date("H:i:s", strtotime('+ '.$eventSetupRoundJudTime.' minutes', strtotime($start_time)));
-
-					$cntrSc = 0;
-					$schedulingtimings = $this->Schedulingtimings->find()->where(['Schedulingtimings.conventionseasons_id' => $conventionSD->id, 'Schedulingtimings.event_id' => $event_id])->order(["Schedulingtimings.id" => "ASC"])->all();
-
-					foreach ($schedulingtimings as $schrecord) {
-						$this->Schedulingtimings->updateAll(
-							[
-								'sch_date_time' => $start_date.' '.$start_time,
-								'day'           => date("l", strtotime($start_date)),
-								'start_time'    => $start_time,
-								'finish_time'   => $finish_time,
-								'modified'      => date("Y-m-d H:i:s"),
-							],
-							["id" => $schrecord->id]
-						);
-						$cntrSc++;
-						$cntrTotRec++;
-						if ($cntrSc == $max_students) {
-							$start_time  = date("H:i:s", strtotime('+1 minutes', strtotime($finish_time)));
-							$finish_time = date("H:i:s", strtotime('+ '.$eventSetupRoundJudTime.' minutes', strtotime($start_time)));
-							$cntrSc = 0;
+			$daySlots = [];
+			if (!empty($this->request->data['Schedulings']['days']) && is_array($this->request->data['Schedulings']['days'])) {
+				foreach ($this->request->data['Schedulings']['days'] as $dayRow) {
+					$isActive = !empty($dayRow['active']);
+					$dayDate = isset($dayRow['date']) ? trim($dayRow['date']) : '';
+					$dayTime = isset($dayRow['time']) ? trim($dayRow['time']) : '';
+					if ($isActive && $dayDate !== '' && $dayTime !== '') {
+						$parsedDate = date('Y-m-d', strtotime($dayDate));
+						$parsedTime = date('H:i:s', strtotime($dayTime));
+						if ($parsedDate && $parsedDate !== '1970-01-01' && $parsedTime) {
+							$daySlots[] = ['date' => $parsedDate, 'time' => $parsedTime];
 						}
 					}
 				}
-
-				if ($cntrTotRec > 0) {
-					$this->Flash->success('Scheduling date/time overwrite successfully. Total '.$cntrTotRec.' record(s) modified across '.count($event_ids).' event(s).');
-				} else {
-					$this->Flash->error('Sorry, no records updated.');
-				}
-				$this->redirect(['controller' => 'schedulings', 'action' => 'precheck', $convention_season_slug]);
 			}
-        }
+
+			// Backward compatible support for older form fields.
+			if (empty($daySlots)) {
+				$overwrite_date = isset($this->request->data['Schedulings']['overwrite_date']) ? $this->request->data['Schedulings']['overwrite_date'] : '';
+				$overwrite_time = isset($this->request->data['Schedulings']['overwrite_time']) ? $this->request->data['Schedulings']['overwrite_time'] : '';
+				if (!empty($overwrite_date) && !empty($overwrite_time)) {
+					$daySlots[] = [
+						'date' => date('Y-m-d', strtotime($overwrite_date)),
+						'time' => date('H:i:s', strtotime($overwrite_time)),
+					];
+				}
+			}
+
+			if (empty($daySlots)) {
+				$this->Flash->error('Please choose at least one convention day with start time.');
+				return;
+			}
+
+			$cntrTotRec = 0;
+			foreach ($event_ids as $event_id) {
+				$eventD = $this->Events->find()->where(['Events.id' => $event_id])->first();
+				if (!$eventD) {
+					continue;
+				}
+
+				$eventSetupRoundJudTime = $eventD->setup_time + $eventD->round_time + $eventD->judging_time;
+				$slotIndex = 0;
+				$start_date = $daySlots[$slotIndex]['date'];
+				$start_time = $daySlots[$slotIndex]['time'];
+				$finish_time = date('H:i:s', strtotime('+ '.$eventSetupRoundJudTime.' minutes', strtotime($start_time)));
+
+				$cntrSc = 0;
+				$schedulingtimings = $this->Schedulingtimings->find()
+					->where(['Schedulingtimings.conventionseasons_id' => $conventionSD->id, 'Schedulingtimings.event_id' => $event_id])
+					->order(['Schedulingtimings.id' => 'ASC'])
+					->all();
+
+				foreach ($schedulingtimings as $schrecord) {
+					$this->Schedulingtimings->updateAll(
+						[
+							'sch_date_time' => $start_date.' '.$start_time,
+							'day' => date('l', strtotime($start_date)),
+							'start_time' => $start_time,
+							'finish_time' => $finish_time,
+							'modified' => date('Y-m-d H:i:s'),
+						],
+						['id' => $schrecord->id]
+					);
+
+					$cntrSc++;
+					$cntrTotRec++;
+					if ($cntrSc >= $max_students) {
+						$cntrSc = 0;
+						if ($slotIndex < count($daySlots) - 1) {
+							$slotIndex++;
+							$start_date = $daySlots[$slotIndex]['date'];
+							$start_time = $daySlots[$slotIndex]['time'];
+						} else {
+							$start_time = date('H:i:s', strtotime('+ '.$time_gap_mins.' minutes', strtotime($finish_time)));
+						}
+						$finish_time = date('H:i:s', strtotime('+ '.$eventSetupRoundJudTime.' minutes', strtotime($start_time)));
+					}
+				}
+			}
+
+			if ($cntrTotRec > 0) {
+				$this->Flash->success('Scheduling date/time overwrite successfully. Total '.$cntrTotRec.' record(s) modified across '.count($event_ids).' event(s).');
+			} else {
+				$this->Flash->error('Sorry, no records updated.');
+			}
+
+			return $this->redirect(['controller' => 'schedulings', 'action' => 'precheck', $convention_season_slug]);
+		}
 		
     }
 	
