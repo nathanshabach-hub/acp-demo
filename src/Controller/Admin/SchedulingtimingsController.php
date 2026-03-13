@@ -46,16 +46,23 @@ class SchedulingtimingsController extends AppController {
 	 * queue — no two rooms in the same allocation can run simultaneously.
 	 */
 	private function getAllocationRoomIds($roomId) {
-		$RoomallocationRooms = \Cake\ORM\TableRegistry::get('RoomallocationRooms');
-		$entry = $RoomallocationRooms->find()->where(['RoomallocationRooms.conventionroom_id' => $roomId])->first();
-		if (!$entry) return [(int)$roomId];
+		try {
+			$RoomallocationRooms = \Cake\ORM\TableRegistry::get('RoomallocationRooms');
+			$entry = $RoomallocationRooms->find()->where(['RoomallocationRooms.conventionroom_id' => $roomId])->first();
+			if (!$entry) {
+				return [(int)$roomId];
+			}
 
-		$siblings = $RoomallocationRooms->find()->where(['RoomallocationRooms.roomallocation_id' => $entry->roomallocation_id])->all();
-		$ids = [];
-		foreach ($siblings as $s) {
-			$ids[] = (int)$s->conventionroom_id;
+			$siblings = $RoomallocationRooms->find()->where(['RoomallocationRooms.roomallocation_id' => $entry->roomallocation_id])->all();
+			$ids = [];
+			foreach ($siblings as $s) {
+				$ids[] = (int)$s->conventionroom_id;
+			}
+			return !empty($ids) ? $ids : [(int)$roomId];
+		} catch (\Exception $e) {
+			// Fallback for databases that do not yet have room allocation tables.
+			return [(int)$roomId];
 		}
-		return !empty($ids) ? $ids : [(int)$roomId];
 	}
 
 	/**
@@ -67,24 +74,29 @@ class SchedulingtimingsController extends AppController {
 	private function sortRoomsByAllocation($roomIds) {
 		if (count($roomIds) <= 1) return $roomIds;
 
-		// Fetch allocation membership for all rooms in one query
-		$allocationMap = [];
-		$entries = \Cake\ORM\TableRegistry::get('RoomallocationRooms')
-			->find()
-			->where(['RoomallocationRooms.conventionroom_id IN' => $roomIds])
-			->all();
-		foreach ($entries as $entry) {
-			if (!isset($allocationMap[$entry->conventionroom_id])) {
-				$allocationMap[$entry->conventionroom_id] = $entry->roomallocation_id;
+		try {
+			// Fetch allocation membership for all rooms in one query.
+			$allocationMap = [];
+			$entries = \Cake\ORM\TableRegistry::get('RoomallocationRooms')
+				->find()
+				->where(['RoomallocationRooms.conventionroom_id IN' => $roomIds])
+				->all();
+			foreach ($entries as $entry) {
+				if (!isset($allocationMap[$entry->conventionroom_id])) {
+					$allocationMap[$entry->conventionroom_id] = $entry->roomallocation_id;
+				}
 			}
-		}
 
-		// Group rooms by allocation ID; rooms with no allocation go last
-		usort($roomIds, function($a, $b) use ($allocationMap) {
-			$allocA = isset($allocationMap[$a]) ? $allocationMap[$a] : PHP_INT_MAX;
-			$allocB = isset($allocationMap[$b]) ? $allocationMap[$b] : PHP_INT_MAX;
-			return $allocA - $allocB;
-		});
+			// Group rooms by allocation ID; rooms with no allocation go last.
+			usort($roomIds, function($a, $b) use ($allocationMap) {
+				$allocA = isset($allocationMap[$a]) ? $allocationMap[$a] : PHP_INT_MAX;
+				$allocB = isset($allocationMap[$b]) ? $allocationMap[$b] : PHP_INT_MAX;
+				return $allocA - $allocB;
+			});
+		} catch (\Exception $e) {
+			// If allocation tables are unavailable, keep original room order.
+			return $roomIds;
+		}
 
 		return $roomIds;
 	}
