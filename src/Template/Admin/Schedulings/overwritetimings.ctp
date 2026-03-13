@@ -6,16 +6,54 @@
 <script>
 	$(document).ready(function(){
 		$('.mdtpicker').mdtimepicker(); //Initializes the time picker
+		window._overwriteSubmitMode = 'apply';
+
+		$('#btn_dry_run').on('click', function(){
+			window._overwriteSubmitMode = 'preview';
+		});
+		$('#btn_apply_overwrite').on('click', function(){
+			window._overwriteSubmitMode = 'apply';
+		});
 
 		$('#select_all_events').on('click', function(e){
 			e.preventDefault();
 			$('input[name="data[Schedulings][event_ids][]"]').prop('checked', true);
+			updateImpactPreview();
 		});
 
 		$('#clear_all_events').on('click', function(e){
 			e.preventDefault();
 			$('input[name="data[Schedulings][event_ids][]"]').prop('checked', false);
+			updateImpactPreview();
 		});
+
+		function updateImpactPreview(){
+			var selectedEvents = $('input[name="data[Schedulings][event_ids][]"]:checked');
+			var maxStudents = parseInt($('#max_students').val(), 10) || 0;
+			var activeDays = $('input[name^="data[Schedulings][days]"][name$="[active]"]:checked').length;
+			var totalStudents = 0;
+			var totalScheduledRecords = 0;
+
+			selectedEvents.each(function(){
+				var eventId = $(this).val();
+				if(window.eventStats && window.eventStats[eventId]){
+					totalStudents += parseInt(window.eventStats[eventId].students || 0, 10);
+					totalScheduledRecords += parseInt(window.eventStats[eventId].scheduled_records || 0, 10);
+				}
+			});
+
+			var estimatedBlocks = maxStudents > 0 ? Math.ceil(Math.max(1, totalScheduledRecords) / maxStudents) : 0;
+			$('#preview_selected_events').text(selectedEvents.length);
+			$('#preview_selected_days').text(activeDays);
+			$('#preview_students').text(totalStudents);
+			$('#preview_records').text(totalScheduledRecords);
+			$('#preview_blocks').text(estimatedBlocks);
+		}
+
+		$('input[name="data[Schedulings][event_ids][]"]').on('change', updateImpactPreview);
+		$('input[name^="data[Schedulings][days]"][name$="[active]"]').on('change', updateImpactPreview);
+		$('#max_students').on('input', updateImpactPreview);
+		updateImpactPreview();
 
 		$('#schedulingWizardForm').on('submit', function(e){
 			var selectedEvents = $('input[name="data[Schedulings][event_ids][]"]:checked').length;
@@ -59,12 +97,19 @@
 				return false;
 			}
 
+			if(window._overwriteSubmitMode === 'preview'){
+				return true;
+			}
+
 			if(!confirm('This will overwrite existing timings for selected events. Continue?')){
 				e.preventDefault();
 				return false;
 			}
 		});
 	});
+</script>
+<script>
+	window.eventStats = <?php echo json_encode(isset($eventStats) ? $eventStats : []); ?>;
 </script>
 
 <?php echo $this->Html->script('jquery/ui/jquery.ui.core.js'); ?>
@@ -93,6 +138,9 @@
 	.overwrite-actions-inline a { margin-right: 10px; }
 	.overwrite-required { color: #d73925; }
 	.overwrite-card { border: 1px solid #e6e6e6; border-radius: 4px; padding: 12px; background: #fcfcfc; }
+	.overwrite-preview { border: 1px solid #d6e9c6; border-radius: 4px; background: #f8fff3; padding: 10px 12px; margin-top: 10px; }
+	.overwrite-preview .row { margin-bottom: 4px; }
+	.overwrite-preview .label { font-size: 12px; }
 </style>
 
 <div class="content-wrapper">
@@ -180,6 +228,15 @@
 					<?php else: ?>
 					<p class="text-muted">No convention days found. Please run scheduling first.</p>
 					<?php endif; ?>
+					<div class="overwrite-preview">
+						<div class="overwrite-panel-title" style="margin-bottom:6px;">Impact Preview</div>
+						<div class="row"><strong>Selected events:</strong> <span id="preview_selected_events">0</span></div>
+						<div class="row"><strong>Selected day slots:</strong> <span id="preview_selected_days">0</span></div>
+						<div class="row"><strong>Participant rows found:</strong> <span id="preview_students">0</span></div>
+						<div class="row"><strong>Existing schedule records to overwrite:</strong> <span id="preview_records">0</span></div>
+						<div class="row"><strong>Estimated time blocks:</strong> <span id="preview_blocks">0</span></div>
+						<div class="overwrite-help">Use Dry Run Preview to confirm counts before applying changes.</div>
+					</div>
 					</div>
 				</div>
 					<div class="form-group">
@@ -200,7 +257,8 @@
 
                     <div class="box-footer">
                         <label class="col-sm-2 control-label" for="inputPassword3">&nbsp;</label>
-						<?php echo $this->Form->button('Apply Overwrite Timings', ['type'=>'submit', 'class' => 'btn btn-info', 'div'=>false]); ?>
+						<button type="submit" class="btn btn-warning" id="btn_dry_run" name="data[Schedulings][preview_only]" value="1">Dry Run Preview</button>
+						<?php echo $this->Form->button('Apply Overwrite Timings', ['type'=>'submit', 'id' => 'btn_apply_overwrite', 'class' => 'btn btn-info', 'div'=>false]); ?>
                         <?php echo $this->Html->link('Cancel', ['controller'=>'schedulings', 'action' => 'precheck', $convention_season_slug], ['class'=>'btn btn-default canlcel_le']); ?>
                     </div>
                   </div>

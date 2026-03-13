@@ -544,6 +544,7 @@ class SchedulingsController extends AppController {
 		// Now check if these events are chosen for this convention season
 		
 		$finalEventArr = array();
+		$eventStats = array();
 		
 		foreach($eventIDArr as $event_id)
 		{
@@ -558,11 +559,25 @@ class SchedulingsController extends AppController {
 											'Crstudentevents.event_id' => $event_id
 										])
 										->count();
+
+				$countScheduledRecords = $this->Schedulingtimings
+										->find()
+										->where([
+											'Schedulingtimings.conventionseasons_id' => $conventionSD->id,
+											'Schedulingtimings.event_id' => $event_id
+										])
+										->count();
 				
 				$finalEventArr[$event_id] = $checkEventCS->Events['event_name'].' ('.$checkEventCS->Events['event_id_number'].')'.' ('.$countStudentsEvent.')';
+				$eventStats[$event_id] = [
+					'label' => $checkEventCS->Events['event_name'].' ('.$checkEventCS->Events['event_id_number'].')',
+					'students' => $countStudentsEvent,
+					'scheduled_records' => $countScheduledRecords,
+				];
 			}
 		}
 		$this->set('finalEventArr', $finalEventArr);
+		$this->set('eventStats', $eventStats);
 
 		// Build list of distinct convention dates from existing scheduled timings
 		$allSchTimings = $this->Schedulingtimings->find()
@@ -635,6 +650,25 @@ class SchedulingsController extends AppController {
 				return;
 			}
 
+			$selectedScheduledRecords = 0;
+			$selectedStudentRecords = 0;
+			foreach ($event_ids as $event_id) {
+				if (isset($eventStats[$event_id])) {
+					$selectedScheduledRecords += (int)$eventStats[$event_id]['scheduled_records'];
+					$selectedStudentRecords += (int)$eventStats[$event_id]['students'];
+				}
+			}
+			$estimatedBlocks = (int)ceil(max(1, $selectedScheduledRecords) / max(1, $max_students));
+
+			if (!empty($this->request->data['Schedulings']['preview_only'])) {
+				$this->Flash->success(
+					'Dry Run: selected '.count($event_ids).' event(s), '.count($daySlots).' day(s), '
+					.$selectedScheduledRecords.' existing schedule record(s) would be updated '
+					.'(participant rows found: '.$selectedStudentRecords.', estimated blocks: '.$estimatedBlocks.').'
+				);
+				return;
+			}
+
 			$cntrTotRec = 0;
 			foreach ($event_ids as $event_id) {
 				$eventD = $this->Events->find()->where(['Events.id' => $event_id])->first();
@@ -683,7 +717,7 @@ class SchedulingsController extends AppController {
 			}
 
 			if ($cntrTotRec > 0) {
-				$this->Flash->success('Scheduling date/time overwrite successfully. Total '.$cntrTotRec.' record(s) modified across '.count($event_ids).' event(s).');
+				$this->Flash->success('Scheduling date/time overwrite successfully. Total '.$cntrTotRec.' record(s) modified across '.count($event_ids).' event(s) and '.count($daySlots).' day slot(s).');
 			} else {
 				$this->Flash->error('Sorry, no records updated.');
 			}
