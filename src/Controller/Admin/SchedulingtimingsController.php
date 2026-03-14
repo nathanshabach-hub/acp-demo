@@ -1231,6 +1231,136 @@ class SchedulingtimingsController extends AppController {
 					echo $finish_time;echo '<br>';
 					echo $schDay;echo '<br>';
 					echo '<hr>'; */
+
+					/* Apply lunch, break, and sports-day constraints for category 2 */
+					if( (strtotime($start_time)>=strtotime($lunch_time_start) &&  strtotime($start_time)<=strtotime($lunch_time_end)) || 
+					(strtotime($finish_time)>=strtotime($lunch_time_start) &&  strtotime($finish_time)<=strtotime($lunch_time_end)))
+					{
+						$start_time 	= $lunch_time_end;
+						$finish_time 	= date("H:i:s", strtotime('+ '.$eventSetupRoundJudTime.' minutes', strtotime($lunch_time_end)));
+
+						if(strtotime($finish_time)>strtotime($normal_finish_time))
+						{
+							$schDay = $this->getNextWeekDay($schDay);
+							$schStartDate = date('Y-m-d', strtotime($schStartDate . ' +1 day'));
+							$cntrDays++;
+
+							$normal_starting_time 	= date("H:i:s",strtotime($schedulingsD->normal_starting_time));
+							$normal_finish_time 	= date("H:i:s",strtotime($schedulingsD->normal_finish_time));
+
+							$start_time 	= $normal_starting_time;
+							$finish_time 	= date("H:i:s", strtotime('+ '.$eventSetupRoundJudTime.' minutes', strtotime($normal_starting_time)));
+						}
+					}
+
+					if($schedulingsD->judging_breaks_yes_no == 1)
+					{
+						$judging_breaks_morning_break_starting_time 	= date("H:i:s",strtotime($schedulingsD->judging_breaks_morning_break_starting_time));
+						$judging_breaks_morning_break_finish_time 		= date("H:i:s",strtotime($schedulingsD->judging_breaks_morning_break_finish_time));
+
+						if( (strtotime($start_time)>=strtotime($judging_breaks_morning_break_starting_time) &&  strtotime($start_time)<=strtotime($judging_breaks_morning_break_finish_time)) || 
+						(strtotime($finish_time)>=strtotime($judging_breaks_morning_break_starting_time) &&  strtotime($finish_time)<=strtotime($judging_breaks_morning_break_finish_time)))
+						{
+							$start_time 	= $judging_breaks_morning_break_finish_time;
+							$finish_time 	= date("H:i:s", strtotime('+ '.$eventSetupRoundJudTime.' minutes', strtotime($judging_breaks_morning_break_finish_time)));
+						}
+
+						if(strtotime($finish_time)>strtotime($normal_finish_time))
+						{
+							$schDay = $this->getNextWeekDay($schDay);
+							$schStartDate = date('Y-m-d', strtotime($schStartDate . ' +1 day'));
+							$cntrDays++;
+
+							$normal_starting_time 	= date("H:i:s",strtotime($schedulingsD->normal_starting_time));
+							$normal_finish_time 	= date("H:i:s",strtotime($schedulingsD->normal_finish_time));
+
+							$start_time 	= $normal_starting_time;
+							$finish_time 	= date("H:i:s", strtotime('+ '.$eventSetupRoundJudTime.' minutes', strtotime($normal_starting_time)));
+						}
+
+						$judging_breaks_afternoon_break_start_time 	= date("H:i:s",strtotime($schedulingsD->judging_breaks_afternoon_break_start_time));
+						$judging_breaks_afternoon_break_finish_time 	= date("H:i:s",strtotime($schedulingsD->judging_breaks_afternoon_break_finish_time));
+
+						if( (strtotime($start_time)>=strtotime($judging_breaks_afternoon_break_start_time) &&  strtotime($start_time)<=strtotime($judging_breaks_afternoon_break_finish_time)) || 
+						(strtotime($finish_time)>=strtotime($judging_breaks_afternoon_break_start_time) &&  strtotime($finish_time)<=strtotime($judging_breaks_afternoon_break_finish_time)))
+						{
+							$start_time 	= $judging_breaks_afternoon_break_finish_time;
+							$finish_time 	= date("H:i:s", strtotime('+ '.$eventSetupRoundJudTime.' minutes', strtotime($judging_breaks_afternoon_break_finish_time)));
+						}
+
+						if(strtotime($finish_time)>strtotime($normal_finish_time))
+						{
+							$schDay = $this->getNextWeekDay($schDay);
+							$schStartDate = date('Y-m-d', strtotime($schStartDate . ' +1 day'));
+							$cntrDays++;
+
+							$normal_starting_time 	= date("H:i:s",strtotime($schedulingsD->normal_starting_time));
+							$normal_finish_time 	= date("H:i:s",strtotime($schedulingsD->normal_finish_time));
+
+							$start_time 	= $normal_starting_time;
+							$finish_time 	= date("H:i:s", strtotime('+ '.$eventSetupRoundJudTime.' minutes', strtotime($normal_starting_time)));
+						}
+					}
+
+					if($schedulingsD->sports_day_yes_no == 1)
+					{
+						$sports_day					= $schedulingsD->sports_day;
+						$sports_day_starting_time	= date("H:i:s",strtotime($schedulingsD->sports_day_starting_time));
+						$sports_day_finish_time		= date("H:i:s",strtotime($schedulingsD->sports_day_finish_time));
+
+						if($sports_day == $schDay)
+						{
+							if( (strtotime($start_time)>=strtotime($sports_day_starting_time) &&  strtotime($start_time)<=strtotime($sports_day_finish_time)) || 
+							(strtotime($finish_time)>=strtotime($sports_day_starting_time) &&  strtotime($finish_time)<=strtotime($sports_day_finish_time)))
+							{
+								$start_time 	= $sports_day_finish_time;
+								$finish_time 	= date("H:i:s", strtotime('+ '.$eventSetupRoundJudTime.' minutes', strtotime($sports_day_finish_time)));
+							}
+
+							if(strtotime($finish_time)>=strtotime($normal_finish_time))
+							{
+								$schDay = $this->getNextWeekDay($schDay);
+								$schStartDate = date('Y-m-d', strtotime($schStartDate . ' +1 day'));
+								$cntrDays++;
+
+								$normal_starting_time 	= date("H:i:s",strtotime($schedulingsD->normal_starting_time));
+								$normal_finish_time 	= date("H:i:s",strtotime($schedulingsD->normal_finish_time));
+
+								$start_time 	= $normal_starting_time;
+								$finish_time 	= date("H:i:s", strtotime('+ '.$eventSetupRoundJudTime.' minutes', strtotime($normal_starting_time)));
+							}
+						}
+					}
+
+					if($schedulingsD->sports_day_having_events_after_sport_yes_no == 1)
+					{
+						$sports_day							= $schedulingsD->sports_day;
+						$sports_day_other_starting_time		= date("H:i:s",strtotime($schedulingsD->sports_day_other_starting_time));
+						$sports_day_other_finish_time		= date("H:i:s",strtotime($schedulingsD->sports_day_other_finish_time));
+
+						if($sports_day == $schDay)
+						{
+							if( (strtotime($start_time)>=strtotime($sports_day_other_starting_time) &&  strtotime($start_time)<=strtotime($sports_day_other_finish_time)) || 
+							(strtotime($finish_time)>=strtotime($sports_day_other_starting_time) &&  strtotime($finish_time)<=strtotime($sports_day_other_finish_time)))
+							{
+								$start_time 	= $sports_day_other_finish_time;
+								$finish_time 	= date("H:i:s", strtotime('+ '.$eventSetupRoundJudTime.' minutes', strtotime($sports_day_other_finish_time)));
+							}
+
+							if(strtotime($finish_time)>=strtotime($normal_finish_time))
+							{
+								$schDay = $this->getNextWeekDay($schDay);
+								$schStartDate = date('Y-m-d', strtotime($schStartDate . ' +1 day'));
+								$cntrDays++;
+
+								$normal_starting_time 	= date("H:i:s",strtotime($schedulingsD->normal_starting_time));
+								$normal_finish_time 	= date("H:i:s",strtotime($schedulingsD->normal_finish_time));
+
+								$start_time 	= $normal_starting_time;
+								$finish_time 	= date("H:i:s", strtotime('+ '.$eventSetupRoundJudTime.' minutes', strtotime($normal_starting_time)));
+							}
+						}
+					}
 					
 					/* here we calculate root, day, start time and end time - ends */
 					
