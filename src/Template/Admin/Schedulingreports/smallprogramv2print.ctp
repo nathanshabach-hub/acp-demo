@@ -46,6 +46,10 @@ th {
 td { border: 1px solid #ccd9e8; padding: 3px 5px; vertical-align: top; word-wrap: break-word; font-size: 0.82em; }
 .sp2-event { margin-bottom: 2px; }
 .sp2-empty-cell { background: #f8f8f8; }
+.sp2-tbd-wrap { margin-top: 18px; border: 1px solid #e6d9a8; }
+.sp2-tbd-header { background: #fff5cf; color: #6d5a00; font-weight: bold; padding: 6px 10px; border-bottom: 1px solid #e6d9a8; }
+.sp2-tbd-list { margin: 0; padding: 8px 20px; }
+.sp2-tbd-list li { margin: 2px 0; }
 h2 { font-size: 1.1em; margin-bottom: 4px; }
 </style>
 <script type="text/javascript">
@@ -122,4 +126,20 @@ window.print();
 <?php endif; ?>
 
 <?php endforeach; ?>
+<?php endif; ?>
+
+<?php if(!empty($unscheduledEvents)): ?>
+<div class="sp2-tbd-wrap">
+    <div class="sp2-tbd-header">Unscheduled Events (TBD)</div>
+    <ul class="sp2-tbd-list">
+        <?php foreach($unscheduledEvents as $ue): ?>
+        <li>
+            <?php echo h($ue['event_name']); ?>
+            <?php if(!empty($ue['event_id_number'])): ?>
+            (<?php echo h($ue['event_id_number']); ?>)
+            <?php endif; ?>
+        </li>
+        <?php endforeach; ?>
+    </ul>
+</div>
 <?php endif; ?>
