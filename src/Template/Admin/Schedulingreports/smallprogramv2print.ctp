@@ -45,7 +45,6 @@ th {
 }
 td { border: 1px solid #ccd9e8; padding: 3px 5px; vertical-align: top; word-wrap: break-word; font-size: 0.82em; }
 .sp2-event { margin-bottom: 2px; }
-.sp2-cat { color: #666; font-size: 0.78em; margin-left: 5px; }
 .sp2-empty-cell { background: #f8f8f8; }
 h2 { font-size: 1.1em; margin-bottom: 4px; }
 </style>
@@ -90,9 +89,6 @@ window.print();
                     <?php foreach($dd['morning'][$rn] as $ev): ?>
                     <div class="sp2-event">
                         <?php echo h($ev['event_name']); ?>
-                        <?php if(!empty($ev['category'])): ?>
-                        <span class="sp2-cat"><?php echo h($ev['category']); ?></span>
-                        <?php endif; ?>
                     </div>
                     <?php endforeach; ?>
                 <?php endif; ?>
@@ -119,9 +115,6 @@ window.print();
                     <?php foreach($dd['afternoon'][$rn] as $ev): ?>
                     <div class="sp2-event">
                         <?php echo h($ev['event_name']); ?>
-                        <?php if(!empty($ev['category'])): ?>
-                        <span class="sp2-cat"><?php echo h($ev['category']); ?></span>
-                        <?php endif; ?>
                     </div>
                     <?php endforeach; ?>
                 <?php endif; ?>

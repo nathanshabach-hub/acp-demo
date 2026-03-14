@@ -884,7 +884,6 @@ foreach ($allTimings as $t) {
     $day      = $t->day;
     $roomName = $t->Conventionrooms['room_name'];
     $eventName = $t->Events['event_name'];
-	$categoryLabel = !empty($t->schedule_category) ? ('Cat '.$t->schedule_category) : '';
 	$eventIdNumber = !empty($t->Events['event_id_number']) ? $t->Events['event_id_number'] : '';
     $startH   = $t->start_time ? strtotime($t->start_time) : null;
     $finishH  = $t->finish_time ? strtotime($t->finish_time) : null;
@@ -910,8 +909,8 @@ foreach ($allTimings as $t) {
         if ($dayData[$day]['afternoonEnd'] === null || $finishH > $dayData[$day]['afternoonEnd']) { $dayData[$day]['afternoonEnd'] = $finishH; }
     }
 
-	// Keep one entry per event+category per room/session (avoid dropping non-elimination categories).
-	$slotKey = $day.'|'.$session.'|'.$roomName.'|'.$eventName.'|'.$categoryLabel;
+	// Keep one entry per unique event per room/session.
+	$slotKey = $day.'|'.$session.'|'.$roomName.'|'.$eventName.'|'.$eventIdNumber;
     if (in_array($slotKey, $seenSlots)) continue;
     $seenSlots[] = $slotKey;
 
@@ -923,7 +922,6 @@ foreach ($allTimings as $t) {
     }
 	$dayData[$day][$session][$roomName][] = [
 		'event_name' => $eventName,
-		'category' => $categoryLabel,
 		'event_id_number' => $eventIdNumber,
 	];
 }
@@ -960,7 +958,6 @@ foreach ($allTimings as $t) {
     $day      = $t->day;
     $roomName = $t->Conventionrooms['room_name'];
     $eventName = $t->Events['event_name'];
-	$categoryLabel = !empty($t->schedule_category) ? ('Cat '.$t->schedule_category) : '';
 	$eventIdNumber = !empty($t->Events['event_id_number']) ? $t->Events['event_id_number'] : '';
     $startH   = $t->start_time ? strtotime($t->start_time) : null;
     $finishH  = $t->finish_time ? strtotime($t->finish_time) : null;
@@ -984,7 +981,7 @@ foreach ($allTimings as $t) {
         if ($dayData[$day]['afternoonEnd'] === null || $finishH > $dayData[$day]['afternoonEnd']) { $dayData[$day]['afternoonEnd'] = $finishH; }
     }
 
-	$slotKey = $day.'|'.$session.'|'.$roomName.'|'.$eventName.'|'.$categoryLabel;
+	$slotKey = $day.'|'.$session.'|'.$roomName.'|'.$eventName.'|'.$eventIdNumber;
     if (in_array($slotKey, $seenSlots)) continue;
     $seenSlots[] = $slotKey;
 
@@ -994,7 +991,6 @@ foreach ($allTimings as $t) {
     }
 	$dayData[$day][$session][$roomName][] = [
 		'event_name' => $eventName,
-		'category' => $categoryLabel,
 		'event_id_number' => $eventIdNumber,
 	];
 }
