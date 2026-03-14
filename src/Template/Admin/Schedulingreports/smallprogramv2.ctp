@@ -54,10 +54,6 @@
 .sp2-event .sp2-time { color: #888; font-size: 0.78em; white-space: nowrap; }
 .sp2-no-events { color: #aaa; font-size: 0.8em; text-align: center; padding: 8px; background: #fafafa; border: 1px solid #eee; }
 .sp2-empty-cell { background: #f8f8f8; }
-.sp2-tbd-wrap { margin-top: 28px; border: 1px solid #e6d9a8; }
-.sp2-tbd-header { background: #fff5cf; color: #6d5a00; font-weight: bold; padding: 8px 12px; border-bottom: 1px solid #e6d9a8; }
-.sp2-tbd-list { margin: 0; padding: 10px 24px; }
-.sp2-tbd-list li { margin: 3px 0; }
 @media print {
     .sp2-day-header { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     .sp2-session-header { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
@@ -184,25 +180,6 @@
 
               <?php endforeach; ?>
               <?php endif; ?>
-
-                            <?php if(!empty($unscheduledEvents)): ?>
-                            <div class="sp2-tbd-wrap">
-                                <div class="sp2-tbd-header">Unscheduled Events (TBD)</div>
-                                <ul class="sp2-tbd-list">
-                                    <?php foreach($unscheduledEvents as $ue): ?>
-                                    <li>
-                                        <?php echo h($ue['event_name']); ?>
-                                        <?php if(!empty($ue['event_id_number'])): ?>
-                                        (<?php echo h($ue['event_id_number']); ?>)
-                                        <?php endif; ?>
-                                        <?php if(!empty($ue['category_name'])): ?>
-                                        &mdash; <?php echo h($ue['category_name']); ?>
-                                        <?php endif; ?>
-                                    </li>
-                                    <?php endforeach; ?>
-                                </ul>
-                            </div>
-                            <?php endif; ?>
 
             </div><!-- /.box-body -->
         </div>

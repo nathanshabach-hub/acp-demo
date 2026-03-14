@@ -34,7 +34,6 @@ class SchedulingreportsController extends AppController {
 		$this->loadModel("Conventionregistrationstudents");
 		$this->loadModel("Conventionregistrationteachers");
 		$this->loadModel("Events");
-		$this->loadModel("Eventcategories");
 		$this->loadModel("Schedulings");
 		$this->loadModel("Schedulingtimings");
     }
@@ -873,51 +872,6 @@ $lunchEnd   = $schedulingD && $schedulingD->lunch_time_end   ? $schedulingD->lun
 $condSch = ["(Schedulingtimings.conventionseasons_id = '".$conventionSD->id."' AND Schedulingtimings.convention_id = '".$conventionSD->convention_id."' AND Schedulingtimings.season_id = '".$conventionSD->season_id."' AND Schedulingtimings.season_year = '".$conventionSD->season_year."' AND Schedulingtimings.is_bye = '0')"];
 $allTimings = $this->Schedulingtimings->find()->where($condSch)->contain(["Events","Conventionrooms"])->order(["Schedulingtimings.sch_date_time"=>"ASC","Schedulingtimings.room_id"=>"ASC"])->all();
 
-$allConventionEvents = $this->Conventionseasonevents->find()
-	->where([
-		'Conventionseasonevents.conventionseasons_id' => $conventionSD->id,
-		'Conventionseasonevents.convention_id' => $conventionSD->convention_id,
-	])
-	->contain(['Events'])
-	->all();
-
-$categoryMap = [];
-$allCategories = $this->Eventcategories->find()->select(['id','name'])->all();
-foreach ($allCategories as $cat) {
-	$categoryMap[(int)$cat->id] = $cat->name;
-}
-
-$scheduledEventIds = [];
-foreach ($allTimings as $t) {
-	if (!empty($t->event_id)) {
-		$scheduledEventIds[(int)$t->event_id] = true;
-	}
-}
-
-$unscheduledEvents = [];
-$seenUnscheduled = [];
-foreach ($allConventionEvents as $cse) {
-	if (empty($cse->Events) || empty($cse->event_id)) {
-		continue;
-	}
-	$eid = (int)$cse->event_id;
-	if (isset($scheduledEventIds[$eid]) || isset($seenUnscheduled[$eid])) {
-		continue;
-	}
-	$seenUnscheduled[$eid] = true;
-	$unscheduledEvents[] = [
-		'event_name' => $cse->Events['event_name'],
-		'event_id_number' => $cse->Events['event_id_number'],
-		'category_name' => !empty($cse->Events['event_grp_name']) && isset($categoryMap[(int)$cse->Events['event_grp_name']]) ? $categoryMap[(int)$cse->Events['event_grp_name']] : '',
-	];
-}
-
-usort($unscheduledEvents, function($a, $b) {
-	$catCmp = strcmp((string)$a['category_name'], (string)$b['category_name']);
-	if ($catCmp !== 0) return $catCmp;
-	return strcmp((string)$a['event_name'], (string)$b['event_name']);
-});
-
 // Build: $dayData[day]['date'] = '30 June 2025'
 //        $dayData[day]['morning|afternoon'][$roomName][] = ['event'=>..., 'start'=>..., 'finish'=>...]
 //        $dayData[day]['morningRange'] = '09:30 AM – 12:30 PM'
@@ -979,7 +933,6 @@ $this->set('dayData', $dayData);
 $this->set('dayOrder', $dayOrder);
 $this->set('lunchStart', date('g:i a', strtotime($lunchStart)));
 $this->set('lunchEnd',   date('g:i a', strtotime($lunchEnd)));
-$this->set('unscheduledEvents', $unscheduledEvents);
 }
 
 public function smallprogramv2print($convention_season_slug=null) {
@@ -995,51 +948,6 @@ $lunchEnd   = $schedulingD && $schedulingD->lunch_time_end   ? $schedulingD->lun
 
 $condSch = ["(Schedulingtimings.conventionseasons_id = '".$conventionSD->id."' AND Schedulingtimings.convention_id = '".$conventionSD->convention_id."' AND Schedulingtimings.season_id = '".$conventionSD->season_id."' AND Schedulingtimings.season_year = '".$conventionSD->season_year."' AND Schedulingtimings.is_bye = '0')"];
 $allTimings = $this->Schedulingtimings->find()->where($condSch)->contain(["Events","Conventionrooms"])->order(["Schedulingtimings.sch_date_time"=>"ASC","Schedulingtimings.room_id"=>"ASC"])->all();
-
-$allConventionEvents = $this->Conventionseasonevents->find()
-	->where([
-		'Conventionseasonevents.conventionseasons_id' => $conventionSD->id,
-		'Conventionseasonevents.convention_id' => $conventionSD->convention_id,
-	])
-	->contain(['Events'])
-	->all();
-
-$categoryMap = [];
-$allCategories = $this->Eventcategories->find()->select(['id','name'])->all();
-foreach ($allCategories as $cat) {
-	$categoryMap[(int)$cat->id] = $cat->name;
-}
-
-$scheduledEventIds = [];
-foreach ($allTimings as $t) {
-	if (!empty($t->event_id)) {
-		$scheduledEventIds[(int)$t->event_id] = true;
-	}
-}
-
-$unscheduledEvents = [];
-$seenUnscheduled = [];
-foreach ($allConventionEvents as $cse) {
-	if (empty($cse->Events) || empty($cse->event_id)) {
-		continue;
-	}
-	$eid = (int)$cse->event_id;
-	if (isset($scheduledEventIds[$eid]) || isset($seenUnscheduled[$eid])) {
-		continue;
-	}
-	$seenUnscheduled[$eid] = true;
-	$unscheduledEvents[] = [
-		'event_name' => $cse->Events['event_name'],
-		'event_id_number' => $cse->Events['event_id_number'],
-		'category_name' => !empty($cse->Events['event_grp_name']) && isset($categoryMap[(int)$cse->Events['event_grp_name']]) ? $categoryMap[(int)$cse->Events['event_grp_name']] : '',
-	];
-}
-
-usort($unscheduledEvents, function($a, $b) {
-	$catCmp = strcmp((string)$a['category_name'], (string)$b['category_name']);
-	if ($catCmp !== 0) return $catCmp;
-	return strcmp((string)$a['event_name'], (string)$b['event_name']);
-});
 
 $dayData = []; $seenSlots = []; $dayOrder = [];
 foreach ($allTimings as $t) {
@@ -1088,7 +996,6 @@ $this->set('dayData', $dayData);
 $this->set('dayOrder', $dayOrder);
 $this->set('lunchStart', date('g:i a', strtotime($lunchStart)));
 $this->set('lunchEnd',   date('g:i a', strtotime($lunchEnd)));
-$this->set('unscheduledEvents', $unscheduledEvents);
 }
 
 
