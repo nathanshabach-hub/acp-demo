@@ -34,6 +34,7 @@ class SchedulingreportsController extends AppController {
 		$this->loadModel("Conventionregistrationstudents");
 		$this->loadModel("Conventionregistrationteachers");
 		$this->loadModel("Events");
+		$this->loadModel("Eventcategories");
 		$this->loadModel("Schedulings");
 		$this->loadModel("Schedulingtimings");
     }
@@ -880,6 +881,12 @@ $allConventionEvents = $this->Conventionseasonevents->find()
 	->contain(['Events'])
 	->all();
 
+$categoryMap = [];
+$allCategories = $this->Eventcategories->find()->select(['id','name'])->all();
+foreach ($allCategories as $cat) {
+	$categoryMap[(int)$cat->id] = $cat->name;
+}
+
 $scheduledEventIds = [];
 foreach ($allTimings as $t) {
 	if (!empty($t->event_id)) {
@@ -901,8 +908,15 @@ foreach ($allConventionEvents as $cse) {
 	$unscheduledEvents[] = [
 		'event_name' => $cse->Events['event_name'],
 		'event_id_number' => $cse->Events['event_id_number'],
+		'category_name' => !empty($cse->Events['event_grp_name']) && isset($categoryMap[(int)$cse->Events['event_grp_name']]) ? $categoryMap[(int)$cse->Events['event_grp_name']] : '',
 	];
 }
+
+usort($unscheduledEvents, function($a, $b) {
+	$catCmp = strcmp((string)$a['category_name'], (string)$b['category_name']);
+	if ($catCmp !== 0) return $catCmp;
+	return strcmp((string)$a['event_name'], (string)$b['event_name']);
+});
 
 // Build: $dayData[day]['date'] = '30 June 2025'
 //        $dayData[day]['morning|afternoon'][$roomName][] = ['event'=>..., 'start'=>..., 'finish'=>...]
@@ -990,6 +1004,12 @@ $allConventionEvents = $this->Conventionseasonevents->find()
 	->contain(['Events'])
 	->all();
 
+$categoryMap = [];
+$allCategories = $this->Eventcategories->find()->select(['id','name'])->all();
+foreach ($allCategories as $cat) {
+	$categoryMap[(int)$cat->id] = $cat->name;
+}
+
 $scheduledEventIds = [];
 foreach ($allTimings as $t) {
 	if (!empty($t->event_id)) {
@@ -1011,8 +1031,15 @@ foreach ($allConventionEvents as $cse) {
 	$unscheduledEvents[] = [
 		'event_name' => $cse->Events['event_name'],
 		'event_id_number' => $cse->Events['event_id_number'],
+		'category_name' => !empty($cse->Events['event_grp_name']) && isset($categoryMap[(int)$cse->Events['event_grp_name']]) ? $categoryMap[(int)$cse->Events['event_grp_name']] : '',
 	];
 }
+
+usort($unscheduledEvents, function($a, $b) {
+	$catCmp = strcmp((string)$a['category_name'], (string)$b['category_name']);
+	if ($catCmp !== 0) return $catCmp;
+	return strcmp((string)$a['event_name'], (string)$b['event_name']);
+});
 
 $dayData = []; $seenSlots = []; $dayOrder = [];
 foreach ($allTimings as $t) {

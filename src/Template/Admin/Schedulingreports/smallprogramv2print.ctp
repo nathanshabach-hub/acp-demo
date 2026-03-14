@@ -138,6 +138,9 @@ window.print();
             <?php if(!empty($ue['event_id_number'])): ?>
             (<?php echo h($ue['event_id_number']); ?>)
             <?php endif; ?>
+            <?php if(!empty($ue['category_name'])): ?>
+            &mdash; <?php echo h($ue['category_name']); ?>
+            <?php endif; ?>
         </li>
         <?php endforeach; ?>
     </ul>
