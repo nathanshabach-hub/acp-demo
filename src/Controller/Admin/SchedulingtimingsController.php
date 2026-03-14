@@ -127,6 +127,70 @@ class SchedulingtimingsController extends AppController {
 		
 		return true;
 	}
+
+	private function getConventionBalancingDays($firstDay, $windowDays = 4) {
+		$week = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+		$startIndex = array_search($firstDay, $week, true);
+		if ($startIndex === false) {
+			$startIndex = 0;
+		}
+
+		$days = [];
+		for ($i = 0; $i < $windowDays; $i++) {
+			$days[] = $week[($startIndex + $i) % 7];
+		}
+
+		return $days;
+	}
+
+	private function getDateForDayFromStart($startDate, $firstDay, $targetDay) {
+		$week = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+		$firstIndex = array_search($firstDay, $week, true);
+		$targetIndex = array_search($targetDay, $week, true);
+
+		if ($firstIndex === false || $targetIndex === false) {
+			return $startDate;
+		}
+
+		$offset = ($targetIndex - $firstIndex + 7) % 7;
+		return date('Y-m-d', strtotime($startDate . ' +' . $offset . ' day'));
+	}
+
+	private function pickLeastLoadedStartDay($conventionSeasonId, $candidateDays = []) {
+		if (empty($candidateDays)) {
+			return null;
+		}
+
+		$dayLoad = [];
+		foreach ($candidateDays as $d) {
+			$dayLoad[$d] = 0;
+		}
+
+		$rows = $this->Schedulingtimings->find()
+			->select(['day', 'cnt' => 'COUNT(*)'])
+			->where([
+				'Schedulingtimings.conventionseasons_id' => $conventionSeasonId,
+				'Schedulingtimings.start_time IS NOT' => null,
+				'Schedulingtimings.day IN' => $candidateDays,
+			])
+			->group(['Schedulingtimings.day'])
+			->all();
+
+		foreach ($rows as $r) {
+			$dayLoad[$r->day] = (int)$r->cnt;
+		}
+
+		$chosenDay = $candidateDays[0];
+		$minCount = $dayLoad[$chosenDay];
+		foreach ($candidateDays as $dayName) {
+			if ($dayLoad[$dayName] < $minCount) {
+				$chosenDay = $dayName;
+				$minCount = $dayLoad[$dayName];
+			}
+		}
+
+		return $chosenDay;
+	}
 	
 	/* public function viewscheduling($convention_season_slug=null) {
         $this->set('title', ADMIN_TITLE . 'Scheduling Pre-check');
@@ -320,9 +384,10 @@ class SchedulingtimingsController extends AppController {
 				{
 					$cntrDays = 1;
 					$resetTime = 1;
-					$schDay = $first_day;
-					
-					$schStartDate = $start_date;
+					$balancingDays = $this->getConventionBalancingDays($first_day, 4);
+					$balancedStartDay = $this->pickLeastLoadedStartDay($conventionSD->id, $balancingDays);
+					$schDay = !empty($balancedStartDay) ? $balancedStartDay : $first_day;
+					$schStartDate = $this->getDateForDayFromStart($start_date, $first_day, $schDay);
 					
 					$totalRoomsForThisEvent = count((array)$roomArrCSEvent);
 					// now firstly choose first room
@@ -1081,9 +1146,10 @@ class SchedulingtimingsController extends AppController {
 				
 				$cntrDays 		= 1;
 				$resetTime 		= 1;
-				$schDay 		= $first_day;
-				
-				$schStartDate = $start_date;
+				$balancingDays = $this->getConventionBalancingDays($first_day, 4);
+				$balancedStartDay = $this->pickLeastLoadedStartDay($conventionSD->id, $balancingDays);
+				$schDay 		= !empty($balancedStartDay) ? $balancedStartDay : $first_day;
+				$schStartDate = $this->getDateForDayFromStart($start_date, $first_day, $schDay);
 				
 				$totalRoomsForThisEvent = count((array)$roomArrCSEvent);
 				// now firstly choose first room
@@ -1799,9 +1865,10 @@ class SchedulingtimingsController extends AppController {
 				
 				$cntrDays 		= 1;
 				$resetTime 		= 1;
-				$schDay 		= $first_day;
-				
-				$schStartDate = $start_date;
+				$balancingDays = $this->getConventionBalancingDays($first_day, 4);
+				$balancedStartDay = $this->pickLeastLoadedStartDay($conventionSD->id, $balancingDays);
+				$schDay 		= !empty($balancedStartDay) ? $balancedStartDay : $first_day;
+				$schStartDate = $this->getDateForDayFromStart($start_date, $first_day, $schDay);
 				
 				$totalRoomsForThisEvent = count((array)$roomArrCSEvent);
 				// now firstly choose first room
@@ -2347,9 +2414,10 @@ class SchedulingtimingsController extends AppController {
 				
 				$cntrDays 		= 1;
 				$resetTime 		= 1;
-				$schDay 		= $first_day;
-				
-				$schStartDate = $start_date;
+				$balancingDays = $this->getConventionBalancingDays($first_day, 4);
+				$balancedStartDay = $this->pickLeastLoadedStartDay($conventionSD->id, $balancingDays);
+				$schDay 		= !empty($balancedStartDay) ? $balancedStartDay : $first_day;
+				$schStartDate = $this->getDateForDayFromStart($start_date, $first_day, $schDay);
 				
 				$totalRoomsForThisEvent = count((array)$roomArrCSEvent);
 				// now firstly choose first room
