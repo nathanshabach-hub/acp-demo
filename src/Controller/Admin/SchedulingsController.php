@@ -664,14 +664,23 @@ class SchedulingsController extends AppController {
 		$this->set('conventionDays', $conventionDays);
 
 		if ($this->request->is(['post', 'put'])) {
-			$hasRowModeInput = !empty($this->request->data['Schedulings']['sched_rows']) && is_array($this->request->data['Schedulings']['sched_rows']);
-			$event_ids = isset($this->request->data['Schedulings']['event_ids']) ? (array)$this->request->data['Schedulings']['event_ids'] : [];
-			if (empty($event_ids) && !empty($this->request->data['Schedulings']['event_id'])) {
-				$event_ids = [(int)$this->request->data['Schedulings']['event_id']];
+			$postData = (array)$this->request->getData();
+			$schedulingInput = [];
+			if (!empty($postData['Schedulings']) && is_array($postData['Schedulings'])) {
+				$schedulingInput = $postData['Schedulings'];
+			} elseif (!empty($postData['data']['Schedulings']) && is_array($postData['data']['Schedulings'])) {
+				// Backward-compatible support for legacy input names like data[Schedulings][...]
+				$schedulingInput = $postData['data']['Schedulings'];
 			}
 
-			$max_students = (int)$this->request->data['Schedulings']['max_students'];
-			$time_gap_mins = max(0, (int)$this->request->data['Schedulings']['time_gap_mins']);
+			$hasRowModeInput = !empty($schedulingInput['sched_rows']) && is_array($schedulingInput['sched_rows']);
+			$event_ids = isset($schedulingInput['event_ids']) ? (array)$schedulingInput['event_ids'] : [];
+			if (empty($event_ids) && !empty($schedulingInput['event_id'])) {
+				$event_ids = [(int)$schedulingInput['event_id']];
+			}
+
+			$max_students = isset($schedulingInput['max_students']) ? (int)$schedulingInput['max_students'] : 0;
+			$time_gap_mins = max(0, isset($schedulingInput['time_gap_mins']) ? (int)$schedulingInput['time_gap_mins'] : 0);
 			if ($time_gap_mins === 0) {
 				$time_gap_mins = 1;
 			}
@@ -679,7 +688,7 @@ class SchedulingsController extends AppController {
 			$rowModeRows = [];
 			if ($hasRowModeInput) {
 				$seenRowEvents = [];
-				foreach ($this->request->data['Schedulings']['sched_rows'] as $row) {
+				foreach ($schedulingInput['sched_rows'] as $row) {
 					$rowEventId = isset($row['event_id']) ? (int)$row['event_id'] : 0;
 					$rowDate = isset($row['date']) ? trim($row['date']) : '';
 					$rowTime = isset($row['time']) ? trim($row['time']) : '';
@@ -766,7 +775,7 @@ class SchedulingsController extends AppController {
 					}
 				}
 
-				if (!empty($this->request->data['Schedulings']['preview_only'])) {
+				if (!empty($schedulingInput['preview_only'])) {
 					$this->Flash->success(
 						'Dry Run: row mode selected '.count($rowModeRows).' row(s), '
 						.count($event_ids).' event(s), '.$selectedScheduledRecords.' existing schedule record(s) would be updated '
@@ -856,8 +865,8 @@ class SchedulingsController extends AppController {
 			}
 
 			$daySlots = [];
-			if (!empty($this->request->data['Schedulings']['days']) && is_array($this->request->data['Schedulings']['days'])) {
-				foreach ($this->request->data['Schedulings']['days'] as $dayRow) {
+			if (!empty($schedulingInput['days']) && is_array($schedulingInput['days'])) {
+				foreach ($schedulingInput['days'] as $dayRow) {
 					$isActive = !empty($dayRow['active']);
 					$dayDate = isset($dayRow['date']) ? trim($dayRow['date']) : '';
 					$dayTime = isset($dayRow['time']) ? trim($dayRow['time']) : '';
@@ -873,8 +882,8 @@ class SchedulingsController extends AppController {
 
 			// Backward compatible support for older form fields.
 			if (empty($daySlots)) {
-				$overwrite_date = isset($this->request->data['Schedulings']['overwrite_date']) ? $this->request->data['Schedulings']['overwrite_date'] : '';
-				$overwrite_time = isset($this->request->data['Schedulings']['overwrite_time']) ? $this->request->data['Schedulings']['overwrite_time'] : '';
+				$overwrite_date = isset($schedulingInput['overwrite_date']) ? $schedulingInput['overwrite_date'] : '';
+				$overwrite_time = isset($schedulingInput['overwrite_time']) ? $schedulingInput['overwrite_time'] : '';
 				if (!empty($overwrite_date) && !empty($overwrite_time)) {
 					$daySlots[] = [
 						'date' => date('Y-m-d', strtotime($overwrite_date)),
@@ -921,7 +930,7 @@ class SchedulingsController extends AppController {
 			}
 			$estimatedBlocks = (int)ceil(max(1, $selectedScheduledRecords) / max(1, $max_students));
 
-			if (!empty($this->request->data['Schedulings']['preview_only'])) {
+			if (!empty($schedulingInput['preview_only'])) {
 				$this->Flash->success(
 					'Dry Run: selected '.count($event_ids).' event(s), '.count($daySlots).' day(s), '
 					.$selectedScheduledRecords.' existing schedule record(s) would be updated '
