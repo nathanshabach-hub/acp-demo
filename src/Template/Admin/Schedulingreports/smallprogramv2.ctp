@@ -52,6 +52,7 @@
 .sp2-table td:empty { background: #f9f9f9; }
 .sp2-event { font-size: 0.85em; margin-bottom: 3px; color: #222; }
 .sp2-event .sp2-time { color: #888; font-size: 0.78em; white-space: nowrap; }
+.sp2-cat { color: #666; font-size: 0.78em; margin-left: 6px; }
 .sp2-no-events { color: #aaa; font-size: 0.8em; text-align: center; padding: 8px; background: #fafafa; border: 1px solid #eee; }
 .sp2-empty-cell { background: #f8f8f8; }
 @media print {
@@ -134,7 +135,12 @@
                           <td class="<?php echo empty($dd['morning'][$rn]) ? 'sp2-empty-cell' : ''; ?>">
                               <?php if(!empty($dd['morning'][$rn])): ?>
                                   <?php foreach($dd['morning'][$rn] as $ev): ?>
-                                  <div class="sp2-event"><?php echo h($ev); ?></div>
+                                  <div class="sp2-event">
+                                      <?php echo h($ev['event_name']); ?>
+                                      <?php if(!empty($ev['category'])): ?>
+                                      <span class="sp2-cat"><?php echo h($ev['category']); ?></span>
+                                      <?php endif; ?>
+                                  </div>
                                   <?php endforeach; ?>
                               <?php endif; ?>
                           </td>
@@ -168,7 +174,12 @@
                           <td class="<?php echo empty($dd['afternoon'][$rn]) ? 'sp2-empty-cell' : ''; ?>">
                               <?php if(!empty($dd['afternoon'][$rn])): ?>
                                   <?php foreach($dd['afternoon'][$rn] as $ev): ?>
-                                  <div class="sp2-event"><?php echo h($ev); ?></div>
+                                  <div class="sp2-event">
+                                      <?php echo h($ev['event_name']); ?>
+                                      <?php if(!empty($ev['category'])): ?>
+                                      <span class="sp2-cat"><?php echo h($ev['category']); ?></span>
+                                      <?php endif; ?>
+                                  </div>
                                   <?php endforeach; ?>
                               <?php endif; ?>
                           </td>
