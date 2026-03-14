@@ -1115,10 +1115,7 @@ class SchedulingsController extends AppController {
 			shuffle($userIDSConflict);
 			
 			/////////////////
-			$userId = $userIDSConflict[0];
-			
-			//echo $userId;exit;
-
+			foreach ($userIDSConflict as $userId) {
 			$resolveConflicts = false;
 			do {
 				try {
@@ -1251,7 +1248,9 @@ class SchedulingsController extends AppController {
 
 			} while ($resolveConflicts);
 
-			$this->Flash->success('Conflict resolved successfully.');
+		} // end foreach userId
+
+		$this->Flash->success('All individual conflicts resolved successfully.');
 			/////////////////
 			
 		}
@@ -1373,6 +1372,8 @@ class SchedulingsController extends AppController {
 			return;
 		}
 		
+		$ref = $this->request->getQuery('ref', 'precheck');
+
 		// get convention season details
 		try {
 			$conventionSD = $this->Conventionseasons->find()
@@ -1419,15 +1420,37 @@ class SchedulingsController extends AppController {
 				$schedulingTimingsD = $this->Schedulingtimings->find()->where(['Schedulingtimings.id' => $schedulingId])->first();
 				
 				if (empty($schedulingTimingsD)) {
-					$this->Flash->error('Scheduling timing record not found.');
-					$this->redirect(['controller' => 'schedulings', 'action' => 'precheck', $convention_season_slug]);
+					// Stale ID — remove it and continue resolving remaining entries
+					$nextSchIDSConflict = array_values(array_diff($schIDSConflict, [$schedulingId]));
+					if (count($nextSchIDSConflict)) {
+						$this->Schedulings->updateAll(['conflict_user_ids_group' => implode(',', $nextSchIDSConflict)], ['id' => $schedulingD->id]);
+						$this->redirect(['controller' => 'schedulings', 'action' => 'resolveconflictsgroup', $convention_season_slug, '?' => ['ref' => $ref]]);
+					} else {
+						$this->Schedulings->updateAll(['conflict_user_ids_group' => NULL], ['id' => $schedulingD->id]);
+						if ($ref === 'schedulecategory') {
+							$this->redirect(['controller' => 'schedulings', 'action' => 'schedulecategory', $convention_season_slug]);
+						} else {
+							$this->redirect(['controller' => 'schedulings', 'action' => 'precheck', $convention_season_slug]);
+						}
+					}
 					return;
 				}
 				
 				// Validate group user IDs
 				if (empty($schedulingTimingsD->group_name_user_ids) || empty($schedulingTimingsD->group_name_opponent_user_ids)) {
-					$this->Flash->error('Invalid group scheduling data found.');
-					$this->redirect(['controller' => 'schedulings', 'action' => 'precheck', $convention_season_slug]);
+					// No group data — skip this entry and continue
+					$nextSchIDSConflict = array_values(array_diff($schIDSConflict, [$schedulingId]));
+					if (count($nextSchIDSConflict)) {
+						$this->Schedulings->updateAll(['conflict_user_ids_group' => implode(',', $nextSchIDSConflict)], ['id' => $schedulingD->id]);
+						$this->redirect(['controller' => 'schedulings', 'action' => 'resolveconflictsgroup', $convention_season_slug, '?' => ['ref' => $ref]]);
+					} else {
+						$this->Schedulings->updateAll(['conflict_user_ids_group' => NULL], ['id' => $schedulingD->id]);
+						if ($ref === 'schedulecategory') {
+							$this->redirect(['controller' => 'schedulings', 'action' => 'schedulecategory', $convention_season_slug]);
+						} else {
+							$this->redirect(['controller' => 'schedulings', 'action' => 'precheck', $convention_season_slug]);
+						}
+					}
 					return;
 				}
 				
