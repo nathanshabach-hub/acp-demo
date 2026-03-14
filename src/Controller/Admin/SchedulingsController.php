@@ -840,8 +840,13 @@ class SchedulingsController extends AppController {
 				return $this->redirect(['controller' => 'schedulings', 'action' => 'precheck', $convention_season_slug]);
 			}
 
+			if (!$hasRowModeInput) {
+				$this->Flash->error('Please use the Per-Event Scheduler rows: choose event, date, time, and students/block for at least one row.');
+				return;
+			}
+
 			if ($max_students <= 0) {
-				$this->Flash->error('Please enter a valid max students value.');
+				$this->Flash->error('Please enter a valid Students/Block value (must be greater than 0).');
 				return;
 			}
 
