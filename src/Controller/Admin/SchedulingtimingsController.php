@@ -578,8 +578,7 @@ class SchedulingtimingsController extends AppController {
 								if($sports_day == $schDay)
 								{
 									// Now check TIMINGS
-									if( (strtotime($start_time)>=strtotime($sports_day_starting_time) &&  strtotime($start_time)<=strtotime($sports_day_finish_time)) || 
-									(strtotime($finish_time)>=strtotime($sports_day_starting_time) &&  strtotime($finish_time)<=strtotime($sports_day_finish_time)))
+									if( strtotime($start_time) < strtotime($sports_day_finish_time) && strtotime($finish_time) > strtotime($sports_day_starting_time))
 									{
 										$start_time 	= $sports_day_finish_time;
 										$finish_time 	= date("H:i:s", strtotime('+ '.$eventSetupRoundJudTime.' minutes', strtotime($sports_day_finish_time)));
@@ -617,16 +616,14 @@ class SchedulingtimingsController extends AppController {
 								// to check if day match
 								if($sports_day == $schDay)
 								{
-									// Now check TIMINGS
-									if( (strtotime($start_time)>=strtotime($sports_day_other_starting_time) &&  strtotime($start_time)<=strtotime($sports_day_other_finish_time)) || 
-									(strtotime($finish_time)>=strtotime($sports_day_other_starting_time) &&  strtotime($finish_time)<=strtotime($sports_day_other_finish_time)))
-									{
-										$start_time 	= $sports_day_other_finish_time;
-										$finish_time 	= date("H:i:s", strtotime('+ '.$eventSetupRoundJudTime.' minutes', strtotime($sports_day_other_finish_time)));
+									// On sports day with after-sport events, only allow times inside this window.
+									if (strtotime($start_time) < strtotime($sports_day_other_starting_time)) {
+										$start_time 	= $sports_day_other_starting_time;
+										$finish_time 	= date("H:i:s", strtotime('+ '.$eventSetupRoundJudTime.' minutes', strtotime($sports_day_other_starting_time)));
 									}
 									
 									// suppose in this case, finish time reach to day end time, then shift to next day
-									if(strtotime($finish_time)>=strtotime($normal_finish_time))
+									if(strtotime($finish_time)>strtotime($sports_day_other_finish_time))
 									{
 										$schDay = $this->getNextWeekDay($schDay);
 										// change to next date
@@ -1310,8 +1307,7 @@ class SchedulingtimingsController extends AppController {
 
 						if($sports_day == $schDay)
 						{
-							if( (strtotime($start_time)>=strtotime($sports_day_starting_time) &&  strtotime($start_time)<=strtotime($sports_day_finish_time)) || 
-							(strtotime($finish_time)>=strtotime($sports_day_starting_time) &&  strtotime($finish_time)<=strtotime($sports_day_finish_time)))
+							if( strtotime($start_time) < strtotime($sports_day_finish_time) && strtotime($finish_time) > strtotime($sports_day_starting_time))
 							{
 								$start_time 	= $sports_day_finish_time;
 								$finish_time 	= date("H:i:s", strtotime('+ '.$eventSetupRoundJudTime.' minutes', strtotime($sports_day_finish_time)));
@@ -1340,14 +1336,12 @@ class SchedulingtimingsController extends AppController {
 
 						if($sports_day == $schDay)
 						{
-							if( (strtotime($start_time)>=strtotime($sports_day_other_starting_time) &&  strtotime($start_time)<=strtotime($sports_day_other_finish_time)) || 
-							(strtotime($finish_time)>=strtotime($sports_day_other_starting_time) &&  strtotime($finish_time)<=strtotime($sports_day_other_finish_time)))
-							{
-								$start_time 	= $sports_day_other_finish_time;
-								$finish_time 	= date("H:i:s", strtotime('+ '.$eventSetupRoundJudTime.' minutes', strtotime($sports_day_other_finish_time)));
+							if (strtotime($start_time) < strtotime($sports_day_other_starting_time)) {
+								$start_time 	= $sports_day_other_starting_time;
+								$finish_time 	= date("H:i:s", strtotime('+ '.$eventSetupRoundJudTime.' minutes', strtotime($sports_day_other_starting_time)));
 							}
 
-							if(strtotime($finish_time)>=strtotime($normal_finish_time))
+							if(strtotime($finish_time)>strtotime($sports_day_other_finish_time))
 							{
 								$schDay = $this->getNextWeekDay($schDay);
 								$schStartDate = date('Y-m-d', strtotime($schStartDate . ' +1 day'));
@@ -2064,8 +2058,7 @@ class SchedulingtimingsController extends AppController {
 							if($sports_day == $schDay)
 							{
 								// Now check TIMINGS
-								if( (strtotime($start_time)>=strtotime($sports_day_starting_time) &&  strtotime($start_time)<=strtotime($sports_day_finish_time)) || 
-								(strtotime($finish_time)>=strtotime($sports_day_starting_time) &&  strtotime($finish_time)<=strtotime($sports_day_finish_time)))
+								if( strtotime($start_time) < strtotime($sports_day_finish_time) && strtotime($finish_time) > strtotime($sports_day_starting_time))
 								{
 									$start_time 	= $sports_day_finish_time;
 									$finish_time 	= date("H:i:s", strtotime('+ '.$eventSetupRoundJudTime.' minutes', strtotime($sports_day_finish_time)));
@@ -2103,16 +2096,13 @@ class SchedulingtimingsController extends AppController {
 							// to check if day match
 							if($sports_day == $schDay)
 							{
-								// Now check TIMINGS
-								if( (strtotime($start_time)>=strtotime($sports_day_other_starting_time) &&  strtotime($start_time)<=strtotime($sports_day_other_finish_time)) || 
-								(strtotime($finish_time)>=strtotime($sports_day_other_starting_time) &&  strtotime($finish_time)<=strtotime($sports_day_other_finish_time)))
-								{
-									$start_time 	= $sports_day_other_finish_time;
-									$finish_time 	= date("H:i:s", strtotime('+ '.$eventSetupRoundJudTime.' minutes', strtotime($sports_day_other_finish_time)));
+								if (strtotime($start_time) < strtotime($sports_day_other_starting_time)) {
+									$start_time 	= $sports_day_other_starting_time;
+									$finish_time 	= date("H:i:s", strtotime('+ '.$eventSetupRoundJudTime.' minutes', strtotime($sports_day_other_starting_time)));
 								}
 								
 								// suppose in this case, finish time reach to day end time, then shift to next day
-								if(strtotime($finish_time)>=strtotime($normal_finish_time))
+								if(strtotime($finish_time)>strtotime($sports_day_other_finish_time))
 								{
 									$schDay = $this->getNextWeekDay($schDay);
 									// change to next date
@@ -2601,8 +2591,7 @@ class SchedulingtimingsController extends AppController {
 							if($sports_day == $schDay)
 							{
 								// Now check TIMINGS
-								if( (strtotime($start_time)>=strtotime($sports_day_starting_time) &&  strtotime($start_time)<=strtotime($sports_day_finish_time)) || 
-								(strtotime($finish_time)>=strtotime($sports_day_starting_time) &&  strtotime($finish_time)<=strtotime($sports_day_finish_time)))
+								if( strtotime($start_time) < strtotime($sports_day_finish_time) && strtotime($finish_time) > strtotime($sports_day_starting_time))
 								{
 									$start_time 	= $sports_day_finish_time;
 									$finish_time 	= date("H:i:s", strtotime('+ '.$eventSetupRoundJudTime.' minutes', strtotime($sports_day_finish_time)));
@@ -2642,16 +2631,13 @@ class SchedulingtimingsController extends AppController {
 							// to check if day match
 							if($sports_day == $schDay)
 							{
-								// Now check TIMINGS
-								if( (strtotime($start_time)>=strtotime($sports_day_other_starting_time) &&  strtotime($start_time)<=strtotime($sports_day_other_finish_time)) || 
-								(strtotime($finish_time)>=strtotime($sports_day_other_starting_time) &&  strtotime($finish_time)<=strtotime($sports_day_other_finish_time)))
-								{
-									$start_time 	= $sports_day_other_finish_time;
-									$finish_time 	= date("H:i:s", strtotime('+ '.$eventSetupRoundJudTime.' minutes', strtotime($sports_day_other_finish_time)));
+								if (strtotime($start_time) < strtotime($sports_day_other_starting_time)) {
+									$start_time 	= $sports_day_other_starting_time;
+									$finish_time 	= date("H:i:s", strtotime('+ '.$eventSetupRoundJudTime.' minutes', strtotime($sports_day_other_starting_time)));
 								}
 								
 								// suppose in this case, finish time reach to day end time, then shift to next day
-								if(strtotime($finish_time)>=strtotime($normal_finish_time))
+								if(strtotime($finish_time)>strtotime($sports_day_other_finish_time))
 								{
 									$schDay = $this->getNextWeekDay($schDay);
 									//echo 'here 431';exit;
