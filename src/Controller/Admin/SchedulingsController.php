@@ -664,6 +664,7 @@ class SchedulingsController extends AppController {
 		$this->set('conventionDays', $conventionDays);
 
 		if ($this->request->is(['post', 'put'])) {
+			$hasRowModeInput = !empty($this->request->data['Schedulings']['sched_rows']) && is_array($this->request->data['Schedulings']['sched_rows']);
 			$event_ids = isset($this->request->data['Schedulings']['event_ids']) ? (array)$this->request->data['Schedulings']['event_ids'] : [];
 			if (empty($event_ids) && !empty($this->request->data['Schedulings']['event_id'])) {
 				$event_ids = [(int)$this->request->data['Schedulings']['event_id']];
@@ -676,7 +677,7 @@ class SchedulingsController extends AppController {
 			}
 
 			$rowModeRows = [];
-			if (!empty($this->request->data['Schedulings']['sched_rows']) && is_array($this->request->data['Schedulings']['sched_rows'])) {
+			if ($hasRowModeInput) {
 				$seenRowEvents = [];
 				foreach ($this->request->data['Schedulings']['sched_rows'] as $row) {
 					$rowEventId = isset($row['event_id']) ? (int)$row['event_id'] : 0;
@@ -723,6 +724,11 @@ class SchedulingsController extends AppController {
 						'time_gap_mins' => $rowGapMins,
 					];
 				}
+			}
+
+			if ($hasRowModeInput && empty($rowModeRows)) {
+				$this->Flash->error('Please configure at least one event row with event, date, and start time.');
+				return;
 			}
 
 			if (!empty($rowModeRows)) {
