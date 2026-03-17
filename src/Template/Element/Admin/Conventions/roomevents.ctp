@@ -1,6 +1,7 @@
 <?php
 use Cake\ORM\TableRegistry;
 $this->Events = TableRegistry::get('Events');
+$this->Crstudentevents = TableRegistry::get('Crstudentevents');
 ?>
 <div class="admin_loader" id="loaderID"><?php echo $this->Html->image('loader_large_blue.gif');?></div>
 <?php if (!$conventionseasonroomevents->isEmpty()) { ?> 
@@ -49,6 +50,10 @@ $this->Events = TableRegistry::get('Events');
                                 <td data-title="Event(s)">
 								<?php
 								$arrEventN = array();
+								$spbMap = [];
+								if (!empty($datarecord->students_per_block)) {
+									$spbMap = (array)json_decode($datarecord->students_per_block, true);
+								}
 								if(!empty($datarecord->event_ids))
 								{
 									$conditionEV = array();
@@ -57,7 +62,12 @@ $this->Events = TableRegistry::get('Events');
 									$eventsL = $this->Events->find()->where($conditionEV)->order(["Events.event_name" => "ASC"])->all();
 									foreach($eventsL as $eventn)
 									{
-										$arrEventN[] = $eventn->event_name."(".$eventn->event_id_number.")";
+										$regCount = $this->Crstudentevents->find()->where(['Crstudentevents.conventionseason_id' => $datarecord->conventionseasons_id, 'Crstudentevents.event_id' => $eventn->id])->count();
+										$label = $eventn->event_name."(".$eventn->event_id_number.") <span class=\"label label-default\" title=\"Registered students\">".$regCount." students</span>";
+										if (isset($spbMap[$eventn->id]) && (int)$spbMap[$eventn->id] > 0) {
+											$label .= ' <span class="label label-info" title="Students per block">' . (int)$spbMap[$eventn->id] . '/block</span>';
+										}
+										$arrEventN[] = $label;
 									}
 								}
 								if(count($arrEventN))

@@ -3,7 +3,6 @@
 namespace App\Controller\Component;
 
 use Cake\Controller\Component;
-use Cake\Controller\Controller;
 	
 	
 	/**
@@ -43,9 +42,9 @@ use Cake\Controller\Controller;
 		/**
 		 * Initialize method. Initialize class properties.
 		 *
-		 * @param Controller $controller
+		 * @param array $config
 		 */
-		public function initialize(Controller $controller) {
+		public function initialize(array $config) {
 			$this->watermarkImage = "img" . DIRECTORY_SEPARATOR . "watermark.png";
 			$this->jpgQuality = 100;
 			$this->errors = array();

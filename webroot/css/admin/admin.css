@@ -34,3 +34,66 @@ fieldset{
     justify-content: end;
     align-items: center;
 }
+
+/* Responsive/mobile-friendly admin UI */
+@media (max-width: 991px) {
+    .admin_st, .menu_row, .input_small input, .company_tab span, .chart_loader, .success, .success-, .drt, fieldset {
+        width: 100% !important;
+        box-sizing: border-box;
+    }
+    .header-filterwrap {
+        flex-direction: column;
+        align-items: flex-start;
+        width: 100%;
+    }
+    .menu_row {
+        margin-bottom: 10px;
+    }
+    .company_tab span {
+        width: 100%;
+        margin-bottom: 6px;
+        text-align: left;
+    }
+    .input_small input {
+        min-width: 120px;
+        font-size: 16px;
+    }
+    .chart_loader img {
+        width: 60px;
+    }
+}
+
+@media (max-width: 767px) {
+    .admin_st, .menu_row, .input_small input, .company_tab span, .chart_loader, .success, .success-, .drt, fieldset {
+        font-size: 16px !important;
+        padding: 8px !important;
+    }
+    .header-filterwrap {
+        flex-direction: column;
+        align-items: stretch;
+        width: 100%;
+        padding: 0 5px;
+    }
+    .menu_row {
+        margin-bottom: 15px;
+    }
+    .company_tab span {
+        font-size: 15px;
+        padding: 8px 10px;
+    }
+    .input_small input {
+        font-size: 15px;
+        padding: 6px 8px;
+    }
+    .chart_loader img {
+        width: 40px;
+    }
+    .drt {
+        height: auto;
+        max-height: 300px;
+        overflow-y: auto;
+    }
+    fieldset {
+        padding: 10px 5px;
+    }
+}

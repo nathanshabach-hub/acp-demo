@@ -1,4 +1,4 @@
- <?php
+<?php
 /**
  * AuthHelper: Allow access to auth vars in view
  * @usage $this->Auth->get('Admin.id'), $this->Auth->get('User.email')

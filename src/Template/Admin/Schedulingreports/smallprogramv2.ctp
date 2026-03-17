@@ -1,7 +1,11 @@
 <style>
+.sp2-brand { display: flex; align-items: center; gap: 16px; margin-bottom: 18px; }
+.sp2-brand-logo { max-height: 88px; max-width: 220px; width: auto; height: auto; display: block; }
+.sp2-brand-copy { min-width: 0; }
+.sp2-wrap-custom-note { margin: 0 0 18px; padding: 12px 14px; background: #f8f8f8; border-left: 4px solid <?php echo h($smallProgramCustomization['secondary_color']); ?>; color: #333; }
 .sp2-wrap { font-family: Arial, sans-serif; }
 .sp2-day-header {
-    background: #1a3a5c;
+    background: <?php echo h($smallProgramCustomization['primary_color']); ?>;
     color: #fff;
     padding: 10px 16px;
     margin-top: 28px;
@@ -12,7 +16,7 @@
 }
 .sp2-day-header .sp2-date { font-weight: normal; font-size: 0.88em; margin-left: 12px; opacity: 0.85; }
 .sp2-session-header {
-    background: #2e6da4;
+    background: <?php echo h($smallProgramCustomization['secondary_color']); ?>;
     color: #fff;
     padding: 5px 12px;
     font-size: 0.92em;
@@ -35,7 +39,7 @@
     table-layout: fixed;
 }
 .sp2-table th {
-    background: #ddeeff;
+    background: <?php echo h($smallProgramCustomization['table_header_color']); ?>;
     border: 1px solid #aaccee;
     padding: 5px 7px;
     text-align: center;
@@ -62,13 +66,20 @@
     .no-print { display: none !important; }
     .sp2-wrap { font-size: 9pt; }
 }
+<?php if (!empty($smallProgramCustomization['custom_css'])): ?>
+<?php echo $smallProgramCustomization['custom_css']; ?>
+<?php endif; ?>
 </style>
 
 <div class="content-wrapper">
     <section class="content-header">
+            <?php
+                $reportTitle = !empty($smallProgramCustomization['report_title']) ? $smallProgramCustomization['report_title'] : 'Small Program';
+                $reportSubtitle = !empty($smallProgramCustomization['report_subtitle']) ? $smallProgramCustomization['report_subtitle'] : $conventionSD->Conventions['name'] . ' - ' . $conventionSD->season_year;
+            ?>
       <h1>
-        Small Program &ndash; <?php echo h($conventionSD->Conventions['name']); ?>
-        &nbsp;<small><?php echo h($conventionSD->season_year); ?></small>
+                <?php echo h($reportTitle); ?>
+                &nbsp;<small><?php echo h($reportSubtitle); ?></small>
       </h1>
       <ol class="breadcrumb">
           <li><?php echo $this->Html->link('<i class="fa fa-dashboard"></i> Dashboard', ['controller'=>'admins', 'action'=>'dashboard'], ['escape'=>false]);?></li>
@@ -86,12 +97,26 @@
             <div style="padding:10px 15px;" class="no-print">
                 <?php echo $this->Html->link('<i class="fa fa-print"></i> Print', ['controller'=>'schedulingreports', 'action'=>'smallprogramv2print',$convention_season_slug], ['escape'=>false, 'class'=>'btn btn-default', 'target'=>'_blank']);?>
                 &nbsp;
+                                <?php echo $this->Html->link('<i class="fa fa-pencil"></i> Customize', ['controller'=>'schedulingreports', 'action'=>'smallprogramv2customize',$convention_season_slug], ['escape'=>false, 'class'=>'btn btn-primary']);?>
+                                &nbsp;
                 <?php echo $this->Html->link('<i class="fa fa-list"></i> List View', ['controller'=>'schedulingreports', 'action'=>'smallprogram',$convention_season_slug], ['escape'=>false, 'class'=>'btn btn-info']);?>
                 &nbsp;
                 <?php echo $this->Html->link('Back', ['controller'=>'schedulings', 'action'=>'reports',$convention_season_slug], ['escape'=>false, 'class'=>'btn btn-warning']);?>
             </div>
 
             <div class="box-body sp2-wrap">
+              <?php if(!empty($smallProgramCustomization['logo_path']) || !empty($smallProgramCustomization['intro_note'])): ?>
+                <div class="sp2-brand">
+                  <?php if(!empty($smallProgramCustomization['logo_path'])): ?>
+                    <img class="sp2-brand-logo" src="<?php echo h($smallProgramCustomization['logo_path']); ?>" alt="<?php echo h(!empty($smallProgramCustomization['logo_alt_text']) ? $smallProgramCustomization['logo_alt_text'] : $reportTitle); ?>">
+                  <?php endif; ?>
+                  <?php if(!empty($smallProgramCustomization['intro_note'])): ?>
+                    <div class="sp2-brand-copy">
+                      <div class="sp2-wrap-custom-note"><?php echo nl2br(h($smallProgramCustomization['intro_note'])); ?></div>
+                    </div>
+                  <?php endif; ?>
+                </div>
+              <?php endif; ?>
 
               <?php if(empty($dayData)): ?>
                 <p><i>No scheduled events found.</i></p>
@@ -118,7 +143,7 @@
               <?php if (!empty($dd['morning'])): ?>
               <!-- MORNING SESSION -->
               <div class="sp2-session-header">
-                  <?php echo !empty($dd['morningRange']) ? h($dd['morningRange']) : 'Morning'; ?> &mdash; Convention Events
+                  <?php echo !empty($dd['morningRange']) ? h($dd['morningRange']) : 'Morning'; ?> &mdash; <?php echo h($smallProgramCustomization['morning_label']); ?>
               </div>
               <table class="sp2-table">
                   <thead>
@@ -148,13 +173,13 @@
 
               <!-- LUNCH BREAK -->
               <div class="sp2-lunch">
-                  LUNCH &nbsp; <?php echo h($lunchStart); ?> &ndash; <?php echo h($lunchEnd); ?>
+                  <?php echo h($smallProgramCustomization['lunch_label']); ?> &nbsp; <?php echo h($lunchStart); ?> &ndash; <?php echo h($lunchEnd); ?>
               </div>
 
               <?php if (!empty($dd['afternoon'])): ?>
               <!-- AFTERNOON SESSION -->
               <div class="sp2-session-header">
-                  <?php echo !empty($dd['afternoonRange']) ? h($dd['afternoonRange']) : 'Afternoon'; ?> &mdash; Convention Events
+                  <?php echo !empty($dd['afternoonRange']) ? h($dd['afternoonRange']) : 'Afternoon'; ?> &mdash; <?php echo h($smallProgramCustomization['afternoon_label']); ?>
               </div>
               <table class="sp2-table">
                   <thead>
@@ -184,6 +209,10 @@
 
               <?php endforeach; ?>
               <?php endif; ?>
+
+                            <?php if(!empty($smallProgramCustomization['footer_note'])): ?>
+                                <div class="sp2-wrap-custom-note" style="margin-top:18px;"><?php echo nl2br(h($smallProgramCustomization['footer_note'])); ?></div>
+                            <?php endif; ?>
 
             </div><!-- /.box-body -->
         </div>

@@ -3,6 +3,7 @@
 namespace App\Controller\Admin;
 
 use App\Controller\AppController;
+use Exception;
 use Cake\Core\Configure;
 use Cake\Core\Configure\Engine\PhpConfig;
 use Cake\Datasource\ConnectionManager;
@@ -34,6 +35,7 @@ class SchedulingsController extends AppController {
 		$this->loadModel("Conventionregistrations");
 		$this->loadModel("Conventionregistrationstudents");
 		$this->loadModel("Events");
+		$this->loadModel("Eventcategories");
 		$this->loadModel("Schedulingtimings");
 		$this->loadModel("Crstudentevents");
     }
@@ -98,6 +100,71 @@ class SchedulingsController extends AppController {
 		);
 	}
 
+	private function getEventBucketRules() {
+		$rulesPath = ROOT . DS . 'config' . DS . 'event_bucket_rules.php';
+		if (file_exists($rulesPath)) {
+			$rules = include $rulesPath;
+			if (is_array($rules)) {
+				return $rules;
+			}
+		}
+
+		return [
+			'group_order' => ['Academics', 'Music Combined', 'Music Instrumental', 'Music Vocal', 'Platform', 'Scripture', 'Sports'],
+			'name_rules' => [],
+			'category_contains_rules' => [],
+			'default_bucket' => 'Academics',
+		];
+	}
+
+	private function classifyEventTypeGroup($eventName, $eventCode, $categoryName, $rules = null) {
+		if ($rules === null) {
+			$rules = $this->getEventBucketRules();
+		}
+
+		$name = strtolower((string)$eventName);
+		$code = strtolower((string)$eventCode);
+		$cat = strtolower((string)$categoryName);
+
+		foreach ((array)$rules['name_rules'] as $rule) {
+			if (empty($rule['bucket']) || empty($rule['pattern'])) {
+				continue;
+			}
+
+			$source = !empty($rule['apply_to']) && $rule['apply_to'] === 'code' ? $code : $name;
+			if (@preg_match($rule['pattern'], $source)) {
+				if (preg_match($rule['pattern'], $source)) {
+					return (string)$rule['bucket'];
+				}
+			}
+		}
+
+		foreach ((array)$rules['category_contains_rules'] as $rule) {
+			if (empty($rule['bucket']) || empty($rule['contains'])) {
+				continue;
+			}
+			if (strpos($cat, strtolower((string)$rule['contains'])) !== false) {
+				return (string)$rule['bucket'];
+			}
+		}
+
+		return !empty($rules['default_bucket']) ? (string)$rules['default_bucket'] : 'Academics';
+	}
+
+	private function getEventCategoryNameMap() {
+		$eventCategoryNameById = [];
+		$eventCategoryRows = $this->Eventcategories->find()
+			->select(['id', 'name'])
+			->enableHydration(false)
+			->toArray();
+
+		foreach ($eventCategoryRows as $catRow) {
+			$eventCategoryNameById[(int)$catRow['id']] = (string)$catRow['name'];
+		}
+
+		return $eventCategoryNameById;
+	}
+
     public function precheck($convention_season_slug=null) {
         $this->set('title', ADMIN_TITLE . 'Scheduling Pre-check');
         $this->viewBuilder()->layout('admin');
@@ -145,143 +212,233 @@ class SchedulingsController extends AppController {
     }
 	
 	public function precheckevents($convention_season_slug=null) {
-		
 		$conventionSD = $this->Conventionseasons->find()->where(['Conventionseasons.slug' => $convention_season_slug])->contain(["Conventions"])->first();
-		
-		
-		// to check events for this convention season
-		$cntrPreCheckEvents = 0;
-		$conventionSEventsList = $this->Conventionseasonevents->find()->where(['Conventionseasonevents.conventionseasons_id' => $conventionSD->id])->contain(['Events'])->all();
-		foreach($conventionSEventsList as $convevPreCheck)
-		{
-			if($convevPreCheck->Events['needs_schedule'] == 1)
-			{
-				$cntrPreCheckEvents++;
-			}
+		$result = $this->executePrecheckEvents($conventionSD);
+
+		if ($result['ok']) {
+			$this->Flash->success($result['message']);
+		} else {
+			$this->Flash->error($result['message']);
 		}
-		
-		
-		//$this->prx($conventionSEvents);
-		if($cntrPreCheckEvents>0)
-		{
-			// now update this precheck events in scheduling table
-			$this->Schedulings->updateAll(['precheck_events' => 1,'total_events_found' => $cntrPreCheckEvents,'modified' => date('Y-m-d H:i:s')], ["conventionseasons_id" => $conventionSD->id]);
-			
-			$this->Flash->success('Total event found: '.$cntrPreCheckEvents);
-		}
-		else
-		{
-			$this->Schedulings->updateAll(['precheck_events' => 0,'total_events_found' => NULL,'modified' => date('Y-m-d H:i:s')], ["conventionseasons_id" => $conventionSD->id]);
-			
-			$this->Flash->error('Sorry no event found for this convention season.');
-		}
-		
+
 		$this->redirect(['controller' => 'schedulings', 'action' => 'precheck',$convention_season_slug]);
     }
 	
 	public function prechecklocations($convention_season_slug=null) {
-		
 		$conventionSD = $this->Conventionseasons->find()->where(['Conventionseasons.slug' => $convention_season_slug])->contain(["Conventions"])->first();
-		
-		// to check location/rooms for this convention
-		$conventionRoomsTotal = $this->Conventionrooms->find()->where(['Conventionrooms.convention_id' => $conventionSD->convention_id])->count();
-		if($conventionRoomsTotal>0)
-		{
-			// to check events for this convention season
-			$cntrConvSeasonTotalEvents = 0;
-			$conventionSEventsList = $this->Conventionseasonevents->find()->where(['Conventionseasonevents.conventionseasons_id' => $conventionSD->id])->contain(['Events'])->all();
-			foreach($conventionSEventsList as $convEv)
-			{
-				if($convEv->Events['needs_schedule'] == 1)
-				{
-					$cntrConvSeasonTotalEvents++;
-				}
-			}
-			
-			$roomEventsArr = array();
-			
-			// now get events that is assigned to a room
-			$convRoomEvents = $this->Conventionseasonroomevents->find()->where(['Conventionseasonroomevents.conventionseasons_id' => $conventionSD->id])->all();
-			foreach($convRoomEvents as $convroomev)
-			{
-				$roomEventIDSExplode = explode(",",$convroomev->event_ids);
-				foreach($roomEventIDSExplode as $eventidexplode)
-				{
-					if(!in_array($eventidexplode,(array)$roomEventsArr))
-					{
-						$roomEventsArr[] = $eventidexplode;
-					}
-				}
-			}
-			
-			if(count((array)$roomEventsArr) < $cntrConvSeasonTotalEvents)
-			{
-				$this->Flash->error('Sorry, '.($cntrConvSeasonTotalEvents-count((array)$roomEventsArr)).' event(s) not assigned to any room. Please assign.');
-				
-				$this->Schedulings->updateAll(['precheck_locations' => 0,'total_locations_found' => NULL,'modified' => date('Y-m-d H:i:s')], ["conventionseasons_id" => $conventionSD->id]);
-			}
-			else
-			{
-				$this->Schedulings->updateAll(['precheck_locations' => 1,'total_locations_found' => $conventionRoomsTotal,'modified' => date('Y-m-d H:i:s')], ["conventionseasons_id" => $conventionSD->id]);
-			
-				$this->Flash->success('Total locations found: '.$conventionRoomsTotal);
-			}
+		$result = $this->executePrecheckLocations($conventionSD);
+
+		if ($result['ok']) {
+			$this->Flash->success($result['message']);
+		} else {
+			$this->Flash->error($result['message']);
 		}
-		else
-		{
-			$this->Flash->error('Sorry no location found for this convention.');
-		}
-		
-		
-		
+
 		$this->redirect(['controller' => 'schedulings', 'action' => 'precheck',$convention_season_slug]);
     }
 	
 	public function precheckregistrations($convention_season_slug=null) {
-		
 		$conventionSD = $this->Conventionseasons->find()->where(['Conventionseasons.slug' => $convention_season_slug])->contain(["Conventions"])->first();
-		
-		// to check convention registrations
-		$conventionRegCount = $this->Conventionregistrations->find()->where(['Conventionregistrations.conventionseason_id' => $conventionSD->id])->count();
-		if($conventionRegCount>0)
-		{
-			$this->Schedulings->updateAll(['precheck_registrations' => 1,'total_registrations_found' => $conventionRegCount,'modified' => date('Y-m-d H:i:s')], ["conventionseasons_id" => $conventionSD->id]);
-			
-			$this->Flash->success('Total registrations found: '.$conventionRegCount);
+		$result = $this->executePrecheckRegistrations($conventionSD);
+
+		if ($result['ok']) {
+			$this->Flash->success($result['message']);
+		} else {
+			$this->Flash->error($result['message']);
 		}
-		else
-		{
-			$this->Schedulings->updateAll(['precheck_registrations' => 0,'total_registrations_found' => NULL,'modified' => date('Y-m-d H:i:s')], ["conventionseasons_id" => $conventionSD->id]);
-			
-			$this->Flash->error('Sorry no registration found for this convention.');
-		}
-		
-		
-		
+
 		$this->redirect(['controller' => 'schedulings', 'action' => 'precheck',$convention_season_slug]);
     }
 	
 	public function precheckstudents($convention_season_slug=null) {
-		
 		$conventionSD = $this->Conventionseasons->find()->where(['Conventionseasons.slug' => $convention_season_slug])->contain(["Conventions"])->first();
-		
-		// to check convention registrations
-		$studentsRegCount = $this->Conventionregistrationstudents->find()->where(['Conventionregistrationstudents.convention_id' => $conventionSD->convention_id,'Conventionregistrationstudents.season_id' => $conventionSD->season_id,'Conventionregistrationstudents.season_year' => $conventionSD->season_year])->count();
-		if($studentsRegCount>0)
-		{
-			$this->Schedulings->updateAll(['precheck_students' => 1,'total_students_found' => $studentsRegCount,'modified' => date('Y-m-d H:i:s')], ["conventionseasons_id" => $conventionSD->id]);
-			
-			$this->Flash->success('Total students found: '.$studentsRegCount);
+		$result = $this->executePrecheckStudents($conventionSD);
+
+		if ($result['ok']) {
+			$this->Flash->success($result['message']);
+		} else {
+			$this->Flash->error($result['message']);
 		}
-		else
-		{
-			$this->Schedulings->updateAll(['precheck_students' => 0,'total_students_found' => NULL,'modified' => date('Y-m-d H:i:s')], ["conventionseasons_id" => $conventionSD->id]);
-			
-			$this->Flash->error('Sorry no stuednts found for this convention.');
-		}
-		
+
 		$this->redirect(['controller' => 'schedulings', 'action' => 'precheck',$convention_season_slug]);
     }
+
+	public function runallprechecks($convention_season_slug=null) {
+		$conventionSD = $this->Conventionseasons->find()
+			->where(['Conventionseasons.slug' => $convention_season_slug])
+			->contain(["Conventions"])
+			->first();
+
+		if (!$conventionSD) {
+			$this->Flash->error('Invalid convention season.');
+			return $this->redirect(['controller' => 'schedulings', 'action' => 'precheck',$convention_season_slug]);
+		}
+
+		$results = [
+			'events' => $this->executePrecheckEvents($conventionSD),
+			'locations' => $this->executePrecheckLocations($conventionSD),
+			'registrations' => $this->executePrecheckRegistrations($conventionSD),
+			'students' => $this->executePrecheckStudents($conventionSD),
+		];
+
+		$passed = 0;
+		$failedLabels = [];
+		foreach ($results as $label => $result) {
+			if (!empty($result['ok'])) {
+				$passed++;
+			} else {
+				$failedLabels[] = ucfirst($label);
+			}
+		}
+
+		if ($passed === 4) {
+			$this->Flash->success('All pre-checks passed successfully (4/4).');
+		} else {
+			$this->Flash->error('Pre-check run complete. Passed: '.$passed.'/4. Failed: '.implode(', ', $failedLabels).'.');
+		}
+
+		return $this->redirect(['controller' => 'schedulings', 'action' => 'precheck',$convention_season_slug]);
+	}
+
+	private function executePrecheckEvents($conventionSD) {
+		if (!$conventionSD) {
+			return ['ok' => false, 'message' => 'Invalid convention season.'];
+		}
+
+		$cntrPreCheckEvents = 0;
+		$conventionSEventsList = $this->Conventionseasonevents->find()
+			->where(['Conventionseasonevents.conventionseasons_id' => $conventionSD->id])
+			->contain(['Events'])
+			->all();
+
+		foreach($conventionSEventsList as $convevPreCheck) {
+			if($convevPreCheck->Events['needs_schedule'] == 1) {
+				$cntrPreCheckEvents++;
+			}
+		}
+
+		if($cntrPreCheckEvents > 0) {
+			$this->Schedulings->updateAll(
+				['precheck_events' => 1,'total_events_found' => $cntrPreCheckEvents,'modified' => date('Y-m-d H:i:s')],
+				["conventionseasons_id" => $conventionSD->id]
+			);
+
+			return ['ok' => true, 'message' => 'Total event found: '.$cntrPreCheckEvents, 'count' => $cntrPreCheckEvents];
+		}
+
+		$this->Schedulings->updateAll(
+			['precheck_events' => 0,'total_events_found' => NULL,'modified' => date('Y-m-d H:i:s')],
+			["conventionseasons_id" => $conventionSD->id]
+		);
+
+		return ['ok' => false, 'message' => 'Sorry no event found for this convention season.', 'count' => 0];
+	}
+
+	private function executePrecheckLocations($conventionSD) {
+		if (!$conventionSD) {
+			return ['ok' => false, 'message' => 'Invalid convention season.'];
+		}
+
+		$conventionRoomsTotal = $this->Conventionrooms->find()->where(['Conventionrooms.convention_id' => $conventionSD->convention_id])->count();
+		if($conventionRoomsTotal <= 0) {
+			$this->Schedulings->updateAll(
+				['precheck_locations' => 0,'total_locations_found' => NULL,'modified' => date('Y-m-d H:i:s')],
+				["conventionseasons_id" => $conventionSD->id]
+			);
+			return ['ok' => false, 'message' => 'Sorry no location found for this convention.', 'count' => 0];
+		}
+
+		$cntrConvSeasonTotalEvents = 0;
+		$conventionSEventsList = $this->Conventionseasonevents->find()
+			->where(['Conventionseasonevents.conventionseasons_id' => $conventionSD->id])
+			->contain(['Events'])
+			->all();
+
+		foreach($conventionSEventsList as $convEv) {
+			if($convEv->Events['needs_schedule'] == 1) {
+				$cntrConvSeasonTotalEvents++;
+			}
+		}
+
+		$roomEventsArr = array();
+		$convRoomEvents = $this->Conventionseasonroomevents->find()->where(['Conventionseasonroomevents.conventionseasons_id' => $conventionSD->id])->all();
+		foreach($convRoomEvents as $convroomev) {
+			$roomEventIDSExplode = explode(",",$convroomev->event_ids);
+			foreach($roomEventIDSExplode as $eventidexplode) {
+				if(!in_array($eventidexplode,(array)$roomEventsArr)) {
+					$roomEventsArr[] = $eventidexplode;
+				}
+			}
+		}
+
+		if(count((array)$roomEventsArr) < $cntrConvSeasonTotalEvents) {
+			$missingCount = $cntrConvSeasonTotalEvents - count((array)$roomEventsArr);
+			$this->Schedulings->updateAll(
+				['precheck_locations' => 0,'total_locations_found' => NULL,'modified' => date('Y-m-d H:i:s')],
+				["conventionseasons_id" => $conventionSD->id]
+			);
+
+			return ['ok' => false, 'message' => 'Sorry, '.$missingCount.' event(s) not assigned to any room. Please assign.', 'count' => $conventionRoomsTotal];
+		}
+
+		$this->Schedulings->updateAll(
+			['precheck_locations' => 1,'total_locations_found' => $conventionRoomsTotal,'modified' => date('Y-m-d H:i:s')],
+			["conventionseasons_id" => $conventionSD->id]
+		);
+
+		return ['ok' => true, 'message' => 'Total locations found: '.$conventionRoomsTotal, 'count' => $conventionRoomsTotal];
+	}
+
+	private function executePrecheckRegistrations($conventionSD) {
+		if (!$conventionSD) {
+			return ['ok' => false, 'message' => 'Invalid convention season.'];
+		}
+
+		$conventionRegCount = $this->Conventionregistrations->find()->where(['Conventionregistrations.conventionseason_id' => $conventionSD->id])->count();
+		if($conventionRegCount > 0) {
+			$this->Schedulings->updateAll(
+				['precheck_registrations' => 1,'total_registrations_found' => $conventionRegCount,'modified' => date('Y-m-d H:i:s')],
+				["conventionseasons_id" => $conventionSD->id]
+			);
+
+			return ['ok' => true, 'message' => 'Total registrations found: '.$conventionRegCount, 'count' => $conventionRegCount];
+		}
+
+		$this->Schedulings->updateAll(
+			['precheck_registrations' => 0,'total_registrations_found' => NULL,'modified' => date('Y-m-d H:i:s')],
+			["conventionseasons_id" => $conventionSD->id]
+		);
+
+		return ['ok' => false, 'message' => 'Sorry no registration found for this convention.', 'count' => 0];
+	}
+
+	private function executePrecheckStudents($conventionSD) {
+		if (!$conventionSD) {
+			return ['ok' => false, 'message' => 'Invalid convention season.'];
+		}
+
+		$studentsRegCount = $this->Conventionregistrationstudents->find()->where([
+			'Conventionregistrationstudents.convention_id' => $conventionSD->convention_id,
+			'Conventionregistrationstudents.season_id' => $conventionSD->season_id,
+			'Conventionregistrationstudents.season_year' => $conventionSD->season_year
+		])->count();
+
+		if($studentsRegCount > 0) {
+			$this->Schedulings->updateAll(
+				['precheck_students' => 1,'total_students_found' => $studentsRegCount,'modified' => date('Y-m-d H:i:s')],
+				["conventionseasons_id" => $conventionSD->id]
+			);
+
+			return ['ok' => true, 'message' => 'Total students found: '.$studentsRegCount, 'count' => $studentsRegCount];
+		}
+
+		$this->Schedulings->updateAll(
+			['precheck_students' => 0,'total_students_found' => NULL,'modified' => date('Y-m-d H:i:s')],
+			["conventionseasons_id" => $conventionSD->id]
+		);
+
+		return ['ok' => false, 'message' => 'Sorry no stuednts found for this convention.', 'count' => 0];
+	}
 	
 	public function resetallprecheck($convention_season_slug=null) {
 		
@@ -330,6 +487,10 @@ class SchedulingsController extends AppController {
 		
 		// to fetch scheduling data and send to template
 		$schedulingD = $this->Schedulings->find()->where(['Schedulings.conventionseasons_id' => $conventionSD->id])->first();
+		if (!$schedulingD) {
+			// No scheduling record yet — precheck creates it; redirect there first
+			return $this->redirect(['action' => 'precheck', $convention_season_slug]);
+		}
 		$this->set('schedulingD', $schedulingD);
 		
 		$schedulings = $this->Schedulings->get($schedulingD->id);
@@ -524,6 +685,319 @@ class SchedulingsController extends AppController {
 		}
 		$this->set('arrEventsC4', $arrEventsC4);
 		//$this->prx($arrEventsC4);
+
+		// Read-only day load summary to help balance schedule distribution across convention days.
+		$dayLoadRows = [];
+		$dayLoadMeta = [
+			'total_slots' => 0,
+			'target_slots_per_day' => 0,
+			'day_count' => 0,
+		];
+
+		$scheduleRows = $this->Schedulingtimings->find()
+			->select([
+				'sch_date_time',
+				'day',
+				'start_time',
+				'finish_time',
+				'event_id',
+				'room_id',
+				'user_id',
+				'user_id_opponent',
+				'group_name_user_ids',
+				'group_name_opponent_user_ids',
+			])
+			->where([
+				'Schedulingtimings.conventionseasons_id' => $conventionSD->id,
+				'Schedulingtimings.schedule_category IN' => [1,2,3,4],
+				'Schedulingtimings.sch_date_time IS NOT' => null,
+			])
+			->order(['Schedulingtimings.sch_date_time' => 'ASC'])
+			->enableHydration(false)
+			->toArray();
+
+		$dayMap = [];
+		$allDayEventIds = [];
+		foreach ($scheduleRows as $row) {
+			$dateKey = date('Y-m-d', strtotime($row['sch_date_time']));
+			if (empty($dateKey) || $dateKey === '1970-01-01') {
+				continue;
+			}
+
+			if (!isset($dayMap[$dateKey])) {
+				$dayMap[$dateKey] = [
+					'date' => $dateKey,
+					'day_name' => !empty($row['day']) ? (string)$row['day'] : date('l', strtotime($dateKey)),
+					'sessions' => 0,
+					'participant_slots' => 0,
+					'events' => [],
+					'event_slots' => [],
+					'rooms' => [],
+					'rows' => [],
+				];
+			}
+
+			$dayMap[$dateKey]['sessions']++;
+
+			$eventId = (int)$row['event_id'];
+			if ($eventId > 0) {
+				$dayMap[$dateKey]['events'][$eventId] = true;
+				$allDayEventIds[$eventId] = true;
+			}
+
+			$roomId = (int)$row['room_id'];
+			if ($roomId > 0) {
+				$dayMap[$dateKey]['rooms'][$roomId] = true;
+			}
+
+			$dayMap[$dateKey]['rows'][] = [
+				'room_id' => $roomId,
+				'start_time' => !empty($row['start_time']) ? (string)$row['start_time'] : '',
+				'finish_time' => !empty($row['finish_time']) ? (string)$row['finish_time'] : '',
+			];
+
+			$rowSlots = 0;
+			if ((int)$row['user_id'] > 0) {
+				$rowSlots++;
+			}
+			if ((int)$row['user_id_opponent'] > 0) {
+				$rowSlots++;
+			}
+
+			if (!empty($row['group_name_user_ids'])) {
+				$ids = array_filter(array_map('trim', explode(',', (string)$row['group_name_user_ids'])));
+				$ids = array_filter($ids, function($id) { return ctype_digit($id) && (int)$id > 0; });
+				$rowSlots += count(array_unique($ids));
+			}
+			if (!empty($row['group_name_opponent_user_ids'])) {
+				$ids = array_filter(array_map('trim', explode(',', (string)$row['group_name_opponent_user_ids'])));
+				$ids = array_filter($ids, function($id) { return ctype_digit($id) && (int)$id > 0; });
+				$rowSlots += count(array_unique($ids));
+			}
+
+			if ($rowSlots <= 0) {
+				$rowSlots = 1;
+			}
+
+			$dayMap[$dateKey]['participant_slots'] += $rowSlots;
+			if ($eventId > 0) {
+				if (!isset($dayMap[$dateKey]['event_slots'][$eventId])) {
+					$dayMap[$dateKey]['event_slots'][$eventId] = 0;
+				}
+				$dayMap[$dateKey]['event_slots'][$eventId] += $rowSlots;
+			}
+			$dayLoadMeta['total_slots'] += $rowSlots;
+		}
+
+		ksort($dayMap);
+
+		$eventLabelMap = [];
+		$eventIdsForLabels = array_keys($allDayEventIds);
+		if (!empty($eventIdsForLabels)) {
+			$eventRows = $this->Events->find()
+				->select(['id', 'event_id_number', 'event_name'])
+				->where(['Events.id IN' => $eventIdsForLabels])
+				->enableHydration(false)
+				->toArray();
+
+			foreach ($eventRows as $evr) {
+				$evId = (int)$evr['id'];
+				$evCode = trim((string)$evr['event_id_number']);
+				$evName = trim((string)$evr['event_name']);
+				if ($evCode !== '') {
+					$eventLabelMap[$evId] = $evCode.' - '.$evName;
+				} else {
+					$eventLabelMap[$evId] = $evName;
+				}
+			}
+		}
+
+		$dayLoadMeta['day_count'] = count($dayMap);
+		if ($dayLoadMeta['day_count'] > 0) {
+			$dayLoadMeta['target_slots_per_day'] = round($dayLoadMeta['total_slots'] / $dayLoadMeta['day_count'], 2);
+		}
+
+		$totalRoomCount = (int)$this->Conventionrooms->find()->where(['Conventionrooms.convention_id' => $conventionSD->convention_id])->count();
+		$schedulingConfig = $this->Schedulings->find()->where(['Schedulings.conventionseasons_id' => $conventionSD->id])->first();
+		$dayStartTime = !empty($schedulingConfig->normal_starting_time) ? date('H:i:s', strtotime($schedulingConfig->normal_starting_time)) : '08:30:00';
+		$dayFinishTime = !empty($schedulingConfig->normal_finish_time) ? date('H:i:s', strtotime($schedulingConfig->normal_finish_time)) : '17:30:00';
+
+		if (strtotime($dayFinishTime) <= strtotime($dayStartTime)) {
+			$dayStartTime = '08:30:00';
+			$dayFinishTime = '17:30:00';
+		}
+
+		foreach ($dayMap as $dayData) {
+			$slotPct = 0;
+			$status = 'N/A';
+			$statusClass = 'default';
+			$overloadedEvents = [];
+			$overloadedEventIds = [];
+			$availableWindows = [];
+
+			if ($dayLoadMeta['target_slots_per_day'] > 0) {
+				$slotPct = round(($dayData['participant_slots'] / $dayLoadMeta['target_slots_per_day']) * 100, 1);
+				if ($slotPct > 115) {
+					$status = 'Overloaded';
+					$statusClass = 'danger';
+				} elseif ($slotPct < 85) {
+					$status = 'Underloaded';
+					$statusClass = 'warning';
+				} else {
+					$status = 'Balanced';
+					$statusClass = 'success';
+				}
+			}
+
+			if ($statusClass === 'danger' && !empty($dayData['event_slots'])) {
+				arsort($dayData['event_slots']);
+				$topEventSlots = array_slice($dayData['event_slots'], 0, 8, true);
+				foreach ($topEventSlots as $topEventId => $topSlots) {
+					$label = isset($eventLabelMap[(int)$topEventId]) ? $eventLabelMap[(int)$topEventId] : ('Event ID '.$topEventId);
+					$overloadedEventIds[] = (int)$topEventId;
+					$overloadedEvents[] = [
+						'event_id' => (int)$topEventId,
+						'label' => $label,
+						'slots' => (int)$topSlots,
+					];
+				}
+			}
+
+			if ($totalRoomCount > 0) {
+				$slotCandidates = [];
+				$windowMinutes = 30;
+
+				// Build blocked time ranges for this day (lunch + sports day)
+				$blockedRanges = [];
+
+				// Lunch block (applies every day)
+				if (!empty($schedulingConfig->lunch_time_start) && !empty($schedulingConfig->lunch_time_end)) {
+					$blockedRanges[] = [
+						'start' => strtotime($dayData['date'].' '.date('H:i:s', strtotime($schedulingConfig->lunch_time_start))),
+						'end'   => strtotime($dayData['date'].' '.date('H:i:s', strtotime($schedulingConfig->lunch_time_end))),
+					];
+				}
+
+				// Sports day block (only on the sports day)
+				if (!empty($schedulingConfig->sports_day_yes_no) && $schedulingConfig->sports_day_yes_no == 1) {
+					if (!empty($schedulingConfig->sports_day) && $dayData['day_name'] == $schedulingConfig->sports_day) {
+						$blockedRanges[] = [
+							'start' => strtotime($dayData['date'].' '.date('H:i:s', strtotime($schedulingConfig->sports_day_starting_time))),
+							'end'   => strtotime($dayData['date'].' '.date('H:i:s', strtotime($schedulingConfig->sports_day_finish_time))),
+						];
+					}
+				}
+
+				// Judging breaks (morning + afternoon)
+				if (!empty($schedulingConfig->judging_breaks_yes_no) && $schedulingConfig->judging_breaks_yes_no == 1) {
+					if (!empty($schedulingConfig->judging_breaks_morning_break_starting_time) && !empty($schedulingConfig->judging_breaks_morning_break_finish_time)) {
+						$blockedRanges[] = [
+							'start' => strtotime($dayData['date'].' '.date('H:i:s', strtotime($schedulingConfig->judging_breaks_morning_break_starting_time))),
+							'end'   => strtotime($dayData['date'].' '.date('H:i:s', strtotime($schedulingConfig->judging_breaks_morning_break_finish_time))),
+						];
+					}
+					if (!empty($schedulingConfig->judging_breaks_afternoon_break_start_time) && !empty($schedulingConfig->judging_breaks_afternoon_break_finish_time)) {
+						$blockedRanges[] = [
+							'start' => strtotime($dayData['date'].' '.date('H:i:s', strtotime($schedulingConfig->judging_breaks_afternoon_break_start_time))),
+							'end'   => strtotime($dayData['date'].' '.date('H:i:s', strtotime($schedulingConfig->judging_breaks_afternoon_break_finish_time))),
+						];
+					}
+				}
+
+				// On sports day with events after sport, override the day window
+				$effectiveDayStart = strtotime($dayData['date'].' '.$dayStartTime);
+				$effectiveDayEnd = strtotime($dayData['date'].' '.$dayFinishTime);
+				if (!empty($schedulingConfig->sports_day_yes_no) && $schedulingConfig->sports_day_yes_no == 1
+					&& !empty($schedulingConfig->sports_day) && $dayData['day_name'] == $schedulingConfig->sports_day
+					&& !empty($schedulingConfig->sports_day_having_events_after_sport_yes_no) && $schedulingConfig->sports_day_having_events_after_sport_yes_no == 1) {
+					$effectiveDayStart = strtotime($dayData['date'].' '.date('H:i:s', strtotime($schedulingConfig->sports_day_other_starting_time)));
+					$effectiveDayEnd = strtotime($dayData['date'].' '.date('H:i:s', strtotime($schedulingConfig->sports_day_other_finish_time)));
+				}
+
+				$cursor = $effectiveDayStart;
+
+				while ($cursor < $effectiveDayEnd) {
+					$slotStartTs = $cursor;
+					$slotEndTs = strtotime('+'.$windowMinutes.' minutes', $slotStartTs);
+					if ($slotEndTs > $effectiveDayEnd) {
+						break;
+					}
+
+					// Skip slots that overlap any blocked range
+					$slotBlocked = false;
+					foreach ($blockedRanges as $br) {
+						if ($slotStartTs < $br['end'] && $slotEndTs > $br['start']) {
+							$slotBlocked = true;
+							break;
+						}
+					}
+					if ($slotBlocked) {
+						$cursor = strtotime('+'.$windowMinutes.' minutes', $cursor);
+						continue;
+					}
+
+					$occupiedRooms = [];
+					foreach ((array)$dayData['rows'] as $rinfo) {
+						if ((int)$rinfo['room_id'] <= 0 || empty($rinfo['start_time']) || empty($rinfo['finish_time'])) {
+							continue;
+						}
+						$rowStartTs = strtotime($dayData['date'].' '.$rinfo['start_time']);
+						$rowEndTs = strtotime($dayData['date'].' '.$rinfo['finish_time']);
+						if ($rowEndTs <= $rowStartTs) {
+							continue;
+						}
+						if ($rowStartTs < $slotEndTs && $rowEndTs > $slotStartTs) {
+							$occupiedRooms[(int)$rinfo['room_id']] = true;
+						}
+					}
+
+					$availableRooms = $totalRoomCount - count($occupiedRooms);
+					if ($availableRooms > 0) {
+						$slotCandidates[] = [
+							'start_ts' => $slotStartTs,
+							'end_ts' => $slotEndTs,
+							'available_rooms' => $availableRooms,
+						];
+					}
+
+					$cursor = strtotime('+'.$windowMinutes.' minutes', $cursor);
+				}
+
+				usort($slotCandidates, function($a, $b) {
+					if ($a['available_rooms'] === $b['available_rooms']) {
+						return $a['start_ts'] <=> $b['start_ts'];
+					}
+					return $b['available_rooms'] <=> $a['available_rooms'];
+				});
+
+				$slotCandidates = array_slice($slotCandidates, 0, 5);
+				foreach ($slotCandidates as $cand) {
+					$availableWindows[] = [
+						'label' => date('H:i', $cand['start_ts']).' - '.date('H:i', $cand['end_ts']),
+						'start_time' => date('H:i', $cand['start_ts']),
+						'rooms' => (int)$cand['available_rooms'],
+					];
+				}
+			}
+
+			$dayLoadRows[] = [
+				'date' => $dayData['date'],
+				'day_name' => $dayData['day_name'],
+				'sessions' => (int)$dayData['sessions'],
+				'participant_slots' => (int)$dayData['participant_slots'],
+				'unique_events' => count($dayData['events']),
+				'unique_rooms' => count($dayData['rooms']),
+				'load_pct' => $slotPct,
+				'status' => $status,
+				'status_class' => $statusClass,
+				'overloaded_events' => $overloadedEvents,
+				'overloaded_event_ids' => $overloadedEventIds,
+				'available_windows' => $availableWindows,
+			];
+		}
+
+		$this->set('dayLoadRows', $dayLoadRows);
+		$this->set('dayLoadMeta', $dayLoadMeta);
 		
 		
     }
@@ -603,20 +1077,69 @@ class SchedulingsController extends AppController {
 		$schedulingD = $this->Schedulings->find()->where(['Schedulings.conventionseasons_id' => $conventionSD->id])->first();
 		$this->set('schedulingD', $schedulingD);
 		
-		// Nathan provided these 3 events for Overwrite
-		/* Spelling U16 - 003--3   Spelling OPEN - 053--11   Bible Memory OPEN - 1056--343 */
-		$eventIDArr = array(343,11,3);
+		// Build dynamic overwrite event list from all events currently in scheduling categories 1-4
+		$eventIDArr = $this->Schedulingtimings->find()
+			->select(['event_id'])
+			->where([
+				'Schedulingtimings.conventionseasons_id' => $conventionSD->id,
+				'Schedulingtimings.schedule_category IN' => [1,2,3,4],
+				'Schedulingtimings.event_id IS NOT' => null,
+			])
+			->group(['Schedulingtimings.event_id'])
+			->order(['Schedulingtimings.event_id' => 'ASC'])
+			->enableHydration(false)
+			->toArray();
+
+		$eventIDArr = array_map(function($row){
+			return (int)$row['event_id'];
+		}, $eventIDArr);
+
+		// Fallback: if no scheduled rows exist yet, include all schedulable season events
+		if (empty($eventIDArr)) {
+			$eventIDArr = $this->Conventionseasonevents->find()
+				->select(['Conventionseasonevents.event_id'])
+				->where(['Conventionseasonevents.conventionseasons_id' => $conventionSD->id])
+				->group(['Conventionseasonevents.event_id'])
+				->enableHydration(false)
+				->toArray();
+
+			$eventIDArr = array_values(array_unique(array_filter(array_map(function($row){
+				return !empty($row['event_id']) ? (int)$row['event_id'] : 0;
+			}, $eventIDArr))));
+		}
 		
 		// Now check if these events are chosen for this convention season
 		
 		$finalEventArr = array();
+		$finalEventGrouped = array();
 		$eventStats = array();
+		$eventSortMeta = array();
+		$eventIdByCode = array();
+		$rules = $this->getEventBucketRules();
+
+		$typeGroupOrder = isset($rules['group_order']) && is_array($rules['group_order']) ? $rules['group_order'] : [];
+		if (empty($typeGroupOrder)) {
+			$typeGroupOrder = ['Academics', 'Music Combined', 'Music Instrumental', 'Music Vocal', 'Platform', 'Scripture', 'Sports'];
+		}
+		foreach ($typeGroupOrder as $typeGroupLabel) {
+			$finalEventGrouped[$typeGroupLabel] = [
+				'label' => $typeGroupLabel,
+				'events' => [],
+			];
+		}
+
+		$eventCategoryNameById = $this->getEventCategoryNameMap();
 		
 		foreach($eventIDArr as $event_id)
 		{
 			$checkEventCS = $this->Conventionseasonevents->find()->where(['Conventionseasonevents.conventionseasons_id' => $conventionSD->id,'Conventionseasonevents.event_id' => $event_id])->contain(["Events"])->first();
 			if($checkEventCS)
 			{
+				$eventName = (string)$checkEventCS->Events['event_name'];
+				$eventCode = (string)$checkEventCS->Events['event_id_number'];
+				$eventCategoryId = (int)$checkEventCS->Events['event_grp_name'];
+				$eventCategoryName = isset($eventCategoryNameById[$eventCategoryId]) ? $eventCategoryNameById[$eventCategoryId] : '';
+
 				// Now we need to show number of students in each event to show in dropdown
 				$countStudentsEvent = $this->Crstudentevents
 										->find()
@@ -634,17 +1157,76 @@ class SchedulingsController extends AppController {
 										])
 										->count();
 				
-				$finalEventArr[$event_id] = $checkEventCS->Events['event_name'].' ('.$checkEventCS->Events['event_id_number'].')'.' ('.$countStudentsEvent.')';
+				$eventLabel = $eventName.' ('.$eventCode.')'.' ('.$countStudentsEvent.')';
+				$finalEventArr[$event_id] = $eventLabel;
+				$eventSortMeta[(int)$event_id] = [
+					'code' => $eventCode,
+					'name' => $eventName,
+				];
+				$eventTypeGroup = $this->classifyEventTypeGroup($eventName, $eventCode, $eventCategoryName, $rules);
+				if (!isset($finalEventGrouped[$eventTypeGroup])) {
+					$finalEventGrouped[$eventTypeGroup] = ['label' => $eventTypeGroup, 'events' => []];
+				}
+				$finalEventGrouped[$eventTypeGroup]['events'][$event_id] = $eventLabel;
+
+				$eventCodeKey = strtoupper(trim($eventCode));
+				if ($eventCodeKey !== '' && !isset($eventIdByCode[$eventCodeKey])) {
+					$eventIdByCode[$eventCodeKey] = (int)$event_id;
+				}
+				if ($eventCodeKey !== '' && ctype_digit($eventCodeKey)) {
+					$eventCodeNumericKey = (string)((int)$eventCodeKey);
+					if ($eventCodeNumericKey !== '' && !isset($eventIdByCode[$eventCodeNumericKey])) {
+						$eventIdByCode[$eventCodeNumericKey] = (int)$event_id;
+					}
+				}
 				$eventStats[$event_id] = [
-					'label' => $checkEventCS->Events['event_name'].' ('.$checkEventCS->Events['event_id_number'].')',
-					'event_id_number' => $checkEventCS->Events['event_id_number'],
+					'label' => $eventName.' ('.$eventCode.')',
+					'event_id_number' => $eventCode,
 					'students' => $countStudentsEvent,
 					'scheduled_records' => $countScheduledRecords,
 					'duration_minutes' => ((int)$checkEventCS->Events['setup_time']) + ((int)$checkEventCS->Events['round_time']) + ((int)$checkEventCS->Events['judging_time']),
 				];
 			}
 		}
+		foreach ($finalEventGrouped as $grpKey => $grpData) {
+			if (!empty($grpData['events']) && is_array($grpData['events'])) {
+				uksort($grpData['events'], function($a, $b) use ($eventSortMeta) {
+					$codeA = isset($eventSortMeta[(int)$a]['code']) ? (string)$eventSortMeta[(int)$a]['code'] : '';
+					$codeB = isset($eventSortMeta[(int)$b]['code']) ? (string)$eventSortMeta[(int)$b]['code'] : '';
+					$codeCmp = strnatcasecmp($codeA, $codeB);
+					if ($codeCmp !== 0) {
+						return $codeCmp;
+					}
+
+					$nameA = isset($eventSortMeta[(int)$a]['name']) ? (string)$eventSortMeta[(int)$a]['name'] : '';
+					$nameB = isset($eventSortMeta[(int)$b]['name']) ? (string)$eventSortMeta[(int)$b]['name'] : '';
+					$nameCmp = strnatcasecmp($nameA, $nameB);
+					if ($nameCmp !== 0) {
+						return $nameCmp;
+					}
+
+					if ((int)$a === (int)$b) {
+						return 0;
+					}
+					return ((int)$a < (int)$b) ? -1 : 1;
+				});
+				$finalEventGrouped[$grpKey]['events'] = $grpData['events'];
+			}
+		}
+		$orderedEventGroups = [];
+		foreach ($typeGroupOrder as $groupLabel) {
+			if (isset($finalEventGrouped[$groupLabel])) {
+				$orderedEventGroups[$groupLabel] = $finalEventGrouped[$groupLabel];
+			}
+		}
+		foreach ($finalEventGrouped as $groupLabel => $groupData) {
+			if (!isset($orderedEventGroups[$groupLabel])) {
+				$orderedEventGroups[$groupLabel] = $groupData;
+			}
+		}
+		$finalEventGrouped = $orderedEventGroups;
 		$this->set('finalEventArr', $finalEventArr);
+		$this->set('finalEventGrouped', $finalEventGrouped);
 		$this->set('eventStats', $eventStats);
 
 		// Build list of distinct convention dates from existing scheduled timings
@@ -662,6 +1244,91 @@ class SchedulingsController extends AppController {
 			}
 		}
 		$this->set('conventionDays', $conventionDays);
+
+		// Optional automation prefill from Schedule Category dashboard links.
+		$prefillRows = [];
+		$prefillDate = trim((string)$this->request->getQuery('prefill_date'));
+		$prefillTimeRaw = trim((string)$this->request->getQuery('prefill_time'));
+		$prefillTime = '';
+		if ($prefillTimeRaw !== '') {
+			$prefillTime = date('H:i', strtotime($prefillTimeRaw));
+			if ($prefillTime === '00:00' && stripos($prefillTimeRaw, '00:00') === false) {
+				$prefillTime = '';
+			}
+		}
+
+		$prefillEventIds = [];
+		$prefillEventIdsCsv = trim((string)$this->request->getQuery('prefill_event_ids'));
+		$prefillSingleEventId = (int)$this->request->getQuery('prefill_event_id');
+		if ($prefillEventIdsCsv !== '') {
+			$prefillEventIds = array_values(array_unique(array_filter(array_map('intval', explode(',', $prefillEventIdsCsv)))));
+		}
+		if ($prefillSingleEventId > 0) {
+			$prefillEventIds[] = $prefillSingleEventId;
+			$prefillEventIds = array_values(array_unique($prefillEventIds));
+		}
+
+		$presetMap = [
+			'conservative' => ['label' => 'Conservative', 'max_students' => 4, 'time_gap_mins' => 2],
+			'balanced' => ['label' => 'Balanced', 'max_students' => 6, 'time_gap_mins' => 1],
+			'aggressive' => ['label' => 'Aggressive', 'max_students' => 8, 'time_gap_mins' => 1],
+		];
+		$prefillPreset = strtolower(trim((string)$this->request->getQuery('prefill_preset', 'balanced')));
+		if (!isset($presetMap[$prefillPreset])) {
+			$prefillPreset = 'balanced';
+		}
+
+		$defaultPrefillMax = (int)$presetMap[$prefillPreset]['max_students'];
+		$defaultPrefillGap = (int)$presetMap[$prefillPreset]['time_gap_mins'];
+		$prefillMaxQuery = $this->request->getQuery('prefill_max');
+		$prefillGapQuery = $this->request->getQuery('prefill_gap');
+		if ($prefillMaxQuery !== null && $prefillMaxQuery !== '') {
+			$defaultPrefillMax = max(1, (int)$prefillMaxQuery);
+		}
+		if ($prefillGapQuery !== null && $prefillGapQuery !== '') {
+			$defaultPrefillGap = max(1, (int)$prefillGapQuery);
+		}
+
+		if (!empty($prefillEventIds) && !empty($prefillDate)) {
+			// Load room-event students_per_block mappings for this convention season
+			$roomEventSpb = [];
+			$convRoomEventsAll = $this->Conventionseasonroomevents->find()
+				->where(['Conventionseasonroomevents.conventionseasons_id' => $conventionSD->id])
+				->all();
+			foreach ($convRoomEventsAll as $cre) {
+				if (!empty($cre->students_per_block)) {
+					$spbMap = (array)json_decode($cre->students_per_block, true);
+					foreach ($spbMap as $eid => $val) {
+						if ((int)$val > 0) {
+							$roomEventSpb[(int)$eid] = (int)$val;
+						}
+					}
+				}
+			}
+			
+			foreach ($prefillEventIds as $prefillEventId) {
+				if (!isset($finalEventArr[$prefillEventId])) {
+					continue;
+				}
+				// Use room-event configured block size if available, otherwise preset default
+				$eventMax = isset($roomEventSpb[$prefillEventId]) ? $roomEventSpb[$prefillEventId] : $defaultPrefillMax;
+				$prefillRows[] = [
+					'event_id' => (int)$prefillEventId,
+					'event_code' => isset($eventStats[$prefillEventId]['event_id_number']) ? (string)$eventStats[$prefillEventId]['event_id_number'] : '',
+					'date' => $prefillDate,
+					'time' => $prefillTime,
+					'max_students' => $eventMax,
+					'time_gap_mins' => $defaultPrefillGap,
+				];
+			}
+		}
+
+		$this->set('overwritePrefillRows', $prefillRows);
+		$this->set('overwriteAutoMode', !empty($prefillRows) && (int)$this->request->getQuery('auto') === 1);
+		$this->set('overwritePresetMap', $presetMap);
+		$this->set('overwriteSelectedPreset', $prefillPreset);
+		$this->set('overwriteDefaultMax', $defaultPrefillMax);
+		$this->set('overwriteDefaultGap', $defaultPrefillGap);
 
 		if ($this->request->is(['post', 'put'])) {
 			$postData = (array)$this->request->getData();
@@ -690,12 +1357,16 @@ class SchedulingsController extends AppController {
 				$seenRowEvents = [];
 				foreach ($schedulingInput['sched_rows'] as $row) {
 					$rowEventId = isset($row['event_id']) ? (int)$row['event_id'] : 0;
+					$rowEventCode = isset($row['event_code']) ? strtoupper(trim($row['event_code'])) : '';
+					if ($rowEventId <= 0 && $rowEventCode !== '' && isset($eventIdByCode[$rowEventCode])) {
+						$rowEventId = (int)$eventIdByCode[$rowEventCode];
+					}
 					$rowDate = isset($row['date']) ? trim($row['date']) : '';
 					$rowTime = isset($row['time']) ? trim($row['time']) : '';
 					$rowMaxStudents = isset($row['max_students']) ? (int)$row['max_students'] : 0;
 					$rowGapMins = isset($row['time_gap_mins']) ? (int)$row['time_gap_mins'] : 0;
 
-					$rowHasAny = ($rowEventId > 0 || $rowDate !== '' || $rowTime !== '');
+					$rowHasAny = ($rowEventId > 0 || $rowEventCode !== '' || $rowDate !== '' || $rowTime !== '');
 					if (!$rowHasAny) {
 						continue;
 					}
@@ -1606,6 +2277,7 @@ class SchedulingsController extends AppController {
 			echo date("H:i:s", strtotime($schedulingtimingsD->finish_time));
 			
 			$flagUpdate = 1;
+			$msgEdit = 'Unable to update time due to a scheduling conflict.';
 			
 			// 1. If save start and finish time not entered
 			if($new_start_time == date("H:i:s", strtotime($schedulingtimingsD->start_time))  && $new_finish_time == date("H:i:s", strtotime($schedulingtimingsD->finish_time)))
@@ -1873,6 +2545,7 @@ class SchedulingsController extends AppController {
 		
 		// Get count of scheduled events per room for this convention season
 		$roomScheduleCounts = [];
+		$roomScheduleDays = [];
 		foreach($convRooms as $room) {
 			$count = $this->Schedulingtimings->find()
 				->where(['Schedulingtimings.room_id' => $room->id, 'Schedulingtimings.conventionseasons_id' => $conventionSD->id])

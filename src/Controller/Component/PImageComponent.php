@@ -72,6 +72,10 @@ class PImageComponent extends Component
 			}
 			else
 			{
+				$applyWidth = 0;
+				$applyHeight = 0;
+				$startX = 0;
+				$startY = 0;
 				switch ($cType){
 					default:
 					case 'resize':
@@ -163,6 +167,7 @@ class PImageComponent extends Component
 
 				if($bgcolor):
 				//set up background color for new image
+					$red = 0; $green = 0; $blue = 0;
 					sscanf($bgcolor, "%2x%2x%2x", $red, $green, $blue);
 					$newColor = ImageColorAllocate($newImage, $red, $green, $blue);
 					imagefill($newImage,0,0,$newColor);
@@ -354,13 +359,13 @@ function imageUpload11($fileFieldId, $imgPrefix="", $destPath, $widthRS)
 							print "The file you uploaded had the following extension: $pext</p>\n";
 							return;
 						}*/
-						$temp=$temp;
+						$temp = '';
 						$temp.=$imgPrefix;
 						//$temp.=".$pext";
 						$final_filename = $temp;
 						$nameToReturn = $final_filename;
 						$newfile = $destPath . $final_filename;
-						$newfile_small=LEAGUE_UPLOAD_SMALL_IMG_PATH.$final_filename;
+						$newfile_small=$destPath.$final_filename;
 
 					 #------------------------------------ ----  Uplaode Image  Full size  ---- --------------------------#
 
@@ -434,9 +439,9 @@ function imageUpload11($fileFieldId, $imgPrefix="", $destPath, $widthRS)
 //                                                $trnprt_indx = imagecolorallocate($tmpee, 0, 0, 0);
 //                                                imagecolortransparent($tmpee, $trnprt_indx);
 
-						imagejpeg($tmpee,getimagesize($uploadedfile),100);
-						imagedestroy($src);
-						imagedestroy($tmpee);
+//imagejpeg($tmpee,getimagesize($uploadedfile),100);
+					//imagedestroy($src);
+					//imagedestroy($tmpee);
 
 
 					return $nameToReturn;

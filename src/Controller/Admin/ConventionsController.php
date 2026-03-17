@@ -1177,15 +1177,17 @@ class ConventionsController extends AppController {
 		$convRooms 		= $this->Conventionrooms->find()->where($condConvRooms)->order(['Conventionrooms.room_name' => 'ASC'])->combine('id', 'room_name')->toArray();
 		$this->set('convRooms', $convRooms);
 		
-		// to get events list for this season
+		// to get events list for this season (with registered student counts)
 		$convSeasEventDD = array();
+		$crstudenteventsTable = \Cake\ORM\TableRegistry::get('Crstudentevents');
 		$convSeasonEvents 		= $this->Conventionseasonevents->find()->where(['Conventionseasonevents.conventionseasons_id' => $conventionSD->id])->contain(["Events"])->order(['Conventionseasonevents.id' => 'ASC'])->all();
 		foreach($convSeasonEvents as $convSeasonEvent)
 		{
 			// to check that this event required scheduling
 			if($convSeasonEvent->Events['needs_schedule'] == 1)
 			{
-				$convSeasEventDD[$convSeasonEvent->event_id] = $convSeasonEvent->Events['event_name']." (".$convSeasonEvent->Events['event_id_number'].")";
+				$regCount = $crstudenteventsTable->find()->where(['Crstudentevents.conventionseason_id' => $conventionSD->id, 'Crstudentevents.event_id' => $convSeasonEvent->event_id])->count();
+				$convSeasEventDD[$convSeasonEvent->event_id] = $convSeasonEvent->Events['event_name']." (".$convSeasonEvent->Events['event_id_number'].") (".$regCount." students)";
 			}
 		}
 		$this->set('convSeasEventDD', $convSeasEventDD);
@@ -1202,6 +1204,14 @@ class ConventionsController extends AppController {
 			{
 				$event_ids_implode = implode(",",$event_ids);
 				
+				// Build students_per_block JSON from POST data
+				$spbPost = isset($this->request->data['students_per_block']) ? (array)$this->request->data['students_per_block'] : [];
+				$spbMap = [];
+				foreach ($event_ids as $eid) {
+					$spbMap[$eid] = isset($spbPost[$eid]) && (int)$spbPost[$eid] > 0 ? (int)$spbPost[$eid] : null;
+				}
+				$spbJson = json_encode($spbMap);
+				
 				$conventionseasonroomevents = $this->Conventionseasonroomevents->newEntity();
 				$data = $this->Conventionseasonroomevents->patchEntity($conventionseasonroomevents, $this->request->data);
 				
@@ -1215,6 +1225,7 @@ class ConventionsController extends AppController {
 				$data->season_year 				= $conventionSD->season_year;
 				$data->room_id 					= $room_id;
 				$data->event_ids 				= $event_ids_implode;
+				$data->students_per_block 		= $spbJson;
 				$data->created 					= date('Y-m-d');
 				$data->modified 				= date('Y-m-d');
 				$this->Conventionseasonroomevents->save($data);
@@ -1305,10 +1316,26 @@ class ConventionsController extends AppController {
 			
 			
 			
+		// Load existing students_per_block JSON
+		$existingSpb = [];
+		if (!empty($conventionSRoomD->students_per_block)) {
+			$existingSpb = (array)json_decode($conventionSRoomD->students_per_block, true);
+		}
+		$this->set('existingSpb', $existingSpb);
+		
 		if ($this->request->is('post')) {
 		
 			//$this->prx($this->request->data);
-			$new_event_ids 	= $this->request->data['Conventionseasonroomevents']['event_ids'];
+			
+			// Handle students_per_block update for existing events
+			$spbPost = isset($this->request->data['students_per_block']) ? (array)$this->request->data['students_per_block'] : [];
+			$updatedSpb = $existingSpb;
+			foreach ($spbPost as $eid => $val) {
+				$updatedSpb[$eid] = (int)$val > 0 ? (int)$val : null;
+			}
+			
+			$new_event_ids 	= isset($this->request->data['Conventionseasonroomevents']['event_ids']) ? (array)$this->request->data['Conventionseasonroomevents']['event_ids'] : [];
+			$new_event_ids = array_filter($new_event_ids);
 			
 			if(count($new_event_ids))
 			{
@@ -1327,10 +1354,18 @@ class ConventionsController extends AppController {
 				
 				$merged_events_implode = implode(",",$merged_events);
 				
+				// Add new events to spb map (with their posted values or null)
+				foreach ($new_event_ids as $neid) {
+					if (!isset($updatedSpb[$neid])) {
+						$updatedSpb[$neid] = isset($spbPost[$neid]) && (int)$spbPost[$neid] > 0 ? (int)$spbPost[$neid] : null;
+					}
+				}
+				
 				// To update room Events
 				$this->Conventionseasonroomevents->updateAll(
 				[
 					'event_ids' => $merged_events_implode,
+					'students_per_block' => json_encode($updatedSpb),
 					'modified' => date("Y-m-d H:i:s"),
 				], 
 				[
@@ -1341,7 +1376,17 @@ class ConventionsController extends AppController {
 			}
 			else
 			{
-				$this->Flash->error('Please choose event.');
+				// No new events, but still save students_per_block updates
+				$this->Conventionseasonroomevents->updateAll(
+				[
+					'students_per_block' => json_encode($updatedSpb),
+					'modified' => date("Y-m-d H:i:s"),
+				], 
+				[
+					'id' => $conventionSRoomD->id
+				]);
+				
+				$this->Flash->success('Students per block updated successfully.');
 			}
 			
 			$this->redirect(['controller' => 'conventions', 'action' => 'editroomevents',$slug,$slug_convention_season]);
@@ -1394,10 +1439,19 @@ class ConventionsController extends AppController {
 						$roomEventIDS = NULL;
 					}
 					
+					// Also remove from students_per_block JSON
+					$spbMap = [];
+					if (!empty($conventionSRoomD->students_per_block)) {
+						$spbMap = (array)json_decode($conventionSRoomD->students_per_block, true);
+					}
+					unset($spbMap[$event_id]);
+					$spbJson = !empty($spbMap) ? json_encode($spbMap) : null;
+					
 					// To update room Events
 					$this->Conventionseasonroomevents->updateAll(
 					[
 						'event_ids' => $roomEventIDS,
+						'students_per_block' => $spbJson,
 						'modified' => date("Y-m-d H:i:s"),
 					], 
 					[

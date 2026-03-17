@@ -32,7 +32,12 @@ $this->Events = TableRegistry::get('Events');
 			
 			
 			<div class="container">
-				<h2>Scheduling Pre-check</h2>         
+				<h2>Scheduling Pre-check</h2>
+				<p>
+					<?php
+					echo $this->Html->link('Run All Pre-checks', ['controller'=>'schedulings', 'action' => 'runallprechecks',$convention_season_slug], ['class'=>'btn btn-primary canlcel_le', 'confirm' => 'Are you sure you want to run all pre-checks now ?']);
+					?>
+				</p>
 				<table class="table table-bordered">
 					<tr>
 						<th>#</th>
@@ -60,16 +65,7 @@ $this->Events = TableRegistry::get('Events');
 							?>
 						</th>
 						<td>
-							<?php
-							if($schedulingD->precheck_events>0)
-							{
-								echo $this->Html->link('Re-Check Events', ['controller'=>'schedulings', 'action' => 'precheckevents',$convention_season_slug], ['class'=>'btn btn-primary canlcel_le', 'confirm' => 'Are you sure you want to re-check events ?']);
-							}
-							else
-							{
-								echo $this->Html->link('Check Events', ['controller'=>'schedulings', 'action' => 'precheckevents',$convention_season_slug], ['class'=>'btn btn-default canlcel_le', 'confirm' => 'Are you sure you want to check events ?']);
-							}
-							?>
+							Run from "Run All Pre-checks"
 						</th>
 					</tr>
 					
@@ -92,16 +88,7 @@ $this->Events = TableRegistry::get('Events');
 							?>
 						</td>
 						<td>
-							<?php
-							if($schedulingD->precheck_locations>0)
-							{
-								echo $this->Html->link('Re-Check Locations', ['controller'=>'schedulings', 'action' => 'prechecklocations',$convention_season_slug], ['class'=>'btn btn-primary canlcel_le', 'confirm' => 'Are you sure you want to re-check locations ?']);
-							}
-							else
-							{
-								echo $this->Html->link('Check Locations', ['controller'=>'schedulings', 'action' => 'prechecklocations',$convention_season_slug], ['class'=>'btn btn-default canlcel_le', 'confirm' => 'Are you sure you want to check locations ?']);
-							}
-							?>
+							Run from "Run All Pre-checks"
 						</td>
 					</tr>
 					
@@ -124,16 +111,7 @@ $this->Events = TableRegistry::get('Events');
 							?>
 						</td>
 						<td>
-							<?php
-							if($schedulingD->precheck_registrations>0)
-							{
-								echo $this->Html->link('Re-Check Registrations', ['controller'=>'schedulings', 'action' => 'precheckregistrations',$convention_season_slug], ['class'=>'btn btn-primary canlcel_le', 'confirm' => 'Are you sure you want to re-check registrations ?']);
-							}
-							else
-							{
-								echo $this->Html->link('Check Registrations', ['controller'=>'schedulings', 'action' => 'precheckregistrations',$convention_season_slug], ['class'=>'btn btn-default canlcel_le', 'confirm' => 'Are you sure you want to check registrations ?']);
-							}
-							?>
+							Run from "Run All Pre-checks"
 						</td>
 					</tr>
 					
@@ -157,16 +135,7 @@ $this->Events = TableRegistry::get('Events');
 							?>
 						</td>
 						<td>
-							<?php
-							if($schedulingD->precheck_students>0)
-							{
-								echo $this->Html->link('Re-Check Students', ['controller'=>'schedulings', 'action' => 'precheckstudents',$convention_season_slug], ['class'=>'btn btn-primary canlcel_le', 'confirm' => 'Are you sure you want to re-check students ?']);
-							}
-							else
-							{
-								echo $this->Html->link('Check Students', ['controller'=>'schedulings', 'action' => 'precheckstudents',$convention_season_slug], ['class'=>'btn btn-default canlcel_le', 'confirm' => 'Are you sure you want to check students ?']);
-							}
-							?>
+							Run from "Run All Pre-checks"
 						</td>
 					</tr>
 					
@@ -185,7 +154,7 @@ $this->Events = TableRegistry::get('Events');
 						echo $this->Html->link('<< Back To Seasons', ['controller'=>'conventions', 'action' => 'seasons',$convention_slug], ['class'=>'btn btn-default canlcel_le']);
 						
 						echo $this->Html->link('Reset All Pre-check', ['controller'=>'schedulings', 'action' => 'resetallprecheck',$convention_season_slug], ['class'=>'btn btn-warning canlcel_le', 'confirm' => 'Are you sure you want to reset all pre-checks ?']);
-						
+
 						echo $this->Html->link('Scheduling Wizard', ['controller'=>'schedulings', 'action' => 'wizard',$convention_season_slug], ['class'=>'btn btn-success canlcel_le','title'=>'Scheduling Wizard']);
 						
 						echo $this->Html->link('View/Start Scheduling', ['controller'=>'schedulings', 'action' => 'schedulecategory',$convention_season_slug], ['class'=>'btn btn-success canlcel_le','title'=>'View/Start Scheduling']);

@@ -2,6 +2,9 @@
 
 namespace App\Model\Table;
 
+use ArrayObject;
+use Cake\Datasource\EntityInterface;
+use Cake\Event\Event;
 use Cake\ORM\Table;
 use Cake\Validation\Validator;
 
@@ -55,6 +58,17 @@ class SchedulingtimingsTable extends Table {
             'foreignKey' => 'user_id_opponent',
             'propertyName' => 'Opponentuser'
         ]);
+    }
+
+    public function beforeSave(Event $event, EntityInterface $entity, ArrayObject $options)
+    {
+        if ($entity->has('is_bye') && $entity->is_bye === null) {
+            $entity->is_bye = 0;
+        }
+
+        if (!$entity->has('is_bye')) {
+            $entity->is_bye = 0;
+        }
     }
 	
 	      

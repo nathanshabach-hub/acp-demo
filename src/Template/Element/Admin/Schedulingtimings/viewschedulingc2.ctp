@@ -39,8 +39,8 @@ $this->Schedulingtimings = TableRegistry::get('Schedulingtimings');
                             <?php //pr($datarecord); exit;?> 
                             <tr>
                                 <td data-title="DB ID"><?php echo $datarecord->id;?></td>
-                                <td data-title="Room"><?php echo $datarecord->Conventionrooms['room_name'];?></td>
-                                <td data-title="Day"><?php echo $datarecord->day;?></td>
+                                <td data-title="Room"><?php echo !empty($datarecord->Conventionrooms) ? $datarecord->Conventionrooms['room_name'] : '<span class="label label-danger">No Room</span>';?></td>
+                                <td data-title="Day"><?php echo $datarecord->day !== null ? $datarecord->day : '<span class="label label-warning">Unscheduled</span>';?></td>
                                 <td data-title="Start">
 								<?php 
 								echo $datarecord->start_time!=NULL ? date("H:i A",strtotime($datarecord->start_time)) : '';
@@ -51,7 +51,7 @@ $this->Schedulingtimings = TableRegistry::get('Schedulingtimings');
 								echo $datarecord->finish_time!=NULL ? date("H:i A",strtotime($datarecord->finish_time)) : '';
 								?>
 								</td>
-                                <td data-title="Event"><?php echo $datarecord->Events['event_name'];?> (<?php echo $datarecord->Events['event_id_number'];?>)</td>
+                                <td data-title="Event"><?php echo !empty($datarecord->Events) ? $datarecord->Events['event_name'].' ('.$datarecord->Events['event_id_number'].')' : '<span class="label label-danger">Unknown Event</span>';?></td>
 								<td data-title="Round No.">Round-<?php echo $datarecord->round_number;?></td>
 								<td data-title="Match No.">Match-<?php echo $datarecord->match_number;?></td>
                                 <td data-title="Match">

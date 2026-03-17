@@ -231,6 +231,41 @@ class AdminsController extends AppController {
 			
 			$total_transactions = $this->Transactions->find()->where($condTr)->count();
 			$this->set('total_transactions', $total_transactions);
+
+			// Chart data: scheduled events by category
+			$schedCategoryData = [];
+			for ($cat = 1; $cat <= 4; $cat++) {
+				$schedCategoryData[] = $this->Schedulingtimings->find()->where([
+					"conventionseasons_id" => $convSD->id,
+					"schedule_category" => $cat,
+					"day IS NOT" => null,
+				])->count();
+			}
+			$this->set('schedCategoryData', json_encode($schedCategoryData));
+
+			// Chart data: scheduled vs unscheduled
+			$totalScheduled = $this->Schedulingtimings->find()->where([
+				"conventionseasons_id" => $convSD->id,
+				"day IS NOT" => null,
+			])->count();
+			$totalUnscheduled = $this->Schedulingtimings->find()->where([
+				"conventionseasons_id" => $convSD->id,
+				"day" => null,
+			])->count();
+			$this->set('totalScheduled', $totalScheduled);
+			$this->set('totalUnscheduled', $totalUnscheduled);
+
+			// Chart data: scheduling by day
+			$dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday'];
+			$dayCountData = [];
+			foreach ($dayNames as $d) {
+				$dayCountData[] = $this->Schedulingtimings->find()->where([
+					"conventionseasons_id" => $convSD->id,
+					"day" => $d,
+				])->count();
+			}
+			$this->set('dayNames', json_encode($dayNames));
+			$this->set('dayCountData', json_encode($dayCountData));
 			
 		}
 		else

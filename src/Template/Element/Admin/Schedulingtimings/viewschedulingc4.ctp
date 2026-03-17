@@ -30,27 +30,33 @@ $this->Events = TableRegistry::get('Events');
                     <tbody>
                         <?php
 						foreach ($schedulingTimingsList as $datarecord)
-						{	
+						{
+							$isUnscheduled = ($datarecord->day === null || $datarecord->start_time === null);
+							$rowStyle = $isUnscheduled ? ' style="background:#ffe6e6;"' : '';
 						?>
                             <?php //pr($datarecord); exit;?> 
-                            <tr>
+                            <tr<?php echo $rowStyle; ?>>
                                 <td data-title="DB ID"><?php echo $datarecord->id;?></td>
-                                <td data-title="Room"><?php echo $datarecord->Conventionrooms['room_name'];?></td>
-                                <td data-title="Day"><?php echo $datarecord->day;?></td>
+                                <td data-title="Room"><?php echo !empty($datarecord->Conventionrooms) ? $datarecord->Conventionrooms['room_name'] : '<span class="label label-danger">No Room</span>';?></td>
+                                <td data-title="Day"><?php echo $datarecord->day !== null ? $datarecord->day : '<span class="label label-warning">Unscheduled</span>';?></td>
                                 <td data-title="Start">
 								<?php 
-								echo $datarecord->start_time!=NULL ? date("H:i A",strtotime($datarecord->start_time)) : '';
+								echo $datarecord->start_time !== null ? date("H:i A",strtotime($datarecord->start_time)) : '-';
 								?>
 								</td>
                                 <td data-title="Finish">
 								<?php 
-								echo $datarecord->finish_time!=NULL ? date("H:i A",strtotime($datarecord->finish_time)) : '';
+								echo $datarecord->finish_time !== null ? date("H:i A",strtotime($datarecord->finish_time)) : '-';
 								?>
 								</td>
-                                <td data-title="Event"><?php echo $datarecord->Events['event_name'];?> (<?php echo $datarecord->Events['event_id_number'];?>)</td>
+                                <td data-title="Event"><?php echo !empty($datarecord->Events) ? $datarecord->Events['event_name'].' ('.$datarecord->Events['event_id_number'].')' : '<span class="label label-danger">Unknown Event</span>';?></td>
                                 <td data-title="Match">
 								<?php
-								echo $datarecord->Users['first_name'].' '.$datarecord->Users['middle_name'].' '.$datarecord->Users['last_name'];
+								if (!empty($datarecord->Users)) {
+									echo $datarecord->Users['first_name'].' '.$datarecord->Users['middle_name'].' '.$datarecord->Users['last_name'];
+								} else {
+									echo '<span class="label label-danger">Unknown</span>';
+								}
 								?>
 								
 								</td>

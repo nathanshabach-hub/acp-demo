@@ -30,8 +30,6 @@
                     </div>
                 <?php echo $this->Form->end(); ?>
                 <div class="add_new_record"><?php echo $this->Html->link('<i class="fa fa-plus"></i> Add Room Event', ['controller'=>'conventions', 'action'=>'addroomevents',$slug_convention_season], ['escape'=>false, 'class'=>'btn btn-default']);?>
-				&nbsp;
-				<?php echo $this->Html->link('<i class="fa fa-th"></i> Room Allocation', ['controller'=>'roomallocations', 'action'=>'index',$slug_convention_season], ['escape'=>false, 'class'=>'btn btn-info']);?>
 				
 				<?php
 				if(count($pendingEventsToRoomsList)>0)

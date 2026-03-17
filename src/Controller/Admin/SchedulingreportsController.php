@@ -36,7 +36,89 @@ class SchedulingreportsController extends AppController {
 		$this->loadModel("Events");
 		$this->loadModel("Schedulings");
 		$this->loadModel("Schedulingtimings");
+		$this->loadModel("Smallprogramcustomizations");
     }
+
+	private function getSmallProgramCustomization($conventionSeasonId) {
+		$defaults = [
+			'report_title' => 'Small Program',
+			'report_subtitle' => '',
+			'intro_note' => '',
+			'footer_note' => '',
+			'morning_label' => 'Convention Events',
+			'afternoon_label' => 'Convention Events',
+			'lunch_label' => 'LUNCH',
+			'primary_color' => '#1a3a5c',
+			'secondary_color' => '#2e6da4',
+			'table_header_color' => '#ddeeff',
+			'logo_path' => '',
+			'logo_alt_text' => '',
+			'custom_css' => ''
+		];
+
+		$customization = $this->Smallprogramcustomizations->find()
+			->where(['Smallprogramcustomizations.conventionseasons_id' => $conventionSeasonId])
+			->first();
+
+		if (!$customization) {
+			return $defaults;
+		}
+
+		foreach ($defaults as $field => $defaultValue) {
+			if ($customization->$field !== null && $customization->$field !== '') {
+				$defaults[$field] = $customization->$field;
+			}
+		}
+
+		return $defaults;
+	}
+
+	private function smallProgramLogoDirectory() {
+		return WWW_ROOT . 'img' . DS . 'smallprogram_logos' . DS;
+	}
+
+	private function removeSmallProgramLogo($logoPath) {
+		if (empty($logoPath)) {
+			return;
+		}
+
+		$prefix = '/img/smallprogram_logos/';
+		if (strpos($logoPath, $prefix) !== 0) {
+			return;
+		}
+
+		$filePath = WWW_ROOT . ltrim(str_replace('/', DS, $logoPath), DS);
+		if (file_exists($filePath) && is_file($filePath)) {
+			@unlink($filePath);
+		}
+	}
+
+	private function saveSmallProgramLogo($logoFile, $currentLogoPath) {
+		if (empty($logoFile['name']) || empty($logoFile['tmp_name'])) {
+			return ['success' => true, 'logo_path' => $currentLogoPath, 'error' => ''];
+		}
+
+		$allowedExtensions = ['png', 'jpg', 'jpeg', 'gif'];
+		$extension = strtolower(pathinfo($logoFile['name'], PATHINFO_EXTENSION));
+		if (!in_array($extension, $allowedExtensions)) {
+			return ['success' => false, 'logo_path' => $currentLogoPath, 'error' => 'Logo must be a PNG, JPG, JPEG or GIF image.'];
+		}
+
+		$logoDirectory = $this->smallProgramLogoDirectory();
+		if (!is_dir($logoDirectory)) {
+			mkdir($logoDirectory, 0775, true);
+		}
+
+		$fileName = 'small-program-logo-' . time() . '-' . mt_rand(1000, 9999) . '.' . $extension;
+		$targetFile = $logoDirectory . $fileName;
+		if (!move_uploaded_file($logoFile['tmp_name'], $targetFile)) {
+			return ['success' => false, 'logo_path' => $currentLogoPath, 'error' => 'Unable to upload the logo file.'];
+		}
+
+		$this->removeSmallProgramLogo($currentLogoPath);
+
+		return ['success' => true, 'logo_path' => '/img/smallprogram_logos/' . $fileName, 'error' => ''];
+	}
 	
 	/* By Students */
 	public function bystudents($convention_season_slug=null) {
@@ -503,7 +585,7 @@ class SchedulingreportsController extends AppController {
         $this->viewBuilder()->layout('print_reports');
 		
         $this->set('convention_season_slug', $convention_season_slug);
-        $this->set('school_id', $school_id);
+		$this->set('event_id', $event_id);
 		
 		$conventionSD = $this->Conventionseasons->find()->where(['Conventionseasons.slug' => $convention_season_slug])->contain(["Conventions"])->first();
 		
@@ -863,13 +945,14 @@ public function smallprogramv2($convention_season_slug=null) {
 $conventionSD = $this->Conventionseasons->find()->where(['Conventionseasons.slug' => $convention_season_slug])->contain(["Conventions"])->first();
 $this->set('conventionSD', $conventionSD);
 $this->set('convention_slug', $conventionSD->Conventions['slug']);
+$this->set('smallProgramCustomization', $this->getSmallProgramCustomization($conventionSD->id));
 $schedulingD = $this->Schedulings->find()->where(['Schedulings.conventionseasons_id' => $conventionSD->id])->first();
 $this->set('schedulingD', $schedulingD);
 
 $lunchStart = $schedulingD && $schedulingD->lunch_time_start ? $schedulingD->lunch_time_start : '12:30:00';
 $lunchEnd   = $schedulingD && $schedulingD->lunch_time_end   ? $schedulingD->lunch_time_end   : '13:30:00';
 
-$condSch = ["(Schedulingtimings.conventionseasons_id = '".$conventionSD->id."' AND Schedulingtimings.convention_id = '".$conventionSD->convention_id."' AND Schedulingtimings.season_id = '".$conventionSD->season_id."' AND Schedulingtimings.season_year = '".$conventionSD->season_year."' AND Schedulingtimings.is_bye = '0')"];
+		$condSch = ["(Schedulingtimings.conventionseasons_id = '".$conventionSD->id."' AND Schedulingtimings.convention_id = '".$conventionSD->convention_id."' AND Schedulingtimings.season_id = '".$conventionSD->season_id."' AND Schedulingtimings.season_year = '".$conventionSD->season_year."' AND (Schedulingtimings.is_bye = '0' OR Schedulingtimings.is_bye IS NULL))"];
 $allTimings = $this->Schedulingtimings->find()->where($condSch)->contain(["Events","Conventionrooms"])->order(["Schedulingtimings.sch_date_time"=>"ASC","Schedulingtimings.room_id"=>"ASC"])->all();
 
 // Build: $dayData[day]['date'] = '30 June 2025'
@@ -945,12 +1028,13 @@ public function smallprogramv2print($convention_season_slug=null) {
 
 $conventionSD = $this->Conventionseasons->find()->where(['Conventionseasons.slug' => $convention_season_slug])->contain(["Conventions"])->first();
 $this->set('conventionSD', $conventionSD);
+$this->set('smallProgramCustomization', $this->getSmallProgramCustomization($conventionSD->id));
 $schedulingD = $this->Schedulings->find()->where(['Schedulings.conventionseasons_id' => $conventionSD->id])->first();
 
 $lunchStart = $schedulingD && $schedulingD->lunch_time_start ? $schedulingD->lunch_time_start : '12:30:00';
 $lunchEnd   = $schedulingD && $schedulingD->lunch_time_end   ? $schedulingD->lunch_time_end   : '13:30:00';
 
-$condSch = ["(Schedulingtimings.conventionseasons_id = '".$conventionSD->id."' AND Schedulingtimings.convention_id = '".$conventionSD->convention_id."' AND Schedulingtimings.season_id = '".$conventionSD->season_id."' AND Schedulingtimings.season_year = '".$conventionSD->season_year."' AND Schedulingtimings.is_bye = '0')"];
+		$condSch = ["(Schedulingtimings.conventionseasons_id = '".$conventionSD->id."' AND Schedulingtimings.convention_id = '".$conventionSD->convention_id."' AND Schedulingtimings.season_id = '".$conventionSD->season_id."' AND Schedulingtimings.season_year = '".$conventionSD->season_year."' AND (Schedulingtimings.is_bye = '0' OR Schedulingtimings.is_bye IS NULL))"];
 $allTimings = $this->Schedulingtimings->find()->where($condSch)->contain(["Events","Conventionrooms"])->order(["Schedulingtimings.sch_date_time"=>"ASC","Schedulingtimings.room_id"=>"ASC"])->all();
 
 $dayData = []; $seenSlots = []; $dayOrder = [];
@@ -1004,6 +1088,67 @@ $this->set('dayData', $dayData);
 $this->set('dayOrder', $dayOrder);
 $this->set('lunchStart', date('g:i a', strtotime($lunchStart)));
 $this->set('lunchEnd',   date('g:i a', strtotime($lunchEnd)));
+}
+
+public function smallprogramv2customize($convention_season_slug=null) {
+		$this->set('title', ADMIN_TITLE . 'Customize Small Program');
+		$this->viewBuilder()->layout('admin');
+
+		$this->set('manageConventions', '1');
+		$this->set('conventionList', '1');
+		$this->set('convention_season_slug', $convention_season_slug);
+
+		$conventionSD = $this->Conventionseasons->find()->where(['Conventionseasons.slug' => $convention_season_slug])->contain(["Conventions"])->first();
+		$this->set('conventionSD', $conventionSD);
+		$this->set('convention_slug', $conventionSD->Conventions['slug']);
+
+		$customization = $this->Smallprogramcustomizations->find()
+			->where(['Smallprogramcustomizations.conventionseasons_id' => $conventionSD->id])
+			->first();
+
+		if (!$customization) {
+			$customization = $this->Smallprogramcustomizations->newEntity();
+			$customization->conventionseasons_id = $conventionSD->id;
+		}
+
+		if ($this->request->is(['post', 'put'])) {
+			$requestData = $this->request->data;
+			$logoFile = !empty($requestData['logo_file']) ? $requestData['logo_file'] : [];
+			$removeLogo = !empty($requestData['remove_logo']);
+			unset($requestData['logo_file']);
+			unset($requestData['remove_logo']);
+
+			$customization = $this->Smallprogramcustomizations->patchEntity($customization, $requestData);
+			$customization->conventionseasons_id = $conventionSD->id;
+
+			if ($removeLogo) {
+				$this->removeSmallProgramLogo($customization->logo_path);
+				$customization->logo_path = '';
+			}
+
+			if (!empty($logoFile['name'])) {
+				$logoResult = $this->saveSmallProgramLogo($logoFile, $customization->logo_path);
+				if (!$logoResult['success']) {
+					$this->Flash->error($logoResult['error']);
+					$this->set('customization', $customization);
+					return;
+				}
+				$customization->logo_path = $logoResult['logo_path'];
+			}
+
+			if (empty($customization->logo_alt_text) && !empty($customization->logo_path)) {
+				$customization->logo_alt_text = $conventionSD->Conventions['name'] . ' logo';
+			}
+
+			if ($this->Smallprogramcustomizations->save($customization)) {
+				$this->Flash->success('Small Program customization saved successfully.');
+				return $this->redirect(['controller' => 'schedulingreports', 'action' => 'smallprogramv2', $convention_season_slug]);
+			}
+
+			$this->Flash->error('Unable to save Small Program customization. Please check the fields and try again.');
+		}
+
+		$this->set('customization', $customization);
 }
 
 

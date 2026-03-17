@@ -4,6 +4,13 @@
     });
 </script>
 <script>
+	window.overwritePrefillRows = <?php echo json_encode(isset($overwritePrefillRows) ? $overwritePrefillRows : []); ?>;
+	window.overwriteAutoMode = <?php echo !empty($overwriteAutoMode) ? 'true' : 'false'; ?>;
+	window.overwritePresetMap = <?php echo json_encode(isset($overwritePresetMap) ? $overwritePresetMap : []); ?>;
+	window.overwriteSelectedPreset = <?php echo json_encode(isset($overwriteSelectedPreset) ? $overwriteSelectedPreset : 'balanced'); ?>;
+	window.overwriteDefaultMax = <?php echo (int)(isset($overwriteDefaultMax) ? $overwriteDefaultMax : 6); ?>;
+	window.overwriteDefaultGap = <?php echo (int)(isset($overwriteDefaultGap) ? $overwriteDefaultGap : 1); ?>;
+
 	$(document).ready(function(){
 		$('.mdtpicker').mdtimepicker(); //Initializes the time picker
 		window._overwriteSubmitMode = 'apply';
@@ -32,7 +39,127 @@
 			$('#sched_rows_body').append(newRow);
 			rowIndexSeed++;
 			bindRowTimePickers();
+			syncEventCodeFromSelection(newRow);
 			updateImpactPreview();
+			return newRow;
+		}
+
+		function setRowValues($row, data) {
+			if (!data || !$row || !$row.length) return;
+			if (data.event_id) {
+				$row.find('.sched-row-event').val(String(data.event_id));
+			}
+			syncEventCodeFromSelection($row);
+			if (data.event_code) {
+				$row.find('.sched-row-event-code').val(String(data.event_code));
+				applyEventCodeToSelection($row);
+			}
+			if (data.date) {
+				$row.find('.sched-row-date').val(String(data.date));
+			}
+			if (data.time) {
+				$row.find('.sched-row-time').val(String(data.time));
+			}
+			if (data.max_students) {
+				$row.find('.sched-row-max').val(String(data.max_students));
+			}
+			if (data.time_gap_mins) {
+				$row.find('.sched-row-gap').val(String(data.time_gap_mins));
+			}
+		}
+
+		function applyPrefillRows() {
+			var rows = window.overwritePrefillRows || [];
+			if (!rows.length) return;
+
+			var $first = $('#sched_rows_body tr.sched-row:first');
+			setRowValues($first, rows[0]);
+
+			for (var i = 1; i < rows.length; i++) {
+				var $newRow = addScheduleRow();
+				setRowValues($newRow, rows[i]);
+			}
+
+			updateImpactPreview();
+		}
+
+		function applyPresetDefaultsToRows(presetKey, forceValues) {
+			var presets = window.overwritePresetMap || {};
+			if (!presets[presetKey]) {
+				return;
+			}
+
+			var maxVal = parseInt(presets[presetKey].max_students, 10);
+			var gapVal = parseInt(presets[presetKey].time_gap_mins, 10);
+			if (isNaN(maxVal) || maxVal <= 0) {
+				maxVal = parseInt(window.overwriteDefaultMax, 10) || 6;
+			}
+			if (isNaN(gapVal) || gapVal <= 0) {
+				gapVal = parseInt(window.overwriteDefaultGap, 10) || 1;
+			}
+
+			$('#sched_rows_body tr.sched-row').each(function(){
+				var $max = $(this).find('.sched-row-max');
+				var $gap = $(this).find('.sched-row-gap');
+				$max.attr('data-default', String(maxVal));
+				$gap.attr('data-default', String(gapVal));
+				if (forceValues) {
+					$max.val(String(maxVal));
+					$gap.val(String(gapVal));
+				}
+			});
+
+			$('#overwritePresetHelp').text('Default students/block: ' + maxVal + ' | Default gap: ' + gapVal + ' min');
+		}
+
+		function normalizeEventCode(code) {
+			return $.trim(String(code || '')).toUpperCase();
+		}
+
+		function syncEventCodeFromSelection(row) {
+			var $row = $(row);
+			var $sel = $row.find('.sched-row-event');
+			var selectedCode = $sel.find('option:selected').data('event-code');
+			if (typeof selectedCode === 'undefined' || selectedCode === null) {
+				selectedCode = '';
+			}
+			$row.find('.sched-row-event-code').val(selectedCode);
+			var selectedText = $.trim($sel.find('option:selected').text());
+			if (!selectedText || selectedText === 'Select event') {
+				selectedText = '';
+			}
+			$sel.attr('title', selectedText);
+		}
+
+		function applyEventCodeToSelection(row) {
+			var $row = $(row);
+			var $sel = $row.find('.sched-row-event');
+			var $codeInput = $row.find('.sched-row-event-code');
+			var typedCode = normalizeEventCode($codeInput.val());
+			if (!typedCode) {
+				return;
+			}
+
+			var matchedValue = '';
+			$sel.find('option').each(function(){
+				var optionCode = normalizeEventCode($(this).data('event-code'));
+				if (!optionCode) return;
+				if (optionCode === typedCode) {
+					matchedValue = $(this).val();
+					return false;
+				}
+				var typedNum = parseInt(typedCode, 10);
+				var optionNum = parseInt(optionCode, 10);
+				if (!isNaN(typedNum) && !isNaN(optionNum) && String(optionNum) === String(typedNum)) {
+					matchedValue = $(this).val();
+					return false;
+				}
+			});
+
+			if (matchedValue) {
+				$sel.val(matchedValue);
+				syncEventCodeFromSelection($row);
+			}
 		}
 
 		$('#add_sched_row').on('click', function(e){
@@ -216,20 +343,41 @@
 		}
 
 		$(document).on('change', '.sched-row-event, .sched-row-date', updateImpactPreview);
+		$(document).on('change', '.sched-row-event', function(){
+			syncEventCodeFromSelection($(this).closest('.sched-row'));
+		});
+		$(document).on('input blur', '.sched-row-event-code', function(){
+			applyEventCodeToSelection($(this).closest('.sched-row'));
+			updateImpactPreview();
+		});
 		$(document).on('input', '.sched-row-time, .sched-row-max, .sched-row-gap', updateImpactPreview);
+		$(document).on('change', '#overwritePreset', function(){
+			var presetKey = String($(this).val() || 'balanced');
+			applyPresetDefaultsToRows(presetKey, true);
+			updateImpactPreview();
+		});
 		bindRowTimePickers();
+		syncEventCodeFromSelection($('#sched_rows_body tr.sched-row:first'));
+		$('#overwritePreset').val(String(window.overwriteSelectedPreset || 'balanced'));
+		applyPresetDefaultsToRows(String(window.overwriteSelectedPreset || 'balanced'), false);
+		applyPrefillRows();
 		updateImpactPreview();
 
 		$('#schedulingWizardForm').on('submit', function(e){
+			$('.sched-row').each(function(){
+				applyEventCodeToSelection(this);
+			});
+
 			var validRows = 0;
 			var seenEvent = {};
 			var duplicateEvent = false;
 			var invalidRows = false;
 			$('.sched-row').each(function(){
 				var eventId = $.trim($(this).find('.sched-row-event').val());
+				var eventCode = $.trim($(this).find('.sched-row-event-code').val());
 				var dayDate = $.trim($(this).find('.sched-row-date').val());
 				var dayTime = $.trim($(this).find('.sched-row-time').val());
-				var rowHasAny = (eventId !== '' || dayDate !== '' || dayTime !== '');
+				var rowHasAny = (eventId !== '' || eventCode !== '' || dayDate !== '' || dayTime !== '');
 				if (!rowHasAny) {
 					return;
 				}
@@ -289,10 +437,20 @@
 	.overwrite-required { color: #d73925; }
 	.overwrite-card { border: 1px solid #e6e6e6; border-radius: 4px; padding: 12px; background: #fcfcfc; }
 	.overwrite-preview { border: 1px solid #d6e9c6; border-radius: 4px; background: #f8fff3; padding: 10px 12px; margin-top: 10px; }
-	.overwrite-preview .row { margin-bottom: 4px; }
+	.overwrite-preview .row { margin: 0 0 4px 0 !important; }
+	.overwrite-undo .row { margin: 0 0 4px 0 !important; }
 	.overwrite-preview .label { font-size: 12px; }
 	.overwrite-undo { border: 1px solid #f2dede; border-radius: 4px; background: #fff8f8; padding: 10px 12px; margin-bottom: 12px; }
 	.overwrite-row-table th, .overwrite-row-table td { vertical-align: middle !important; }
+	.overwrite-row-table-wrap { width: 100%; overflow-x: auto; }
+	.overwrite-row-table { table-layout: fixed; min-width: 980px; }
+	.overwrite-row-table th:nth-child(1), .overwrite-row-table td:nth-child(1) { width: 35%; }
+	.overwrite-row-table th:nth-child(2), .overwrite-row-table td:nth-child(2) { width: 12%; }
+	.overwrite-row-table th:nth-child(3), .overwrite-row-table td:nth-child(3) { width: 17%; }
+	.overwrite-row-table th:nth-child(4), .overwrite-row-table td:nth-child(4) { width: 12%; }
+	.overwrite-row-table th:nth-child(5), .overwrite-row-table td:nth-child(5) { width: 10%; }
+	.overwrite-row-table th:nth-child(6), .overwrite-row-table td:nth-child(6) { width: 8%; }
+	.overwrite-row-table th:nth-child(7), .overwrite-row-table td:nth-child(7) { width: 6%; }
 	.overwrite-warning-box { border: 1px solid #faebcc; border-radius: 4px; background: #fffdf2; padding: 8px 10px; margin-top: 8px; }
 </style>
 
@@ -318,6 +476,11 @@
 				</h3>
             </div>
             <div class="ersu_message"> <?php echo $this->Flash->render() ?> </div>
+			<?php if(!empty($overwriteAutoMode)): ?>
+			<div class="alert alert-info" style="margin:10px 15px;">
+				Automation mode loaded: recommended rows were prefilled from Day Load Dashboard. You can edit event, date, time, students/block, and gaps before applying.
+			</div>
+			<?php endif; ?>
             <?php echo $this->Form->create($schedulings, ['id'=>'schedulingWizardForm', 'type' => 'file', 'autocomplete' => 'off']); ?>
                 <div class="form-horizontal">
                     <div class="box-body">
@@ -343,10 +506,29 @@
 						<div class="overwrite-card" style="margin-bottom:15px;">
 							<div class="overwrite-panel-title">Per-Event Scheduler (Recommended)</div>
 							<p class="overwrite-help" style="margin-bottom:8px;">Set each event with its own date, start time, students per block, and gap. Example: Spelling OPEN and Spelling U16 on the same date with different times.</p>
+							<div class="row" style="margin-bottom:8px;">
+								<div class="col-sm-4">
+									<label for="overwritePreset" style="margin-bottom:4px; display:block;">Automation Preset</label>
+									<select id="overwritePreset" class="form-control input-sm">
+										<?php if (!empty($overwritePresetMap)) { ?>
+											<?php foreach ($overwritePresetMap as $presetKey => $presetCfg) { ?>
+												<option value="<?php echo h($presetKey); ?>" <?php echo (!empty($overwriteSelectedPreset) && $overwriteSelectedPreset === $presetKey) ? 'selected="selected"' : ''; ?>><?php echo h($presetCfg['label']); ?></option>
+											<?php } ?>
+										<?php } else { ?>
+											<option value="conservative">Conservative</option>
+											<option value="balanced" selected="selected">Balanced</option>
+											<option value="aggressive">Aggressive</option>
+										<?php } ?>
+									</select>
+									<div id="overwritePresetHelp" class="overwrite-help" style="margin-top:4px;"></div>
+								</div>
+							</div>
+							<div class="overwrite-row-table-wrap">
 							<table class="table table-bordered table-condensed overwrite-row-table">
 								<thead>
 									<tr style="background:#eef3f8;">
 										<th>Event</th>
+										<th>Event Number</th>
 										<th>Date</th>
 										<th>Start Time</th>
 										<th>Students/Block</th>
@@ -359,11 +541,24 @@
 										<td>
 											<select name="data[Schedulings][sched_rows][0][event_id]" class="form-control sched-row-event">
 												<option value="">Select event</option>
-												<?php foreach($finalEventArr as $evId => $evLabel): ?>
-												<option value="<?php echo h($evId); ?>"><?php echo h($evLabel); ?></option>
-												<?php endforeach; ?>
+												<?php if(!empty($finalEventGrouped)): ?>
+													<?php foreach($finalEventGrouped as $grp): ?>
+														<optgroup label="<?php echo h($grp['label']); ?>">
+															<?php foreach($grp['events'] as $evId => $evLabel): ?>
+															<?php $evCode = isset($eventStats[$evId]['event_id_number']) ? $eventStats[$evId]['event_id_number'] : ''; ?>
+															<option value="<?php echo h($evId); ?>" data-event-code="<?php echo h($evCode); ?>"><?php echo h($evLabel); ?></option>
+															<?php endforeach; ?>
+														</optgroup>
+													<?php endforeach; ?>
+												<?php else: ?>
+													<?php foreach($finalEventArr as $evId => $evLabel): ?>
+													<?php $evCode = isset($eventStats[$evId]['event_id_number']) ? $eventStats[$evId]['event_id_number'] : ''; ?>
+													<option value="<?php echo h($evId); ?>" data-event-code="<?php echo h($evCode); ?>"><?php echo h($evLabel); ?></option>
+													<?php endforeach; ?>
+												<?php endif; ?>
 											</select>
 										</td>
+										<td><input type="text" name="data[Schedulings][sched_rows][0][event_code]" class="form-control sched-row-event-code" placeholder="e.g. 001 or 707"></td>
 										<td>
 											<select name="data[Schedulings][sched_rows][0][date]" class="form-control sched-row-date">
 												<option value="">Select day</option>
@@ -373,12 +568,13 @@
 											</select>
 										</td>
 										<td><input type="text" name="data[Schedulings][sched_rows][0][time]" class="form-control sched-row-time mdtpicker" placeholder="e.g. 01:30 PM"></td>
-										<td><input type="number" name="data[Schedulings][sched_rows][0][max_students]" class="form-control sched-row-max" min="1" value="6" data-default="6"></td>
-										<td><input type="number" name="data[Schedulings][sched_rows][0][time_gap_mins]" class="form-control sched-row-gap" min="1" value="1" data-default="1"></td>
+										<td><input type="number" name="data[Schedulings][sched_rows][0][max_students]" class="form-control sched-row-max" min="1" value="<?php echo (int)(isset($overwriteDefaultMax) ? $overwriteDefaultMax : 6); ?>" data-default="<?php echo (int)(isset($overwriteDefaultMax) ? $overwriteDefaultMax : 6); ?>"></td>
+										<td><input type="number" name="data[Schedulings][sched_rows][0][time_gap_mins]" class="form-control sched-row-gap" min="1" value="<?php echo (int)(isset($overwriteDefaultGap) ? $overwriteDefaultGap : 1); ?>" data-default="<?php echo (int)(isset($overwriteDefaultGap) ? $overwriteDefaultGap : 1); ?>"></td>
 										<td><a href="#" class="btn btn-xs btn-danger remove_sched_row">Remove</a></td>
 									</tr>
 								</tbody>
 							</table>
+							</div>
 							<a href="#" class="btn btn-xs btn-default" id="add_sched_row">Add another event row</a>
 							<div id="row_warning_box" class="overwrite-warning-box" style="display:none;">
 								<div class="overwrite-panel-title" style="margin-bottom:6px;color:#8a6d3b;">Row Warnings</div>

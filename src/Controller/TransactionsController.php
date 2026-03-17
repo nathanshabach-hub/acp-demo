@@ -65,6 +65,9 @@ class TransactionsController extends AppController {
 		
 		// to get % of discount applicable
 		$settingsDiscount = $this->Settings->find()->where(['Settings.id' => 1])->first();
+		$sess_selected_convention_registration_id = 0;
+		$totalStudentsApplicableDiscount = 0;
+		$transactionStatus = 0;
 		
 		
 		if($this->request->session()->read("sess_selected_convention_registration_id")>0)
@@ -79,7 +82,7 @@ class TransactionsController extends AppController {
 			if(!($CRDetails->price_per_student>0))
 			{
 				$this->Flash->error('Please choose price structure before payment.');
-				$this->redirect(['controller' => 'conventionregistrations', 'action' => 'pricestructure']);
+				return $this->redirect(['controller' => 'conventionregistrations', 'action' => 'pricestructure']);
 			}
 			
 			$this->set('CRDetails', $CRDetails);
@@ -87,7 +90,7 @@ class TransactionsController extends AppController {
 		else
 		{
 			$this->Flash->error('Please choose convention registration first.');
-			$this->redirect(['controller' => 'users', 'action' => 'dashboard']);
+			return $this->redirect(['controller' => 'users', 'action' => 'dashboard']);
 		}
 		
 		// now check total students registered in this convention registration
@@ -218,6 +221,11 @@ class TransactionsController extends AppController {
 			if($payType == "invoice")
 			{
 				$transactionStatus = 3;
+			}
+			else
+			{
+				$this->Flash->error('Invalid payment type selected.');
+				return $this->redirect(['controller' => 'transactions', 'action' => 'paymentsummary']);
 			}
 			
 			// Step 1:: Add 1 record into transactions
@@ -393,7 +401,7 @@ class TransactionsController extends AppController {
 		else
 		{
 			$this->Flash->error('Please choose convention registration first.');
-			$this->redirect(['controller' => 'users', 'action' => 'dashboard']);
+			return $this->redirect(['controller' => 'users', 'action' => 'dashboard']);
 		}
 		
         $transactionInfo    =   $this->Transactions->find()->where(['Transactions.slug' => $transaction_slug, 'Transactions.conventionregistration_id' => $sess_selected_convention_registration_id])->contain(['Conventions','Seasons','Users'])->first();
@@ -500,7 +508,7 @@ class TransactionsController extends AppController {
 				if($transaction_slug == $item_number)
 				{
 					// update in data
-					$this->Transactions->updateAll(['transaction_data' => json_decode($_REQUEST)],["slug" => $transaction_slug]);
+					$this->Transactions->updateAll(['transaction_data' => json_encode($_REQUEST)],["slug" => $transaction_slug]);
 					$this->Flash->success("Your payment confirmed successfully. You will receive confirmation email shortly.");
 				}
 				else

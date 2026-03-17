@@ -1,10 +1,10 @@
-<script src="https://code.highcharts.com/highcharts.js"></script>
-<script src="https://code.highcharts.com/modules/exporting.js"></script>
+<?php echo $this->Html->script('highcharts/highcharts.js'); ?>
+<?php echo $this->Html->script('highcharts/exporting.js'); ?>
 <div class="content-wrapper">
     <!-- Content Header (Page header) -->
     <section class="content-header">
         <h1>
-            Dashboard
+            Dashboard <span class="help-icon" title="This dashboard gives you a quick overview of convention stats and charts. Hover over each chart for details."><i class="fa fa-question-circle"></i></span>
         </h1>
         <ol class="breadcrumb">
             <li><a href="#"><i class="fa fa-dashboard"></i> Home</a></li>
@@ -12,7 +12,6 @@
         </ol>
     </section>
 
-    <!-- Main content -->
 	<?php
 	if($sess_admin_header_season_id>0)
 	{
@@ -103,8 +102,128 @@
                 </div>
             </div>
 			
-			 
     </section>
+
+    <!-- Dashboard Charts Section -->
+    <?php if ($sess_admin_header_season_id > 0): ?>
+    <section class="content">
+        <div class="row">
+            <div class="col-md-6">
+                <div class="box box-primary">
+                    <div class="box-header with-border">
+                        <h3 class="box-title">Scheduled Events by Category <span class="help-icon" title="Number of scheduled entries in each scheduling category."><i class="fa fa-info-circle"></i></span></h3>
+                    </div>
+                    <div class="box-body">
+                        <div id="event-distribution-chart" style="height: 280px;"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="box box-primary">
+                    <div class="box-header with-border">
+                        <h3 class="box-title">Schedule Status <span class="help-icon" title="Breakdown of scheduled vs unscheduled entries."><i class="fa fa-info-circle"></i></span></h3>
+                    </div>
+                    <div class="box-body">
+                        <div id="event-status-chart" style="height: 280px;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-6">
+                <div class="box box-primary">
+                    <div class="box-header with-border">
+                        <h3 class="box-title">Participants Breakdown <span class="help-icon" title="Number of students, supervisors, schools and judges registered."><i class="fa fa-info-circle"></i></span></h3>
+                    </div>
+                    <div class="box-body">
+                        <div id="registration-trend-chart" style="height: 280px;"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="box box-primary">
+                    <div class="box-header with-border">
+                        <h3 class="box-title">Events per Convention Day <span class="help-icon" title="How many events are scheduled on each day of the convention."><i class="fa fa-info-circle"></i></span></h3>
+                    </div>
+                    <div class="box-body">
+                        <div id="schedule-timeline-chart" style="height: 280px;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <script>
+    $(document).ready(function() {
+        if (typeof Highcharts === 'undefined') {
+            $('.box-body [id$="-chart"]').html('<p style="color:#999;padding:20px;">Chart library failed to load. Please refresh the page.</p>');
+            return;
+        }
+        // Scheduled Events by Category - Bar Chart
+        var schedCategoryData = <?php echo isset($schedCategoryData) ? $schedCategoryData : '[0,0,0,0]'; ?>;
+        Highcharts.chart('event-distribution-chart', {
+            chart: { type: 'column' },
+            title: { text: null },
+            xAxis: { categories: ['Group Sequential', 'Individual Elimination', 'Group Elimination', 'Individual Sequential'] },
+            yAxis: { min: 0, title: { text: 'Scheduled Entries' } },
+            legend: { enabled: false },
+            series: [{ name: 'Entries', data: schedCategoryData, colorByPoint: true }],
+            credits: { enabled: false }
+        });
+
+        // Schedule Status Donut
+        var totalScheduled   = <?php echo isset($totalScheduled)   ? (int)$totalScheduled   : 0; ?>;
+        var totalUnscheduled = <?php echo isset($totalUnscheduled) ? (int)$totalUnscheduled : 0; ?>;
+        Highcharts.chart('event-status-chart', {
+            chart: { type: 'pie' },
+            title: { text: null },
+            plotOptions: { pie: { innerSize: '55%', dataLabels: { enabled: true } } },
+            series: [{
+                name: 'Entries',
+                data: [
+                    { name: 'Scheduled',   y: totalScheduled,   color: '#00a65a' },
+                    { name: 'Unscheduled', y: totalUnscheduled, color: '#dd4b39' }
+                ]
+            }],
+            credits: { enabled: false }
+        });
+
+        // Participants breakdown - bar chart
+        Highcharts.chart('registration-trend-chart', {
+            chart: { type: 'bar' },
+            title: { text: null },
+            xAxis: { categories: ['Students', 'Supervisors', 'Schools', 'Judges'] },
+            yAxis: { min: 0, title: { text: 'Count' } },
+            legend: { enabled: false },
+            series: [{
+                name: 'Count',
+                colorByPoint: true,
+                data: [
+                    <?php echo isset($total_students)          ? (int)$total_students          : 0; ?>,
+                    <?php echo isset($total_teachers_parents)  ? (int)$total_teachers_parents  : 0; ?>,
+                    <?php echo isset($total_schools)           ? (int)$total_schools           : 0; ?>,
+                    <?php echo isset($total_judges)            ? (int)$total_judges            : 0; ?>
+                ]
+            }],
+            credits: { enabled: false }
+        });
+
+        // Events per Convention Day - column chart
+        var dayNames     = <?php echo isset($dayNames)     ? $dayNames     : '["Monday","Tuesday","Wednesday","Thursday"]'; ?>;
+        var dayCountData = <?php echo isset($dayCountData) ? $dayCountData : '[0,0,0,0]'; ?>;
+        Highcharts.chart('schedule-timeline-chart', {
+            chart: { type: 'column' },
+            title: { text: null },
+            xAxis: { categories: dayNames },
+            yAxis: { min: 0, title: { text: 'Scheduled Entries' } },
+            legend: { enabled: false },
+            series: [{ name: 'Entries', data: dayCountData, color: '#3c8dbc' }],
+            credits: { enabled: false }
+        });
+    });
+    </script>
+    <?php endif; ?>
+
 	<?php
 	}
 	else

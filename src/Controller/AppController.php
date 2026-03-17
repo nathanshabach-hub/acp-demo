@@ -385,8 +385,13 @@ class AppController extends Controller{
     }
 	
 	/////////////////////////////////
-	public function nextBookings($convention_season_slug, $conflict, $base_start_time, $base_finish_time, $base_sch_date_time,$recordId)
+	public function nextBookings($convention_season_slug, $conflict, $base_start_time, $base_finish_time, $base_sch_date_time,$recordId, $depth = 0)
 	{
+		// Safety limit to prevent infinite recursion
+		if ($depth > 500) {
+			return $conflict;
+		}
+
 		// First we need to collect all students list of all schools
 		$conventionSD 	= $this->Conventionseasons->find()->where(['Conventionseasons.slug' => $convention_season_slug])->contain(["Conventions"])->first();
 		$schedulingD 	= $this->Schedulings->find()->where(['Schedulings.conventionseasons_id' => $conventionSD->id])->first();
@@ -451,14 +456,14 @@ class AppController extends Controller{
 		
 		if (!empty($nextBooking)) {
 			if (strtotime($nextFinishTime) >= strtotime($nextBooking->start_time)) { // available for user
-				return $this->nextBookings($convention_season_slug, $conflict, $base_start_time, $base_finish_time, $base_sch_date_time, $recordId);
+				return $this->nextBookings($convention_season_slug, $conflict, $base_start_time, $base_finish_time, $base_sch_date_time, $recordId, $depth + 1);
 			}
 		}
 
 		$opponentBooking = $this->checkForOpponent($convention_season_slug, $conflict, $base_start_time, $base_finish_time, $base_sch_date_time);
 		if (!empty($opponentBooking)) {
 			if (strtotime($nextFinishTime) >= strtotime($opponentBooking->start_time)) { // available for opponent
-				return $this->nextBookings($convention_season_slug, $conflict, $base_start_time, $base_finish_time, $base_sch_date_time, $recordId);
+				return $this->nextBookings($convention_season_slug, $conflict, $base_start_time, $base_finish_time, $base_sch_date_time, $recordId, $depth + 1);
 			}
 		}
 		
@@ -473,7 +478,7 @@ class AppController extends Controller{
 			$base_start_time = $lunch_time_start;
 			$base_finish_time = $lunch_time_end;
 
-			return $this->nextBookings($convention_season_slug, $conflict, $base_start_time, $base_finish_time, $base_sch_date_time, $recordId);
+			return $this->nextBookings($convention_season_slug, $conflict, $base_start_time, $base_finish_time, $base_sch_date_time, $recordId, $depth + 1);
 		}
 
 		if ($schedulingD->judging_breaks_yes_no == 1) {
@@ -487,7 +492,7 @@ class AppController extends Controller{
 				$base_start_time = $judging_breaks_morning_break_starting_time;
 				$base_finish_time = $judging_breaks_morning_break_finish_time;
 
-				return $this->nextBookings($convention_season_slug, $conflict, $base_start_time, $base_finish_time, $base_sch_date_time, $recordId);
+				return $this->nextBookings($convention_season_slug, $conflict, $base_start_time, $base_finish_time, $base_sch_date_time, $recordId, $depth + 1);
 			}
 
 			$judging_breaks_afternoon_break_start_time = date("H:i:s", strtotime($schedulingD->judging_breaks_afternoon_break_start_time));
@@ -500,7 +505,7 @@ class AppController extends Controller{
 				$base_start_time = $judging_breaks_afternoon_break_start_time;
 				$base_finish_time = $judging_breaks_afternoon_break_finish_time;
 
-				return $this->nextBookings($convention_season_slug, $conflict, $base_start_time, $base_finish_time, $base_sch_date_time, $recordId);
+				return $this->nextBookings($convention_season_slug, $conflict, $base_start_time, $base_finish_time, $base_sch_date_time, $recordId, $depth + 1);
 			}
 		}
 		/* New check for lunch timings and judging breaks - Ends */
@@ -526,7 +531,7 @@ class AppController extends Controller{
 					$base_start_time = $sports_day_starting_time;
 					$base_finish_time = $sports_day_finish_time;
 
-					return $this->nextBookings($convention_season_slug, $conflict, $base_start_time, $base_finish_time, $base_sch_date_time, $recordId);
+					return $this->nextBookings($convention_season_slug, $conflict, $base_start_time, $base_finish_time, $base_sch_date_time, $recordId, $depth + 1);
 				}
 				
 			}
@@ -553,7 +558,7 @@ class AppController extends Controller{
 					$base_start_time = $sports_day_other_starting_time;
 					$base_finish_time = $sports_day_other_finish_time;
 
-					return $this->nextBookings($convention_season_slug, $conflict, $base_start_time, $base_finish_time, $base_sch_date_time, $recordId);
+					return $this->nextBookings($convention_season_slug, $conflict, $base_start_time, $base_finish_time, $base_sch_date_time, $recordId, $depth + 1);
 				}
 				
 			}
@@ -712,8 +717,13 @@ class AppController extends Controller{
 	
 	/////////////////////////////////
 	/* Group conflict resolve process */
-	public function findNextTime($conflict, $base_start_time, $base_finish_time, $base_sch_date_time, $allUserIds)
+	public function findNextTime($conflict, $base_start_time, $base_finish_time, $base_sch_date_time, $allUserIds, $depth = 0)
 	{
+		// Safety limit to prevent infinite recursion
+		if ($depth > 500) {
+			return $conflict;
+		}
+
 		$schDate 					= date('Y-m-d', strtotime($base_sch_date_time));
 		$schDateTime 				= date('Y-m-d', strtotime($base_sch_date_time));
 		$starTime 					= $base_start_time;
@@ -764,7 +774,7 @@ class AppController extends Controller{
 				//echo $checkGBusy;exit;
 				
 				if ($checkGBusy>0) {
-					return $this->findNextTime($conflict, $base_start_time, $base_finish_time, $base_sch_date_time, $allUserIds);
+					return $this->findNextTime($conflict, $base_start_time, $base_finish_time, $base_sch_date_time, $allUserIds, $depth + 1);
 				}
 		}
 
@@ -782,7 +792,7 @@ class AppController extends Controller{
 			||
 			(strtotime($base_finish_time)>=strtotime($lunch_time_start) &&  strtotime($base_finish_time)<=strtotime($lunch_time_end))
 		) {
-			return $this->findNextTime($conflict, $base_start_time, $base_finish_time, $base_sch_date_time, $allUserIds);
+			return $this->findNextTime($conflict, $base_start_time, $base_finish_time, $base_sch_date_time, $allUserIds, $depth + 1);
 		}
 
 		if ($schedulingD->judging_breaks_yes_no == 1) {
@@ -793,7 +803,7 @@ class AppController extends Controller{
 				||
 				(strtotime($base_finish_time)>=strtotime($judging_breaks_morning_break_starting_time) &&  strtotime($base_finish_time)<=strtotime($judging_breaks_morning_break_finish_time))
 			) {
-			   return $this->findNextTime($conflict, $base_start_time, $base_finish_time, $base_sch_date_time, $allUserIds);
+			   return $this->findNextTime($conflict, $base_start_time, $base_finish_time, $base_sch_date_time, $allUserIds, $depth + 1);
 			}
 
 			$judging_breaks_afternoon_break_start_time = date("H:i:s", strtotime($schedulingD->judging_breaks_afternoon_break_start_time));
@@ -803,7 +813,7 @@ class AppController extends Controller{
 				||
 				(strtotime($base_finish_time)>=strtotime($judging_breaks_afternoon_break_start_time) &&  strtotime($base_finish_time)<=strtotime($judging_breaks_afternoon_break_finish_time))
 			) {
-			   return $this->findNextTime($conflict, $base_start_time, $base_finish_time, $base_sch_date_time, $allUserIds);
+			   return $this->findNextTime($conflict, $base_start_time, $base_finish_time, $base_sch_date_time, $allUserIds, $depth + 1);
 			}
 		}
 		
@@ -821,7 +831,7 @@ class AppController extends Controller{
 					||
 					(strtotime($base_finish_time)>=strtotime($sports_day_starting_time) &&  strtotime($base_finish_time)<=strtotime($sports_day_finish_time))
 				) {
-				   return $this->findNextTime($conflict, $base_start_time, $base_finish_time, $base_sch_date_time, $allUserIds);
+				   return $this->findNextTime($conflict, $base_start_time, $base_finish_time, $base_sch_date_time, $allUserIds, $depth + 1);
 				}
 			}
 		}
@@ -840,7 +850,7 @@ class AppController extends Controller{
 					||
 					(strtotime($base_finish_time)>=strtotime($sports_day_other_starting_time) &&  strtotime($base_finish_time)<=strtotime($sports_day_other_finish_time))
 				) {
-				   return $this->findNextTime($conflict, $base_start_time, $base_finish_time, $base_sch_date_time, $allUserIds);
+				   return $this->findNextTime($conflict, $base_start_time, $base_finish_time, $base_sch_date_time, $allUserIds, $depth + 1);
 				}
 			}
 		}

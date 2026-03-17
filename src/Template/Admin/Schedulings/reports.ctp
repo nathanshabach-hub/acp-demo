@@ -85,6 +85,15 @@
 						  ?>
                       </div>
                     </div>
+
+          <div class="form-group">
+              <label class="col-sm-2 control-label">&nbsp;</label>
+              <div class="col-sm-10">
+              <?php
+              echo $this->Html->link('Customize Small Program v2', ['controller'=>'schedulingreports', 'action' => 'smallprogramv2customize',$convention_season_slug], ['class'=>'btn btn-primary canlcel_le','title'=>'Edit Small Program v2 title, notes and styling','style' =>'width:220px;text-align:center;']);
+              ?>
+              </div>
+            </div>
 					
 					<div class="form-group">
                       <label class="col-sm-2 control-label">&nbsp;</label>
