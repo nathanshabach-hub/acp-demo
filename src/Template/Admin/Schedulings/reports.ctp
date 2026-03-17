@@ -7,10 +7,8 @@
 
 <div class="content-wrapper">
     <section class="content-header">
-      <h1>
-        Scheduling Reports - [Convention - <?php echo $conventionSD->Conventions['name']; ?>]&nbsp;&nbsp;&nbsp;&nbsp;
-		  [Season Year - <?php echo $conventionSD->season_year; ?>]
-      </h1>
+      <h1>Scheduling Reports</h1>
+        <p style="margin:2px 0 0 0; font-size:13px; color:#777;"><small><?php echo $conventionSD->Conventions['name']; ?> &mdash; <?php echo $conventionSD->season_year; ?></small></p>
       <ol class="breadcrumb">
           <li><?php echo $this->Html->link('<i class="fa fa-dashboard"></i> <span>Dashboard</span> ', ['controller'=>'admins', 'action'=>'dashboard'], ['escape'=>false]);?></li>
           <li><?php echo $this->Html->link('<i class="fa fa-bars"></i> Conventions ', ['controller'=>'conventions', 'action'=>'index'], ['escape'=>false]);?></li>
@@ -86,14 +84,7 @@
                       </div>
                     </div>
 
-          <div class="form-group">
-              <label class="col-sm-2 control-label">&nbsp;</label>
-              <div class="col-sm-10">
-              <?php
-              echo $this->Html->link('Customize Small Program v2', ['controller'=>'schedulingreports', 'action' => 'smallprogramv2customize',$convention_season_slug], ['class'=>'btn btn-primary canlcel_le','title'=>'Edit Small Program v2 title, notes and styling','style' =>'width:220px;text-align:center;']);
-              ?>
-              </div>
-            </div>
+
 					
 					<div class="form-group">
                       <label class="col-sm-2 control-label">&nbsp;</label>
