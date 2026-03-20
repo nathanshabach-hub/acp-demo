@@ -28,19 +28,19 @@
                     <div class="form-group">
                       <label class="col-sm-2 control-label">Current Username <span class="require"></span></label>
                       <div class="col-sm-10">
-                          <?php echo $this->Form->input('Admins.old_username', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required', 'value'=>$adminInfo->username, 'readonly'=>true]); ?>
+                          <?php echo $this->Form->control('Admins.old_username', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required', 'value'=>$adminInfo->username, 'readonly'=>true]); ?>
                       </div>
                     </div>
                     <div class="form-group">
                       <label class="col-sm-2 control-label">New Username <span class="require">*</span></label>
                       <div class="col-sm-10">
-                          <?php echo $this->Form->input('Admins.new_username', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required', 'autocomplete'=>'off', 'placeholder'=>'New Username']); ?>
+                          <?php echo $this->Form->control('Admins.new_username', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required', 'autocomplete'=>'off', 'placeholder'=>'New Username']); ?>
                       </div>
                     </div>
                     <div class="form-group">
                       <label class="col-sm-2 control-label">Confirm Username <span class="require">*</span></label>
                       <div class="col-sm-10">
-                          <?php echo $this->Form->input('Admins.conf_username', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required', 'autocomplete'=>'off', 'placeholder'=>'Confirm Username', 'equalTo'=>'#admins-new-username']); ?>
+                          <?php echo $this->Form->control('Admins.conf_username', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required', 'autocomplete'=>'off', 'placeholder'=>'Confirm Username', 'equalTo'=>'#admins-new-username']); ?>
                       </div>
                     </div>
 

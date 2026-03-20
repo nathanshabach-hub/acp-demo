@@ -1,0 +1,29 @@
+user_id	user_name	user_type	day	start_time	finish_time	event_a	b_start	b_finish	event_b	a_id	b_id
+55	Fiji Agape Mission School 	School	Thursday	08:30:00	08:51:00	Futsal (Male) OPEN	08:30:00	08:51:00	Volleyball (Male) OPEN	16160	16167
+55	Fiji Agape Mission School 	School	Thursday	08:30:00	08:51:00	Futsal (Male) OPEN	08:30:00	08:38:00	Table Tennis - Doubles (Female) U14	16160	16173
+55	Fiji Agape Mission School 	School	Thursday	08:30:00	08:51:00	Futsal (Male) OPEN	08:48:00	08:56:00	Table Tennis - Doubles (Female) U17	16160	16175
+55	Fiji Agape Mission School 	School	Thursday	08:30:00	08:51:00	Volleyball (Male) OPEN	08:30:00	08:38:00	Table Tennis - Doubles (Female) U14	16167	16173
+55	Fiji Agape Mission School 	School	Thursday	08:30:00	08:51:00	Volleyball (Male) OPEN	08:48:00	08:56:00	Table Tennis - Doubles (Female) U17	16167	16175
+55	Fiji Agape Mission School 	School	Thursday	08:43:00	08:55:00	Male Trio U16	08:52:00	09:13:00	Basketball (Male) OPEN	15705	16154
+55	Fiji Agape Mission School 	School	Thursday	08:43:00	08:55:00	Male Trio U16	08:30:00	08:51:00	Futsal (Male) OPEN	15705	16160
+55	Fiji Agape Mission School 	School	Thursday	08:43:00	08:55:00	Male Trio U16	08:30:00	08:51:00	Volleyball (Male) OPEN	15705	16167
+55	Fiji Agape Mission School 	School	Thursday	08:43:00	08:55:00	Male Trio U16	08:48:00	08:56:00	Table Tennis - Doubles (Female) U17	15705	16175
+55	Fiji Agape Mission School 	School	Thursday	08:52:00	09:13:00	Basketball (Male) OPEN	08:48:00	08:56:00	Table Tennis - Doubles (Female) U17	16154	16175
+55	Fiji Agape Mission School 	School	Thursday	08:52:00	09:13:00	Basketball (Male) OPEN	08:57:00	09:05:00	Table Tennis - Doubles (Female) U17	16154	16176
+55	Fiji Agape Mission School 	School	Thursday	08:56:00	09:08:00	Female Duet U16	08:57:00	09:05:00	Table Tennis - Doubles (Male) U17	15706	16143
+55	Fiji Agape Mission School 	School	Thursday	08:56:00	09:08:00	Female Duet U16	09:06:00	09:14:00	Table Tennis - Doubles (Male) U17	15706	16144
+55	Fiji Agape Mission School 	School	Thursday	08:56:00	09:08:00	Female Duet U16	08:52:00	09:13:00	Basketball (Male) OPEN	15706	16154
+55	Fiji Agape Mission School 	School	Thursday	08:56:00	09:08:00	Female Duet U16	08:57:00	09:05:00	Table Tennis - Doubles (Female) U17	15706	16176
+55	Fiji Agape Mission School 	School	Thursday	08:57:00	09:05:00	Table Tennis - Doubles (Male) U17	08:52:00	09:13:00	Basketball (Male) OPEN	16143	16154
+55	Fiji Agape Mission School 	School	Thursday	08:57:00	09:05:00	Table Tennis - Doubles (Male) U17	08:57:00	09:05:00	Table Tennis - Doubles (Female) U17	16143	16176
+55	Fiji Agape Mission School 	School	Thursday	09:06:00	09:14:00	Table Tennis - Doubles (Male) U17	08:52:00	09:13:00	Basketball (Male) OPEN	16144	16154
+55	Fiji Agape Mission School 	School	Thursday	10:00:00	10:18:00	Combined Ensemble OPEN	10:00:00	10:08:00	Table Tennis - Doubles (Male) OPEN	15783	16150
+55	Fiji Agape Mission School 	School	Thursday	10:53:00	11:05:00	Mixed Trio U16	11:04:00	11:25:00	Volleyball (Female) OPEN	15762	16187
+55	Fiji Agape Mission School 	School	Thursday	11:06:00	11:18:00	Mixed Trio U16	11:04:00	11:25:00	Volleyball (Female) OPEN	15763	16187
+5804	Suva Christian Community School 	School	Thursday	10:42:00	11:03:00	Basketball (Female) OPEN	10:42:00	11:03:00	Volleyball (Female) OPEN	16179	16186
+5806	Christian Outreach College 	School	Thursday	08:30:00	08:42:00	Male Duet U16	08:30:00	08:38:00	Table Tennis - Doubles (Male) U14	15704	16140
+5806	Christian Outreach College 	School	Thursday	08:30:00	08:42:00	Male Duet U16	08:30:00	08:51:00	Basketball (Male) OPEN	15704	16153
+5806	Christian Outreach College 	School	Thursday	08:30:00	08:38:00	Table Tennis - Doubles (Male) U14	08:30:00	08:51:00	Basketball (Male) OPEN	16140	16153
+5806	Christian Outreach College 	School	Thursday	10:14:00	10:26:00	Female Duet OPEN	10:20:00	10:41:00	Volleyball (Female) OPEN	15712	16185
+5806	Christian Outreach College 	School	Thursday	10:27:00	10:39:00	Female Trio OPEN	10:20:00	10:41:00	Volleyball (Female) OPEN	15713	16185
+5806	Christian Outreach College 	School	Thursday	10:40:00	10:52:00	Mixed Duet OPEN	10:20:00	10:41:00	Volleyball (Female) OPEN	15714	16185

@@ -1,7 +1,7 @@
 <?php
 use Cake\ORM\TableRegistry;
-$this->Evaluationquestions = TableRegistry::get('Evaluationquestions');
-$this->Crstudentevents = TableRegistry::get('Crstudentevents');
+$this->Evaluationquestions = TableRegistry::getTableLocator()->get('Evaluationquestions');
+$this->Crstudentevents = TableRegistry::getTableLocator()->get('Crstudentevents');
 ?>
 <div class="container-fluid p-0">
 	<div class="row">

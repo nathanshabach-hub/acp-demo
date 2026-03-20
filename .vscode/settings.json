@@ -1,4 +1,9 @@
 {
+    // Use the host PHP executable installed via apt.
+    "php.executablePath": "/usr/bin/php",
+    "php.validate.executablePath": "/usr/bin/php",
+    "php.validate.enable": true,
+
     // PHP Intelephense - target PHP 8.2 to match cPanel
     "intelephense.environment.phpVersion": "8.2.0",
 

@@ -1,8 +1,8 @@
 <?php
 use Cake\ORM\TableRegistry;
-$this->Events = TableRegistry::get('Events');
-$this->Eventsubmissions = TableRegistry::get('Eventsubmissions');
-$this->Crstudentevents = TableRegistry::get('Crstudentevents');
+$this->Events = TableRegistry::getTableLocator()->get('Events');
+$this->Eventsubmissions = TableRegistry::getTableLocator()->get('Eventsubmissions');
+$this->Crstudentevents = TableRegistry::getTableLocator()->get('Crstudentevents');
 ?>
 
 <?php if ($packageregistration) { ?>

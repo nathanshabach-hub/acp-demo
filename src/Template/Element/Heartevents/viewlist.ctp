@@ -1,4 +1,5 @@
 <div class="admin_loader" id="loaderID"><?php echo $this->Html->image('loader_large_blue.gif');?></div>
+<?php $currentUserId = isset($currentUserId) ? $currentUserId : null; ?>
 <?php if (!$heartevents->isEmpty()) { ?> 
     <div class="panel-body">
         
@@ -56,7 +57,7 @@
 								?>
 								<td data-title="Uploaded By">
 								<?php
-								if($this->request->session()->read("user_id") == $datarecord->uploaded_by_user_id)
+                                if($currentUserId == $datarecord->uploaded_by_user_id)
 								{
 									echo 'You';
 								}

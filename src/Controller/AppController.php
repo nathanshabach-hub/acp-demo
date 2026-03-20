@@ -15,9 +15,9 @@
 namespace App\Controller;
 
 use Cake\Controller\Controller;
-use Cake\Event\Event;
+use Cake\Event\EventInterface;
+use Cake\Mailer\Mailer;
 use Cake\Utility\Inflector;
-use Cake\Mailer\Email;
 use Cake\Controller\Component\FlashComponent;
 use Cake\Datasource\ConnectionManager;
 
@@ -54,7 +54,7 @@ class AppController extends Controller{
 		$this->loadModel("Schedulingtimings");
     }
 	
-	public function beforeRender(Event $event) {
+	public function beforeRender(EventInterface $event) {
         parent::beforeRender($event);
 		
 		$adminInfo = $this->Admins->find()->where(['Admins.id' => 1])->first();
@@ -64,8 +64,17 @@ class AppController extends Controller{
         
 		
 		// to check if school admin is logged in, then show header dropdown
-		$user_id 	= $this->request->session()->read("user_id");
-		$user_type 	= $this->request->session()->read("user_type");
+		$user_id 	= $this->request->getSession()->read("user_id");
+		$user_type 	= $this->request->getSession()->read("user_type");
+		$currentSessionProfileType = $this->request->getSession()->read("current_session_profile_type");
+		$sessSelectedConventionRegistrationId = $this->request->getSession()->read("sess_selected_convention_registration_id");
+		$sessSelectedConventionId = $this->request->getSession()->read("sess_selected_convention_id");
+
+		$this->set('currentUserId', $user_id);
+		$this->set('currentUserType', $user_type);
+		$this->set('currentSessionProfileType', $currentSessionProfileType);
+		$this->set('sessSelectedConventionRegistrationId', $sessSelectedConventionRegistrationId);
+		$this->set('sessSelectedConventionId', $sessSelectedConventionId);
 		
 		if($user_id>0)
 		{
@@ -107,7 +116,7 @@ class AppController extends Controller{
 			}
 			
 			// now get convention id for judge + supervisor as a judge
-			if($user_type == "Judge" || $this->request->session()->read("current_session_profile_type")  == "Judge")
+			if($user_type == "Judge" || $currentSessionProfileType  == "Judge")
 			{
 				$conventionregistrations = $this->Conventionregistrations->find()->where(['Conventionregistrations.user_id' => $user_id,'Conventionregistrations.season_id' => $season_id,'Conventionregistrations.season_year' => $seasonD->season_year,'Conventionregistrations.status' => 1])->order(['Conventionregistrations.id' => 'ASC'])->all();
 				foreach($conventionregistrations as $convreg)
@@ -134,10 +143,6 @@ class AppController extends Controller{
 		}
 
 	}
-    
-//  public function beforeFilter(Event $event) {
-//        $this->set('loggedIn', $this->Auth->loggedIn());
-//    }
     
     public function getAdminInfo() {
 		
@@ -343,6 +348,33 @@ class AppController extends Controller{
 		$settingsInfo = $this->Settings->find()->where(['Settings.id' => 1])->first();
         return $settingsInfo;
 	}
+
+	protected function sendLegacyHtmlEmail($to, $subject, $message, array $from, $cc = null)
+	{
+		$mailer = new Mailer('default');
+
+		if (method_exists($mailer, 'setEmailFormat')) {
+			$mailer->setEmailFormat('html');
+		}
+		if (method_exists($mailer, 'setTo')) {
+			$mailer->setTo($to);
+		}
+		if ($cc !== null && method_exists($mailer, 'setCc')) {
+			$mailer->setCc($cc);
+		}
+		if (method_exists($mailer, 'setFrom')) {
+			$mailer->setFrom($from);
+		}
+		if (method_exists($mailer, 'setSubject')) {
+			$mailer->setSubject($subject);
+		}
+
+		if (method_exists($mailer, 'deliver')) {
+			return $mailer->deliver($message);
+		}
+
+		return $mailer->send($message);
+	}
 	
 	public function getMinMaxEvents($conv_reg_id = 0) {
 		
@@ -375,13 +407,41 @@ class AppController extends Controller{
 	}
 	
 	public function getCurrentSeason(){
-        /* $currYear = date("Y");
-		$seasonD = $this->Seasons->find()->where(['Seasons.season_year' => $currYear])->first();
-		return $seasonD->id; */
-		
-		// need to get last active season
-		$seasonD = $this->Seasons->find()->where(['Seasons.status' => 1])->order(['Seasons.season_year' => 'DESC'])->first();
-		return $seasonD->id;
+		$currYear = date("Y");
+
+		// Prefer the current calendar year season so newly created season-years are visible to users.
+		$seasonD = $this->Seasons->find()
+			->where(['Seasons.season_year' => $currYear])
+			->order(['Seasons.id' => 'DESC'])
+			->first();
+
+		if($seasonD)
+		{
+			return $seasonD->id;
+		}
+
+		// Fallback to last active season.
+		$seasonD = $this->Seasons->find()
+			->where(['Seasons.status' => 1])
+			->order(['Seasons.season_year' => 'DESC'])
+			->first();
+
+		if($seasonD)
+		{
+			return $seasonD->id;
+		}
+
+		// Final fallback to latest season record if no active season exists.
+		$seasonD = $this->Seasons->find()
+			->order(['Seasons.season_year' => 'DESC'])
+			->first();
+
+		if($seasonD)
+		{
+			return $seasonD->id;
+		}
+
+		return 0;
     }
 	
 	/////////////////////////////////
@@ -395,6 +455,8 @@ class AppController extends Controller{
 		// First we need to collect all students list of all schools
 		$conventionSD 	= $this->Conventionseasons->find()->where(['Conventionseasons.slug' => $convention_season_slug])->contain(["Conventions"])->first();
 		$schedulingD 	= $this->Schedulings->find()->where(['Schedulings.conventionseasons_id' => $conventionSD->id])->first();
+		$bufferMinutes = isset($schedulingD->buffer_minutes) && $schedulingD->buffer_minutes !== null ? (int)$schedulingD->buffer_minutes : 5;
+		$bufferSeconds = $bufferMinutes * 60;
 		
 		// To get schedulingtiming record details via auto id
 		$schedulingTimingsD 	= $this->Schedulingtimings->find()->where(['Schedulingtimings.id' => $recordId])->first();
@@ -408,7 +470,7 @@ class AppController extends Controller{
 
 		$userId			= $conflict['user_id'];
 
-		$nextStartTime	= date("H:i:s", strtotime($finishTime . " +1 minute"));
+		$nextStartTime	= date("H:i:s", strtotime($finishTime . " +$bufferMinutes minute"));
 		$nextFinishTime	= date("H:i:s", strtotime($nextStartTime . " +$playTime minute"));
 
 		$schDateTime				= $schDateTime . ' ' . $nextStartTime;
@@ -455,14 +517,14 @@ class AppController extends Controller{
 
 		
 		if (!empty($nextBooking)) {
-			if (strtotime($nextFinishTime) >= strtotime($nextBooking->start_time)) { // available for user
+			if (strtotime($nextFinishTime) > (strtotime($nextBooking->start_time) - $bufferSeconds)) {
 				return $this->nextBookings($convention_season_slug, $conflict, $base_start_time, $base_finish_time, $base_sch_date_time, $recordId, $depth + 1);
 			}
 		}
 
 		$opponentBooking = $this->checkForOpponent($convention_season_slug, $conflict, $base_start_time, $base_finish_time, $base_sch_date_time);
 		if (!empty($opponentBooking)) {
-			if (strtotime($nextFinishTime) >= strtotime($opponentBooking->start_time)) { // available for opponent
+			if (strtotime($nextFinishTime) > (strtotime($opponentBooking->start_time) - $bufferSeconds)) {
 				return $this->nextBookings($convention_season_slug, $conflict, $base_start_time, $base_finish_time, $base_sch_date_time, $recordId, $depth + 1);
 			}
 		}
@@ -637,6 +699,9 @@ class AppController extends Controller{
 		
 		// First we need to collect all students list of all schools
 		$conventionSD = $this->Conventionseasons->find()->where(['Conventionseasons.slug' => $convention_season_slug])->contain(["Conventions"])->first();
+		$schedulingD = $this->Schedulings->find()->where(['Schedulings.conventionseasons_id' => $conventionSD->id])->first();
+		$bufferMinutes = isset($schedulingD->buffer_minutes) && $schedulingD->buffer_minutes !== null ? (int)$schedulingD->buffer_minutes : 5;
+		$bufferSeconds = $bufferMinutes * 60;
 		
 		$condSchList = array();
 		$condSchList[] = "(
@@ -682,7 +747,7 @@ class AppController extends Controller{
 				$bStart = strtotime($data[$j]['start_time_with_date']);
 				$bEnd   = strtotime($data[$j]['finish_time_with_date']);
 				
-				if ($aStart < $bEnd && $aEnd > $bStart) {
+				if ($aStart < ($bEnd + $bufferSeconds) && $aEnd > ($bStart - $bufferSeconds)) {
 					$userConflictRecordId = $data[$i]['id'];
 					$conflict = [
 						'id'                    => $data[$j]['id'],
@@ -899,31 +964,75 @@ class AppController extends Controller{
 			return false;
 		}
 	}
+
+	protected function getLoggedUserId() {
+		$userId = $this->request->getSession()->read("user_id");
+		if (!empty($userId)) {
+			return (int)$userId;
+		}
+
+		if (isset($this->Authentication) && method_exists($this->Authentication, 'getIdentity')) {
+			$identity = $this->Authentication->getIdentity();
+			if ($identity) {
+				if (method_exists($identity, 'getIdentifier')) {
+					return (int)$identity->getIdentifier();
+				}
+				if ($identity instanceof \ArrayAccess && isset($identity['id'])) {
+					return (int)$identity['id'];
+				}
+				if (is_object($identity) && isset($identity->id)) {
+					return (int)$identity->id;
+				}
+			}
+		}
+
+		return 0;
+	}
+
+	protected function getLoggedUserType() {
+		$userType = $this->request->getSession()->read("user_type");
+		if (!empty($userType)) {
+			return $userType;
+		}
+
+		if (isset($this->Authentication) && method_exists($this->Authentication, 'getIdentity')) {
+			$identity = $this->Authentication->getIdentity();
+			if ($identity) {
+				if ($identity instanceof \ArrayAccess && isset($identity['user_type'])) {
+					return $identity['user_type'];
+				}
+				if (is_object($identity) && isset($identity->user_type)) {
+					return $identity->user_type;
+				}
+			}
+		}
+
+		return null;
+	}
     
     
 	// general login check for user
 	function userLoginCheck() {
-		// $returnUrl = $this->request->params->url;
-        $returnUrl = $this->request->url;
-        $userid =$this->request->session()->read("user_id");
+		$returnUrl = $this->request->getRequestTarget();
+		$userid = $this->getLoggedUserId();
         $this->loadModel("Users");
         $isExists = $this->Users->find()->where(['Users.id' => $userid, 'Users.activation_status' => 1, 'Users.status' => 1])->select(['id'])->first();
         if (empty($isExists)) {
             $msgString = "Please Login"; 
-            $this->request->session()->delete('user_id');
-            $this->request->session()->delete('email_address');
-            $this->request->session()->delete('user_type');
-            $this->request->session()->delete('last_login');
+            $this->request->getSession()->delete('user_id');
+            $this->request->getSession()->delete('email_address');
+            $this->request->getSession()->delete('user_type');
+            $this->request->getSession()->delete('last_login');
 			
             $this->Flash->error($msgString);
-            $this->request->session()->write("returnUrl", $returnUrl);
+            $this->request->getSession()->write("returnUrl", $returnUrl);
             $this->redirect('/users/login');
         }
     }
 	
 	// to check subscribers type login
 	function schoolAdminLoginCheck() {  
-		if($this->request->session()->read("user_type") != "School")
+		if($this->getLoggedUserType() != "School")
 		{
 			$msgString = "Un-authorize access.";
 			$this->Flash->error($msgString);
@@ -933,7 +1042,7 @@ class AppController extends Controller{
 	
 	// to check individuals user type login
 	function teacherLoginCheck() {  
-		if($this->request->session()->read("user_type") != "Teacher_Parent")
+		if($this->getLoggedUserType() != "Teacher_Parent")
 		{
 			$msgString = "Un-authorize access.";
 			$this->Flash->error($msgString);
@@ -943,7 +1052,7 @@ class AppController extends Controller{
 	
 	// to check individuals user type login
 	function judgeLoginCheck() {  
-		if($this->request->session()->read("user_type") != "Judge")
+		if($this->getLoggedUserType() != "Judge")
 		{
 			$msgString = "Un-authorize access.";
 			$this->Flash->error($msgString);
@@ -952,7 +1061,7 @@ class AppController extends Controller{
     }
 	
 	function multiLoginCheck($usersTypesList=null) { 
-        $user_type =$this->request->session()->read("user_type");
+		$user_type = $this->getLoggedUserType();
 		//echo $user_type;exit;
         if (!in_array($user_type,(array)$usersTypesList)) {
             $msgString = "Unauthorize access !!!"; 
@@ -960,6 +1069,59 @@ class AppController extends Controller{
             $this->redirect(['controller' => 'users', 'action' => 'dashboard']);
         }
     }
+
+	protected function getConventionSeasonSubmissionLockFile($conventionSeasonId = null) {
+		return TMP . 'event_submission_lock_convseason_' . (int)$conventionSeasonId . '.flag';
+	}
+
+	function isConventionSeasonSubmissionOpen($conventionSeasonId = null) {
+		if ((int)$conventionSeasonId <= 0) {
+			return true;
+		}
+
+		$lockFile = $this->getConventionSeasonSubmissionLockFile($conventionSeasonId);
+		return !file_exists($lockFile);
+	}
+
+	function setConventionSeasonSubmissionStatus($conventionSeasonId = null, $isOpen = true) {
+		if ((int)$conventionSeasonId <= 0) {
+			return false;
+		}
+
+		$lockFile = $this->getConventionSeasonSubmissionLockFile($conventionSeasonId);
+
+		if ($isOpen) {
+			if (file_exists($lockFile)) {
+				@unlink($lockFile);
+			}
+			return true;
+		}
+
+		return file_put_contents($lockFile, 'locked') !== false;
+	}
+
+	function checkEventSubmissionOpen($conventionRegistrationId = null, $redirectAction = ['controller' => 'eventsubmissions', 'action' => 'viewlist']) {
+		if ((int)$conventionRegistrationId <= 0) {
+			return true;
+		}
+
+		$convRegD = $this->Conventionregistrations->find()
+			->where(['Conventionregistrations.id' => $conventionRegistrationId])
+			->select(['id', 'conventionseason_id'])
+			->first();
+
+		if (!$convRegD) {
+			return true;
+		}
+
+		if (!$this->isConventionSeasonSubmissionOpen($convRegD->conventionseason_id)) {
+			$this->Flash->error('Event Submissions Closed');
+			$this->redirect($redirectAction);
+			return false;
+		}
+
+		return true;
+	}
 	
 	function checkRegistrationStillOpen($convention_registration_id=NULL) {
         
@@ -973,8 +1135,8 @@ class AppController extends Controller{
 		{
            // to check if registration closed
 			$currDateTime = time();
-			$regStartDateTime = strtotime($convRegD->Conventionseasons['registration_start_date']);
-			$regEndDateTime = strtotime($convRegD->Conventionseasons['registration_end_date']);
+			$regStartDateTime = strtotime(date('Y-m-d 00:00:00', strtotime($convRegD->Conventionseasons['registration_start_date'])));
+			$regEndDateTime = strtotime(date('Y-m-d 23:59:59', strtotime($convRegD->Conventionseasons['registration_end_date'])));
 			
 			if($currDateTime>=$regStartDateTime && $currDateTime<=$regEndDateTime)
 			{

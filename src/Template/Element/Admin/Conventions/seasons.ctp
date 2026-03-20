@@ -67,6 +67,17 @@
 									echo $this->Html->link('<i class="fa fa-heart"></i>', ['controller' => 'heartevents', 'action' => 'listheartevents',$datarecord->slug,$slug], [ 'escape' => false, 'title' => 'Events of the heart students', 'class'=>'btn btn-primary btn-xs']);
 									
 									echo $this->Html->link('<i class="fa fa-gavel"></i>', ['controller' => 'conventions', 'action' => 'brokenrecordcertificate',$datarecord->slug,$slug], [ 'escape' => false, 'title' => 'Broken record certificate', 'class'=>'btn btn-primary btn-xs']);
+
+                                    $eventSubmissionsOpen = true;
+                                    if (isset($eventSubmissionOpenMap[$datarecord->id])) {
+                                        $eventSubmissionsOpen = $eventSubmissionOpenMap[$datarecord->id];
+                                    }
+
+                                    if ($eventSubmissionsOpen) {
+                                        echo $this->Html->link('<i class="fa fa-lock"></i>', ['controller' => 'conventions', 'action' => 'closeeventsubmissions', $datarecord->slug, $slug], [ 'escape' => false, 'title' => 'Close Event Submissions', 'class'=>'btn btn-warning btn-xs', 'confirm' => 'Are you sure you want to close event submissions for this season?']);
+                                    } else {
+                                        echo $this->Html->link('<i class="fa fa-unlock"></i>', ['controller' => 'conventions', 'action' => 'openeventsubmissions', $datarecord->slug, $slug], [ 'escape' => false, 'title' => 'Open Event Submissions', 'class'=>'btn btn-success btn-xs', 'confirm' => 'Are you sure you want to open event submissions for this season?']);
+                                    }
 									
 									echo '<br />';
 									echo '<br />';

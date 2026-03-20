@@ -28,19 +28,19 @@
                     <div class="form-group">
                       <label class="col-sm-2 control-label">Current Password <span class="require">*</span></label>
                       <div class="col-sm-10">
-                          <?php echo $this->Form->input('Admins.old_password', ['label'=>false, 'type'=>'password',  'div'=>false, 'class'=>'form-control required', 'placeholder'=>'Current Password']); ?>
+                          <?php echo $this->Form->control('Admins.old_password', ['label'=>false, 'type'=>'password',  'div'=>false, 'class'=>'form-control required', 'placeholder'=>'Current Password']); ?>
                       </div>
                     </div>
                     <div class="form-group">
                       <label class="col-sm-2 control-label">New Password <span class="require">*</span></label>
                       <div class="col-sm-10">
-                          <?php echo $this->Form->input('Admins.new_password', ['label'=>false, 'type'=>'password',  'div'=>false, 'class'=>'form-control required', 'placeholder'=>'New Password', 'minlength'=>6]); ?>
+                          <?php echo $this->Form->control('Admins.new_password', ['label'=>false, 'type'=>'password',  'div'=>false, 'class'=>'form-control required', 'placeholder'=>'New Password', 'minlength'=>6]); ?>
                       </div>
                     </div>
                     <div class="form-group">
                       <label class="col-sm-2 control-label">Confirm Password <span class="require">*</span></label>
                       <div class="col-sm-10">
-                          <?php echo $this->Form->input('Admins.conf_password', ['label'=>false, 'type'=>'password',  'div'=>false, 'class'=>'form-control required', 'placeholder'=>'Confirm Password', 'equalTo'=>'#admins-new-password']); ?>
+                          <?php echo $this->Form->control('Admins.conf_password', ['label'=>false, 'type'=>'password',  'div'=>false, 'class'=>'form-control required', 'placeholder'=>'Confirm Password', 'equalTo'=>'#admins-new-password']); ?>
                       </div>
                     </div>
 

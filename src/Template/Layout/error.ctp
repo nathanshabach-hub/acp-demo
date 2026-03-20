@@ -25,13 +25,11 @@ $cakeDescription = SITE_TITLE;
     </title>
     <?php echo $this->Html->meta('icon') ?>
 
-    <?php echo $this->Html->css('base.css') ?>
-    <?php echo $this->Html->css('cake.css') ?>
-
     <?php echo $this->fetch('meta') ?>
     <?php echo $this->fetch('css') ?>
     <?php echo $this->fetch('script') ?>
-    <?php echo $this->Html->css('front/style.css'); ?>
+    <?php echo $this->Html->css('front/bootstrap.min.css'); ?>
+    <?php echo $this->Html->css('front/style_front.css'); ?>
 </head>
 <body>
     <div id="container">

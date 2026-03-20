@@ -70,77 +70,77 @@ if(empty($users->user_timezone))
 					<div class="form-group">
                       <label class="col-sm-2 control-label">Customer Code <span class="require">*</span></label>
                       <div class="col-sm-10">
-                          <?php echo $this->Form->input('Users.customer_code', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required', 'placeholder'=>'Customer Code']); ?>
+                          <?php echo $this->Form->control('Users.customer_code', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required', 'placeholder'=>'Customer Code']); ?>
                       </div>
                     </div>
 					
 					<div class="form-group">
                       <label class="col-sm-2 control-label">School/HSSP Name <span class="require">*</span></label>
                       <div class="col-sm-10">
-                          <?php echo $this->Form->input('Users.first_name', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required', 'placeholder'=>'School/HSSP Name']); ?>
+                          <?php echo $this->Form->control('Users.first_name', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required', 'placeholder'=>'School/HSSP Name']); ?>
                       </div>
                     </div>
 					
 					<div class="form-group">
                       <label class="col-sm-2 control-label">Main Contact Person <span class="require">*</span></label>
                       <div class="col-sm-10">
-                          <?php echo $this->Form->input('Users.middle_name', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required', 'placeholder'=>'Main Contact Person']); ?>
+                          <?php echo $this->Form->control('Users.middle_name', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required', 'placeholder'=>'Main Contact Person']); ?>
                       </div>
                     </div>
 					
 					<div class="form-group">
                       <label class="col-sm-2 control-label">Telephone 1 <span class="require">*</span></label>
                       <div class="col-sm-10">
-                          <?php echo $this->Form->input('Users.phone', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required', 'placeholder'=>'Telephone 1']); ?>
+                          <?php echo $this->Form->control('Users.phone', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required', 'placeholder'=>'Telephone 1']); ?>
                       </div>
                     </div>
 					
 					<div class="form-group">
                       <label class="col-sm-2 control-label">Telephone 2 <span class="require"></span></label>
                       <div class="col-sm-10">
-                          <?php echo $this->Form->input('Users.phone2', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control', 'placeholder'=>'Telephone 2']); ?>
+                          <?php echo $this->Form->control('Users.phone2', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control', 'placeholder'=>'Telephone 2']); ?>
                       </div>
                     </div>
 					
 					<div class="form-group">
                       <label class="col-sm-2 control-label">Email Address <span class="require">*</span></label>
                       <div class="col-sm-10">
-                          <?php echo $this->Form->input('Users.email_address', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required email', 'placeholder'=>'Email Address']); ?>
+                          <?php echo $this->Form->control('Users.email_address', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required email', 'placeholder'=>'Email Address']); ?>
                       </div>
                     </div>
 					
 					<div class="form-group">
                       <label class="col-sm-2 control-label">Bill To Street <span class="require"></span></label>
                       <div class="col-sm-10">
-                          <?php echo $this->Form->input('Users.bill_to_street', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control', 'placeholder'=>'Bill To Street']); ?>
+                          <?php echo $this->Form->control('Users.bill_to_street', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control', 'placeholder'=>'Bill To Street']); ?>
                       </div>
                     </div>
 					
 					<div class="form-group">
                       <label class="col-sm-2 control-label">Bill To Block <span class="require"></span></label>
                       <div class="col-sm-10">
-                          <?php echo $this->Form->input('Users.bill_to_block', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control', 'placeholder'=>'Bill To Block']); ?>
+                          <?php echo $this->Form->control('Users.bill_to_block', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control', 'placeholder'=>'Bill To Block']); ?>
                       </div>
                     </div>
 					
 					<div class="form-group">
                       <label class="col-sm-2 control-label">Bill To City <span class="require"></span></label>
                       <div class="col-sm-10">
-                          <?php echo $this->Form->input('Users.bill_to_city', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control', 'placeholder'=>'Bill To City']); ?>
+                          <?php echo $this->Form->control('Users.bill_to_city', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control', 'placeholder'=>'Bill To City']); ?>
                       </div>
                     </div>
 					
 					<div class="form-group">
                       <label class="col-sm-2 control-label">Bill To Zip <span class="require"></span></label>
                       <div class="col-sm-10">
-                          <?php echo $this->Form->input('Users.bill_to_zip', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control', 'placeholder'=>'Bill To Zip']); ?>
+                          <?php echo $this->Form->control('Users.bill_to_zip', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control', 'placeholder'=>'Bill To Zip']); ?>
                       </div>
                     </div>
 					
 					<div class="form-group">
                       <label class="col-sm-2 control-label">Bill To Country <span class="require"></span></label>
                       <div class="col-sm-10">
-                          <?php echo $this->Form->input('Users.bill_to_country', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control', 'placeholder'=>'Bill To Country']); ?>
+                          <?php echo $this->Form->control('Users.bill_to_country', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control', 'placeholder'=>'Bill To Country']); ?>
                       </div>
                     </div>
 					

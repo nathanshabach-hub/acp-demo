@@ -9,7 +9,7 @@ use Cake\Core\Configure\Engine\PhpConfig;
 class ConventionregistrationstudentsController extends AppController {
 
     public $paginate = ['limit' => 50, 'order' => ['Events.name' => 'asc']];
-    var $components = array('RequestHandler', 'PImage', 'PImageTest');
+    public $components = ['RequestHandler', 'PImage', 'PImageTest'];
 
     //public $helpers = array('Javascript', 'Ajax');
 
@@ -17,8 +17,8 @@ class ConventionregistrationstudentsController extends AppController {
         parent::initialize();
         $this->loadComponent('Paginator');
         $this->loadComponent('Flash');
-        $action = $this->request->params['action'];
-        $loggedAdminId = $this->request->session()->read('admin_id');
+		$action = $this->request->getParam('action');
+		$loggedAdminId = $this->request->getSession()->read('admin_id');
         if ($action != 'forgotPassword' && $action != 'logout') {
             if (!$loggedAdminId && $action != "login" && $action != 'captcha') {
                 $this->redirect(['controller' => 'admins', 'action' => 'login']);
@@ -39,12 +39,12 @@ class ConventionregistrationstudentsController extends AppController {
 	public function allstudents() {
 
         $this->set('title', ADMIN_TITLE . 'Convention Registrations Students');
-        $this->viewBuilder()->layout('admin');
+        $this->viewBuilder()->setLayout('admin');
         $this->set('dashboard', '1');
 		
         $condition = array();
 		
-		$sess_admin_header_season_id = $this->request->session()->read("sess_admin_header_season_id");
+		$sess_admin_header_season_id = $this->request->getSession()->read("sess_admin_header_season_id");
 		$convSeasonD = $this->Conventionseasons->find()->where(['Conventionseasons.id' => $sess_admin_header_season_id])->first();
 		
 		$condition[] = "(Conventionregistrationstudents.convention_id = '".$convSeasonD->convention_id."' AND Conventionregistrationstudents.season_id = '".$convSeasonD->season_id."' AND Conventionregistrationstudents.season_year = '".$convSeasonD->season_year."')";
@@ -56,13 +56,13 @@ class ConventionregistrationstudentsController extends AppController {
 	public function studentevents($conv_reg_student_slug = NULL) {
 
         $this->set('title', ADMIN_TITLE . 'Convention Registrations Student Events');
-        $this->viewBuilder()->layout('admin');
+        $this->viewBuilder()->setLayout('admin');
         $this->set('dashboard', '1');
 		
         $condition = array();
 		$condition[] = "(Conventionregistrationstudents.slug = '".$conv_reg_student_slug."')";
 		
-		$sess_admin_header_season_id = $this->request->session()->read("sess_admin_header_season_id");
+		$sess_admin_header_season_id = $this->request->getSession()->read("sess_admin_header_season_id");
 		$convSeasonD = $this->Conventionseasons->find()->where(['Conventionseasons.id' => $sess_admin_header_season_id])->first();
 		
 		$condition[] = "(Conventionregistrationstudents.convention_id = '".$convSeasonD->convention_id."' AND Conventionregistrationstudents.season_id = '".$convSeasonD->season_id."' AND Conventionregistrationstudents.season_year = '".$convSeasonD->season_year."')";
@@ -91,7 +91,7 @@ class ConventionregistrationstudentsController extends AppController {
 
     public function removestudentevent($conv_reg_student_slug=NULL, $event_slug = NULL) {
 		
-		$sess_admin_header_season_id = $this->request->session()->read("sess_admin_header_season_id");
+		$sess_admin_header_season_id = $this->request->getSession()->read("sess_admin_header_season_id");
 		
 		$convRegStudentD = $this->Conventionregistrationstudents->find()->where(["slug" => $conv_reg_student_slug])->first();
 		
@@ -175,7 +175,7 @@ class ConventionregistrationstudentsController extends AppController {
     public function events($conv_reg_slug=NULL) {
 
         $this->set('title', ADMIN_TITLE . 'Manage Events Registered');
-        $this->viewBuilder()->layout('admin');
+        $this->viewBuilder()->setLayout('admin');
         $this->set('manageRegistrations', '1');
         $this->set('registrationsList', '1');
 		
@@ -228,7 +228,7 @@ class ConventionregistrationstudentsController extends AppController {
 		
 		//$this->helpers[] = 'Pdf';
 		
-		$this->viewbuilder()->layout('');
+		$this->viewBuilder()->setLayout('');
 		
 		// to get convention season details
 		if ($slug_convention_season)

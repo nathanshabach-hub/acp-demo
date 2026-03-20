@@ -1,8 +1,18 @@
 <?php
 use Cake\ORM\TableRegistry;
-$this->Users = TableRegistry::get('Users');
+$this->Users = TableRegistry::getTableLocator()->get('Users');
 
-$user_id = $this->request->session()->read("user_id");
+$header_menu_register_active = isset($header_menu_register_active) ? $header_menu_register_active : '';
+$header_menu_login_active = isset($header_menu_login_active) ? $header_menu_login_active : '';
+$header_menu_judgesreg_active = isset($header_menu_judgesreg_active) ? $header_menu_judgesreg_active : '';
+
+$currentUserId = isset($currentUserId) ? $currentUserId : null;
+$currentUserType = isset($currentUserType) ? $currentUserType : null;
+$currentSessionProfileType = isset($currentSessionProfileType) ? $currentSessionProfileType : null;
+$sessSelectedConventionRegistrationId = isset($sessSelectedConventionRegistrationId) ? $sessSelectedConventionRegistrationId : null;
+$sessSelectedConventionId = isset($sessSelectedConventionId) ? $sessSelectedConventionId : null;
+
+$user_id = $currentUserId;
 if($user_id>0)
 {
 	$loggedinUserD = $this->Users->find()->where(["Users.id" => $user_id])->first();
@@ -23,13 +33,13 @@ if($user_id>0)
 			<?php
 			$displayedTopDD = 0;
 			// school admin + Supervisor header dropdown menu
-			if ($this->request->session()->read("user_id") > 0 && ($this->request->session()->read("user_type") == "School" || ($this->request->session()->read("user_type") == "Teacher_Parent" && $this->request->session()->read("current_session_profile_type") == "Supervisor")))
+			if ($currentUserId > 0 && ($currentUserType == "School" || ($currentUserType == "Teacher_Parent" && $currentSessionProfileType == "Supervisor")))
 			{	
 				$displayedTopDD = 1;
 
 				$sess_selected_convention_id = "";
-				if ($this->request->session()->read("sess_selected_convention_registration_id") > 0) {
-					$sess_selected_convention_id = $this->request->session()->read("sess_selected_convention_id");
+				if ($sessSelectedConventionRegistrationId > 0) {
+					$sess_selected_convention_id = $sessSelectedConventionId;
 				}
 				?>
 
@@ -80,15 +90,15 @@ if($user_id>0)
 			if($displayedTopDD == 0)
 			{
 				// school judge + Supervisor as a judge header dropdown menu
-				if ($this->request->session()->read("user_id") > 0 && ($this->request->session()->read("user_type") == "Judge" || ($this->request->session()->read("user_type") == "Teacher_Parent" || $this->request->session()->read("current_session_profile_type") == "Judge")))
+				if ($currentUserId > 0 && ($currentUserType == "Judge" || ($currentUserType == "Teacher_Parent" || $currentSessionProfileType == "Judge")))
 				/* changes - 06june2024
-				if ($this->request->session()->read("user_id") > 0 && ($this->request->session()->read("user_type") == "Judge" || ($this->request->session()->read("user_type") == "Teacher_Parent" && $this->request->session()->read("current_session_profile_type") == "Judge")))
+				if ($currentUserId > 0 && ($currentUserType == "Judge" || ($currentUserType == "Teacher_Parent" && $currentSessionProfileType == "Judge")))
 				*/
 				{
 					
 					$sess_selected_convention_id = "";
-					if ($this->request->session()->read("sess_selected_convention_registration_id") > 0) {
-						$sess_selected_convention_id = $this->request->session()->read("sess_selected_convention_id");
+					if ($sessSelectedConventionRegistrationId > 0) {
+						$sess_selected_convention_id = $sessSelectedConventionId;
 					}
 					?>
 
@@ -140,7 +150,7 @@ if($user_id>0)
 				<ul class="navbar-nav">
 					
 					<?php
-					if(!($this->request->session()->read("user_id") > 0))
+					if(!($currentUserId > 0))
 					{
 					?>
 					<li class="nav-item ">
@@ -186,7 +196,7 @@ if($user_id>0)
 					</li>
 					
 					<?php
-					if(!($this->request->session()->read("user_id") > 0))
+					if(!($currentUserId > 0))
 					{
 					?>
 					<li class="nav-item ">
@@ -212,7 +222,7 @@ if($user_id>0)
 					</li>
 					
 					<?php
-					if(!($this->request->session()->read("user_id") > 0))
+					if(!($currentUserId > 0))
 					{
 					?>
 					<li class="nav-item ">
@@ -234,7 +244,7 @@ if($user_id>0)
 						<a class="nav-link px-3 " href="#">Switch</a>
 					 
 						<?php
-						if($this->request->session()->read("current_session_profile_type") == 'Supervisor')
+						if($currentSessionProfileType == 'Supervisor')
 						{
 						?>
 						<ul class="dropdown-menu">
@@ -245,7 +255,7 @@ if($user_id>0)
 						?>
 						
 						<?php
-						if($this->request->session()->read("current_session_profile_type") == 'Judge')
+						if($currentSessionProfileType == 'Judge')
 						{
 						?>
 						<ul class="dropdown-menu">
@@ -263,7 +273,7 @@ if($user_id>0)
 					
 					
 					<?php
-					if($this->request->session()->read("user_id") > 0)
+					if($currentUserId > 0)
 					{
 					?>
 					<li class="nav-item ">

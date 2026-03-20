@@ -19,17 +19,17 @@ $(document).ready(function () {
 					
 					<div class="form-group">
 						<label for="name">First Name</label>
-						<?php echo $this->Form->input('Users.first_name', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required', 'placeholder'=>'First Name']); ?>
+						<?php echo $this->Form->control('Users.first_name', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required', 'placeholder'=>'First Name']); ?>
 					</div>
 					
 					<div class="form-group">
 						<label for="name">Middle Name</label>
-						<?php echo $this->Form->input('Users.middle_name', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control', 'placeholder'=>'Middle Name']); ?>
+						<?php echo $this->Form->control('Users.middle_name', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control', 'placeholder'=>'Middle Name']); ?>
 					</div>
 					
 					<div class="form-group">
 						<label for="name">Last Name</label>
-						<?php echo $this->Form->input('Users.last_name', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required', 'placeholder'=>'Last Name']); ?>
+						<?php echo $this->Form->control('Users.last_name', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required', 'placeholder'=>'Last Name']); ?>
 					</div>
 					
 					<div class="form-group">

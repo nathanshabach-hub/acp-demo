@@ -29,14 +29,14 @@
 					<div class="form-group">
                       <label class="col-sm-2 control-label">Category Name <span class="require">*</span></label>
                       <div class="col-sm-10">
-                          <?php echo $this->Form->input('Eventcategories.name', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required', 'placeholder'=>'Category Name', 'autocomplete'=>'off']); ?>
+                          <?php echo $this->Form->control('Eventcategories.name', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required', 'placeholder'=>'Category Name', 'autocomplete'=>'off']); ?>
                       </div>
                     </div>
 					
 					<div class="form-group">
                       <label class="col-sm-2 control-label">Max Events <span class="require">*</span></label>
                       <div class="col-sm-10">
-                          <?php echo $this->Form->input('Eventcategories.max_events', ['label'=>false, 'type'=>'number',  'div'=>false, 'class'=>'form-control required', 'placeholder'=>'Max Events', 'autocomplete'=>'off']); ?>
+                          <?php echo $this->Form->control('Eventcategories.max_events', ['label'=>false, 'type'=>'number',  'div'=>false, 'class'=>'form-control required', 'placeholder'=>'Max Events', 'autocomplete'=>'off']); ?>
                       </div>
                     </div>
 					

@@ -36,14 +36,14 @@ if(!empty($events->book_ids))
 					<div class="form-group">
                       <label class="col-sm-2 control-label">Event ID Number <span class="require"></span></label>
                       <div class="col-sm-10">
-                          <?php echo $this->Form->input('Events.event_id_number_no_change', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required', 'placeholder'=>'Event Number', 'autocomplete'=>'off', 'value'=>$events->event_id_number, 'readonly']); ?>
+                          <?php echo $this->Form->control('Events.event_id_number_no_change', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required', 'placeholder'=>'Event Number', 'autocomplete'=>'off', 'value'=>$events->event_id_number, 'readonly']); ?>
                       </div>
                     </div>
 					
 					<div class="form-group">
                       <label class="col-sm-2 control-label">Event Name <span class="require">*</span></label>
                       <div class="col-sm-10">
-                          <?php echo $this->Form->input('Events.event_name', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required', 'placeholder'=>'Event Name', 'autocomplete'=>'off']); ?>
+                          <?php echo $this->Form->control('Events.event_name', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required', 'placeholder'=>'Event Name', 'autocomplete'=>'off']); ?>
                       </div>
                     </div>
 					
@@ -126,14 +126,14 @@ if(!empty($events->book_ids))
 					<div class="form-group">
                       <label class="col-sm-2 control-label">Min No. <span class="require">*</span></label>
                       <div class="col-sm-10">
-                          <?php echo $this->Form->input('Events.min_no', ['label'=>false, 'type'=>'number',  'div'=>false, 'class'=>'form-control required', 'placeholder'=>'Min No.', 'autocomplete'=>'off']); ?>
+                          <?php echo $this->Form->control('Events.min_no', ['label'=>false, 'type'=>'number',  'div'=>false, 'class'=>'form-control required', 'placeholder'=>'Min No.', 'autocomplete'=>'off']); ?>
                       </div>
                     </div>
 					
 					<div class="form-group">
                       <label class="col-sm-2 control-label">Max No. <span class="require">*</span></label>
                       <div class="col-sm-10">
-                          <?php echo $this->Form->input('Events.max_no', ['label'=>false, 'type'=>'number',  'div'=>false, 'class'=>'form-control required', 'placeholder'=>'Max No.', 'autocomplete'=>'off']); ?>
+                          <?php echo $this->Form->control('Events.max_no', ['label'=>false, 'type'=>'number',  'div'=>false, 'class'=>'form-control required', 'placeholder'=>'Max No.', 'autocomplete'=>'off']); ?>
                       </div>
                     </div>
 					
@@ -147,21 +147,21 @@ if(!empty($events->book_ids))
 					<div class="form-group">
                       <label class="col-sm-2 control-label">Set Up Time <span class="require">*</span></label>
                       <div class="col-sm-10">
-                          <?php echo $this->Form->input('Events.setup_time', ['label'=>false, 'type'=>'number',  'div'=>false, 'class'=>'form-control required', 'placeholder'=>'Set Up Time', 'autocomplete'=>'off']); ?>
+                          <?php echo $this->Form->control('Events.setup_time', ['label'=>false, 'type'=>'number',  'div'=>false, 'class'=>'form-control required', 'placeholder'=>'Set Up Time', 'autocomplete'=>'off']); ?>
                       </div>
                     </div>
 					
 					<div class="form-group">
                       <label class="col-sm-2 control-label">Round Time <span class="require">*</span></label>
                       <div class="col-sm-10">
-                          <?php echo $this->Form->input('Events.round_time', ['label'=>false, 'type'=>'number',  'div'=>false, 'class'=>'form-control required', 'placeholder'=>'Round Time', 'autocomplete'=>'off']); ?>
+                          <?php echo $this->Form->control('Events.round_time', ['label'=>false, 'type'=>'number',  'div'=>false, 'class'=>'form-control required', 'placeholder'=>'Round Time', 'autocomplete'=>'off']); ?>
                       </div>
                     </div>
 					
 					<div class="form-group">
                       <label class="col-sm-2 control-label">Judging Time <span class="require">*</span></label>
                       <div class="col-sm-10">
-                          <?php echo $this->Form->input('Events.judging_time', ['label'=>false, 'type'=>'number',  'div'=>false, 'class'=>'form-control required', 'placeholder'=>'Judging Time', 'autocomplete'=>'off']); ?>
+                          <?php echo $this->Form->control('Events.judging_time', ['label'=>false, 'type'=>'number',  'div'=>false, 'class'=>'form-control required', 'placeholder'=>'Judging Time', 'autocomplete'=>'off']); ?>
                       </div>
                     </div>
 					
@@ -182,7 +182,7 @@ if(!empty($events->book_ids))
 					<div class="form-group">
                       <label class="col-sm-2 control-label">Competitors Per Round <span class="require">*</span></label>
                       <div class="col-sm-10">
-                          <?php echo $this->Form->input('Events.competitors_per_round', ['label'=>false, 'type'=>'number',  'div'=>false, 'class'=>'form-control required', 'placeholder'=>'Competitors Per Round', 'autocomplete'=>'off']); ?>
+                          <?php echo $this->Form->control('Events.competitors_per_round', ['label'=>false, 'type'=>'number',  'div'=>false, 'class'=>'form-control required', 'placeholder'=>'Competitors Per Round', 'autocomplete'=>'off']); ?>
                       </div>
                     </div>
 					
@@ -235,7 +235,7 @@ if(!empty($events->book_ids))
                     
                     <div class="box-footer">
                         <label class="col-sm-2 control-label" for="inputPassword3">&nbsp;</label>
-                        <?php echo $this->Form->input('Events.id', ['label'=>false, 'type'=>'hidden']); ?>
+                        <?php echo $this->Form->control('Events.id', ['label'=>false, 'type'=>'hidden']); ?>
                         <?php echo $this->Form->button('Save', ['type'=>'submit', 'class' => 'btn btn-info', 'div'=>false]); ?>
                         <?php echo $this->Html->link('Cancel', ['controller'=>'events', 'action' => 'index'], ['class'=>'btn btn-default canlcel_le']); ?>
                     </div>

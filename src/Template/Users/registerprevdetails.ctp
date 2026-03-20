@@ -26,12 +26,12 @@ $(document).ready(function () {
 								<div class="lables">
 									<span class="mb-0 me-1 col-4">Customer Code</span>
 									<!--<input type="text" placeholder="Accelerate School for Convention" class=" w-75">-->
-									<?php echo $this->Form->input('Users.customer_code', ['label'=>false, 'type'=>'text', 'autocomplete'=>'off', 'div'=>false, 'class'=>'form-control required', 'placeholder'=>'Customer Code']); ?>
+									<?php echo $this->Form->control('Users.customer_code', ['label'=>false, 'type'=>'text', 'autocomplete'=>'off', 'div'=>false, 'class'=>'form-control required', 'placeholder'=>'Customer Code']); ?>
 								</div>
 								<div class="lables">
 									<span class="mb-0 me-1 col-4 ">Password</span>
 									<!--<input type="text" placeholder="John Smith" class="w-75">-->
-									<?php echo $this->Form->input('Users.password', ['label'=>false, 'type'=>'password', 'autocomplete'=>'off', 'div'=>false, 'class'=>'form-control required', 'placeholder'=>'Password']); ?>
+									<?php echo $this->Form->control('Users.password', ['label'=>false, 'type'=>'password', 'autocomplete'=>'off', 'div'=>false, 'class'=>'form-control required', 'placeholder'=>'Password']); ?>
 								</div>
 								
 								<div class="btns col-8 float-end">

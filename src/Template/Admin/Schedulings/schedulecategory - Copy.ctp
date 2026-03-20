@@ -1,6 +1,6 @@
 <?php
 use Cake\ORM\TableRegistry;
-$this->Schedulingtimings = TableRegistry::get('Schedulingtimings');
+$this->Schedulingtimings = TableRegistry::getTableLocator()->get('Schedulingtimings');
 ?>
 <script type="text/javascript">
     $(document).ready(function() {

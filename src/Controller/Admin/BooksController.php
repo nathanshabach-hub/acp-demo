@@ -9,7 +9,7 @@ use Cake\Core\Configure\Engine\PhpConfig;
 class BooksController extends AppController {
 
     public $paginate = ['limit' => 50, 'order' => ['Books.name' => 'asc']];
-    var $components = array('RequestHandler', 'PImage', 'PImageTest');
+    public $components = ['RequestHandler', 'PImage', 'PImageTest'];
 
     //public $helpers = array('Javascript', 'Ajax');
 
@@ -17,8 +17,8 @@ class BooksController extends AppController {
         parent::initialize();
         $this->loadComponent('Paginator');
         $this->loadComponent('Flash');
-        $action = $this->request->params['action'];
-        $loggedAdminId = $this->request->session()->read('admin_id');
+        $action = $this->request->getParam('action');
+        $loggedAdminId = $this->request->getSession()->read('admin_id');
         if ($action != 'forgotPassword' && $action != 'logout') {
             if (!$loggedAdminId && $action != "login" && $action != 'captcha') {
                 $this->redirect(['controller' => 'admins', 'action' => 'login']);
@@ -32,7 +32,7 @@ class BooksController extends AppController {
     public function index() {
 
         $this->set('title', ADMIN_TITLE . 'Manage Books');
-        $this->viewBuilder()->layout('admin');
+        $this->viewBuilder()->setLayout('admin');
         $this->set('manageBooks', '1');
         $this->set('bookList', '1');
 
@@ -41,9 +41,10 @@ class BooksController extends AppController {
         //$condition = array('Books.parent_id' => 0);
 
         if ($this->request->is('post')) {
-            if (isset($this->request->data['action'])) {
-                $idList = implode(',', $this->request->data['chkRecordId']);
-                $action = $this->request->data['action'];
+            $requestData = $this->request->getData();
+            if (isset($requestData['action'])) {
+                $idList = implode(',', $requestData['chkRecordId']);
+                $action = $requestData['action'];
                 if ($idList) {
                     if ($action == "Activate") {
                         $this->Books->updateAll(['status' => '1'], ["id IN ($idList)"]);
@@ -58,12 +59,12 @@ class BooksController extends AppController {
                 }
             }
 
-            if (isset($this->request->data['Books']['keyword']) && $this->request->data['Books']['keyword'] != '') {
-                $keyword = trim($this->request->data['Books']['keyword']);
+            if (isset($requestData['Books']['keyword']) && $requestData['Books']['keyword'] != '') {
+                $keyword = trim($requestData['Books']['keyword']);
             }
-        } elseif ($this->request->params) {
-            if (isset($this->request->params['pass'][0]) && $this->request->params['pass'][0] != '') {
-                $searchArr = $this->request->params['pass'];
+        } elseif ($this->request->getParam('pass')) {
+            if (isset($this->request->getParam('pass')[0]) && $this->request->getParam('pass')[0] != '') {
+                $searchArr = $this->request->getParam('pass');
                 foreach ($searchArr as $val) {
                     if (strpos($val, ":") !== false) {
                         $vars = explode(":", $val);
@@ -84,7 +85,7 @@ class BooksController extends AppController {
         $this->paginate = ['conditions' => $condition, 'limit' => 50, 'order' => ['Books.id' => 'ASC']];
         $this->set('books', $this->paginate($this->Books));
         if ($this->request->is("ajax")) {
-            $this->viewBuilder()->layout(($this->request->is("ajax")) ? "" : "default");
+            $this->viewBuilder()->setLayout(($this->request->is("ajax")) ? "" : "default");
             $this->viewBuilder()->templatePath('Element' . DS . 'Admin/Books');
             $this->render('index');
         }
@@ -92,7 +93,7 @@ class BooksController extends AppController {
 
     public function add() {
         $this->set('title', ADMIN_TITLE . 'Add Book');
-        $this->viewBuilder()->layout('admin');
+        $this->viewBuilder()->setLayout('admin');
 		
         $this->set('manageBooks', '1');
         $this->set('bookAdd', '1');
@@ -100,14 +101,15 @@ class BooksController extends AppController {
         $books = $this->Books->newEntity();
         if ($this->request->is('post')) {
 			
-			//$this->prx($this->request->data);
+			//$this->prx($this->request->getData());
 			
 			$flagC = 1;
+			$requestData = $this->request->getData();
 			
-            $data = $this->Books->patchEntity($books, $this->request->data, ['validate' => 'add']);
-            if (count($data->errors()) == 0 && $flagC == 1) {
+            $data = $this->Books->patchEntity($books, $requestData, ['validate' => 'add']);
+            if (count($data->getErrors()) == 0 && $flagC == 1) {
 
-				$slug = $this->getSlug($this->request->data['Books']['book_name'] . ' ' . time(), 'Books');
+				$slug = $this->getSlug($requestData['Books']['book_name'] . ' ' . time(), 'Books');
 				
                 $data->slug = $slug;
                 $data->status = 1;

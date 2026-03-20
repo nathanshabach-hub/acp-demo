@@ -36,28 +36,28 @@
 					<div class="form-group">
                       <label class="col-sm-2 control-label">Title <span class="require">*</span></label>
                       <div class="col-sm-10">
-                          <?php echo $this->Form->input('Users.title', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required', 'placeholder'=>'Title']); ?>
+                          <?php echo $this->Form->control('Users.title', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required', 'placeholder'=>'Title']); ?>
                       </div>
                     </div>
 					
 					<div class="form-group">
                       <label class="col-sm-2 control-label">First Name <span class="require">*</span></label>
                       <div class="col-sm-10">
-                          <?php echo $this->Form->input('Users.first_name', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required', 'placeholder'=>'First Name']); ?>
+                          <?php echo $this->Form->control('Users.first_name', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required', 'placeholder'=>'First Name']); ?>
                       </div>
                     </div>
 					
 					<div class="form-group">
                       <label class="col-sm-2 control-label">Surname <span class="require">*</span></label>
                       <div class="col-sm-10">
-                          <?php echo $this->Form->input('Users.last_name', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required', 'placeholder'=>'Surname']); ?>
+                          <?php echo $this->Form->control('Users.last_name', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required', 'placeholder'=>'Surname']); ?>
                       </div>
                     </div>
 					
 					<div class="form-group">
                       <label class="col-sm-2 control-label">Email Address <span class="require">*</span></label>
                       <div class="col-sm-10">
-                          <?php echo $this->Form->input('Users.email_address_old', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required email', 'placeholder'=>'Email Address', 'value'=>$users->email_address,'readonly']); ?>
+                          <?php echo $this->Form->control('Users.email_address_old', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required email', 'placeholder'=>'Email Address', 'value'=>$users->email_address,'readonly']); ?>
                       </div>
                     </div>
 					
@@ -78,7 +78,7 @@
                     <div class="form-group">
                       <label class="col-sm-2 control-label">Password <span class="require"></span></label>
                       <div class="col-sm-10">
-                          <?php echo $this->Form->input('Users.password', ['label'=>false, 'type'=>'password',  'div'=>false, 'class'=>'form-control', 'placeholder'=>'Password']); ?>
+                          <?php echo $this->Form->control('Users.password', ['label'=>false, 'type'=>'password',  'div'=>false, 'class'=>'form-control', 'placeholder'=>'Password']); ?>
                           <em class="bugdm">* Note: If You want to change User's password, only then fill password below otherwise leave it blank.</em>
                       </div>
                     </div>
@@ -86,7 +86,7 @@
                     <div class="form-group">
                       <label class="col-sm-2 control-label">Confirm Password <span class="require"></span></label>
                       <div class="col-sm-10">
-                          <?php echo $this->Form->input('Users.confirm_password', ['label'=>false, 'type'=>'password',  'div'=>false, 'class'=>'form-control', 'placeholder'=>'Confirm Password', 'equalTo'=>'#users-password']); ?>
+                          <?php echo $this->Form->control('Users.confirm_password', ['label'=>false, 'type'=>'password',  'div'=>false, 'class'=>'form-control', 'placeholder'=>'Confirm Password', 'equalTo'=>'#users-password']); ?>
                       </div>
                     </div>
 					
@@ -94,7 +94,7 @@
                    
                     <div class="box-footer">
                         <label class="col-sm-2 control-label" for="inputPassword3">&nbsp;</label>
-                        <?php echo $this->Form->input('Users.id', ['label'=>false, 'type'=>'hidden']); ?>
+                        <?php echo $this->Form->control('Users.id', ['label'=>false, 'type'=>'hidden']); ?>
                         <?php echo $this->Form->button('Save', ['type'=>'submit', 'class' => 'btn btn-info', 'div'=>false]); ?>
                         <?php echo $this->Html->link('Cancel', ['controller'=>'users', 'action' => 'teachers'], ['class'=>'btn btn-default canlcel_le']); ?>
                     </div>

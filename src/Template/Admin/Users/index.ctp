@@ -18,7 +18,7 @@
                     <div class="form-group align_box dtpickr_inputs">
                        <span class="hints">Search by Customer Code, School Name or Email Address</span>
                        <span class="hint">
-                           <?php echo $this->Form->input('Users.keyword', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control', 'placeholder'=>'Customer Code, School Name or Email Address']); ?>
+                           <?php echo $this->Form->control('Users.keyword', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control', 'placeholder'=>'Customer Code, School Name or Email Address']); ?>
                        </span>
                       
                        <div class="admin_asearch">

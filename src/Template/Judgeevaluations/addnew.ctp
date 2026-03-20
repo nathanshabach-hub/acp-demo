@@ -1,9 +1,9 @@
 <?php
 use Cake\ORM\TableRegistry;
-$this->Evaluationtags 			= TableRegistry::get('Evaluationtags');
-$this->Evaluationareas 			= TableRegistry::get('Evaluationareas');
-$this->Evaluationcategories 	= TableRegistry::get('Evaluationcategories');
-$this->Evaluationquestions 		= TableRegistry::get('Evaluationquestions');
+$this->Evaluationtags 			= TableRegistry::getTableLocator()->get('Evaluationtags');
+$this->Evaluationareas 			= TableRegistry::getTableLocator()->get('Evaluationareas');
+$this->Evaluationcategories 	= TableRegistry::getTableLocator()->get('Evaluationcategories');
+$this->Evaluationquestions 		= TableRegistry::getTableLocator()->get('Evaluationquestions');
 
 $arrAlreadyData = array();
 if($checkEvalJudge->id>0)

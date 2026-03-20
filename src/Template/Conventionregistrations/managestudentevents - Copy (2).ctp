@@ -1,8 +1,8 @@
 <?php
 use Cake\ORM\TableRegistry;
-$this->Eventcategories = TableRegistry::get('Eventcategories');
-$this->Divisions = TableRegistry::get('Divisions');
-$this->Events = TableRegistry::get('Events');
+$this->Eventcategories = TableRegistry::getTableLocator()->get('Eventcategories');
+$this->Divisions = TableRegistry::getTableLocator()->get('Divisions');
+$this->Events = TableRegistry::getTableLocator()->get('Events');
 
 //echo '<pre>';
 //print_r($liveEvents);

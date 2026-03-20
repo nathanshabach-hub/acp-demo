@@ -16,12 +16,12 @@ $(document).ready(function () {
 					
 					<div class="form-group">
 						<label for="name">Previous convention experience ?</label>
-						<?php echo $this->Form->input('Users.previous_convention_experience', ['label'=>false, 'type'=>'textarea',  'div'=>false, 'class'=>'form-control required', 'placeholder'=>'What is your previous convention experience?']); ?>
+						<?php echo $this->Form->control('Users.previous_convention_experience', ['label'=>false, 'type'=>'textarea',  'div'=>false, 'class'=>'form-control required', 'placeholder'=>'What is your previous convention experience?']); ?>
 					</div>
 					
 					<div class="form-group">
 						<label for="name">Other non-convention experience?</label>
-						<?php echo $this->Form->input('Users.non_convention_experience', ['label'=>false, 'type'=>'textarea',  'div'=>false, 'class'=>'form-control required', 'placeholder'=>'What other non-convention experience do you have that would assist in your area of interest for judging?']); ?>
+						<?php echo $this->Form->control('Users.non_convention_experience', ['label'=>false, 'type'=>'textarea',  'div'=>false, 'class'=>'form-control required', 'placeholder'=>'What other non-convention experience do you have that would assist in your area of interest for judging?']); ?>
 					</div>
 					
 					

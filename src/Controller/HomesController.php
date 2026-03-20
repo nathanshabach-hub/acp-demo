@@ -6,7 +6,7 @@ use Cake\Datasource\ConnectionManager;
 use App\Controller\AppController;
 use Cake\Core\Configure;
 use Cake\Core\Configure\Engine\PhpConfig;
-use Cake\Mailer\Email;
+use Cake\Mailer\Mailer;
 use Cake\I18n\I18n;
 
 class HomesController extends AppController {
@@ -39,12 +39,12 @@ class HomesController extends AppController {
 
     public function index() {
 		
-		if($this->request->session()->read("user_id") > 0)
+		if($this->request->getSession()->read("user_id") > 0)
 		{
 			$this->redirect(['controller' => 'users', 'action' => 'dashboard']);
 		}
 		
-		$this->viewbuilder()->layout("home");		
+		$this->viewBuilder()->setLayout("home");		
 		$this->set('title_for_layout', 'Welcome '.TITLE_FOR_PAGES);
 		
 		$this->set('header_menu_register_active', 'active');
@@ -86,7 +86,7 @@ class HomesController extends AppController {
 			
 			if($conventionD)
 			{
-				$this->viewBuilder()->layout("");
+				$this->viewBuilder()->setLayout("");
 				//$this->Users->updateAll(['status' => '1', 'activation_status'=>'1'], ["slug"=>$slug]);
 				//$this->set('action', '/admin/users/deactivateuser/' . $slug);
 				
@@ -100,7 +100,7 @@ class HomesController extends AppController {
 	
 	public function checkcode($convention_slug=null,$season_id=null) {
 		
-		$this->viewbuilder()->layout("home");		
+		$this->viewBuilder()->setLayout("home");		
 		$this->set('title_for_layout', 'Check Customer Code '.TITLE_FOR_PAGES);
 		
 		$this->set('header_menu_register_active', 'active');
@@ -108,7 +108,7 @@ class HomesController extends AppController {
 		$this->set('convention_slug',$convention_slug);
 		$this->set('season_id',$season_id);
 		
-		//$this->prx($this->request->data['Users']['customer_code']);
+		//$this->prx($this->request->getData()['Users']['customer_code']);
 		
 		$conventionD = $this->Conventions->find()->where(['Conventions.slug' => $convention_slug])->first();
 		
@@ -121,7 +121,7 @@ class HomesController extends AppController {
 		// to see if form posted, then go to next page
 		if ($this->request->is('post')) {
 			
-			$customer_code = $this->request->data['Users']['customer_code'];
+			$customer_code = $this->request->getData()['Users']['customer_code'];
 			
 			if($customer_code)
 			{
@@ -173,7 +173,7 @@ class HomesController extends AppController {
 	
 	public function sendconvreglink($convention_slug=null,$customer_code=null,$season_id=null) {
 		
-		$this->viewbuilder()->layout("home");		
+		$this->viewBuilder()->setLayout("home");		
 		$this->set('title_for_layout', 'Welcome '.TITLE_FOR_PAGES);
 		
 		$this->set('header_menu_register_active', 'active');
@@ -250,15 +250,28 @@ class HomesController extends AppController {
 						
 						//echo $messageToSend;exit;
 						
-						$email = new Email();
-						$email->template('default', 'admintemplate')
-							->emailFormat('html')
-							->to($emailId)
-							->cc(HEADERS_CC)
-							->from([HEADERS_FROM_EMAIL => HEADERS_FROM_NAME])
-							->subject($subjectToSend)
-							->viewVars(['content_for_layout' => $messageToSend])
-							->send();
+						$mailer = new Mailer('default');
+						if (method_exists($mailer, 'setEmailFormat')) {
+							$mailer->setEmailFormat('html');
+						}
+						if (method_exists($mailer, 'setTo')) {
+							$mailer->setTo($emailId);
+						}
+						if (method_exists($mailer, 'setCc')) {
+							$mailer->setCc(HEADERS_CC);
+						}
+						if (method_exists($mailer, 'setFrom')) {
+							$mailer->setFrom([HEADERS_FROM_EMAIL => HEADERS_FROM_NAME]);
+						}
+						if (method_exists($mailer, 'setSubject')) {
+							$mailer->setSubject($subjectToSend);
+						}
+
+						if (method_exists($mailer, 'deliver')) {
+							$mailer->deliver($messageToSend);
+						} else {
+							$mailer->send($messageToSend);
+						}
 							
 						$this->Flash->success('Registration link sent successfully.');
 					}
@@ -339,15 +352,25 @@ class HomesController extends AppController {
 				
 				//echo $messageToSend;exit;
 				
-				$email = new Email();
-				$email->template('default', 'admintemplate')
-					->emailFormat('html')
-					->to($emailId)
-					//->cc(HEADERS_CC)
-					->from([HEADERS_FROM_EMAIL => HEADERS_FROM_NAME])
-					->subject($subjectToSend)
-					->viewVars(['content_for_layout' => $messageToSend])
-					->send();
+				$mailer = new Mailer('default');
+				if (method_exists($mailer, 'setEmailFormat')) {
+					$mailer->setEmailFormat('html');
+				}
+				if (method_exists($mailer, 'setTo')) {
+					$mailer->setTo($emailId);
+				}
+				if (method_exists($mailer, 'setFrom')) {
+					$mailer->setFrom([HEADERS_FROM_EMAIL => HEADERS_FROM_NAME]);
+				}
+				if (method_exists($mailer, 'setSubject')) {
+					$mailer->setSubject($subjectToSend);
+				}
+
+				if (method_exists($mailer, 'deliver')) {
+					$mailer->deliver($messageToSend);
+				} else {
+					$mailer->send($messageToSend);
+				}
 				
 				// confirm school account
 				$this->Users->updateAll(['activation_status' => 1,'modified' => date('Y-m-d H:i:s')], ["id" => $conventionRegD->user_id]);
@@ -367,7 +390,7 @@ class HomesController extends AppController {
 	
 	public function reglinkverified($conventionregistration_slug=null,$conventionregistration_id_md5=null,$convention_name=null) {
 		
-		$this->viewbuilder()->layout("home");		
+		$this->viewBuilder()->setLayout("home");		
 		$this->set('title_for_layout', 'Welcome '.TITLE_FOR_PAGES);
 		
 		$this->set('header_menu_register_active', 'active');
@@ -411,11 +434,11 @@ class HomesController extends AppController {
 	
 	public function headerconvddfrmsubmit() {
 		
-		//$this->prx($this->request->session()->read("user_type"));
+		//$this->prx($this->request->getSession()->read("user_type"));
 		
-		$convention_id = $this->request->data['Conventions']['convention_id'];
+		$convention_id = $this->request->getData()['Conventions']['convention_id'];
 		
-		if ($this->request->session()->read("user_id") > 0)
+		if ($this->request->getSession()->read("user_id") > 0)
 		{
 			if($convention_id >0)
 			{
@@ -423,58 +446,58 @@ class HomesController extends AppController {
 				$season_id = $this->getCurrentSeason();
 				$seasonD = $this->Seasons->find()->where(['Seasons.id' => $season_id])->first();
 				
-				if ($this->request->session()->read("user_type") == "School")
+				if ($this->request->getSession()->read("user_type") == "School")
 				{
-					$user_id = $this->request->session()->read("user_id");
+					$user_id = $this->request->getSession()->read("user_id");
 					$convRegD = $this->Conventionregistrations->find()->where(['Conventionregistrations.convention_id' => $convention_id,'Conventionregistrations.user_id' => $user_id,'Conventionregistrations.season_id' => $season_id])->first();
 				}
 				
-				if ($this->request->session()->read("user_type") == "Teacher_Parent")
+				if ($this->request->getSession()->read("user_type") == "Teacher_Parent")
 				{
-					$user_id = $this->request->session()->read("user_id");
+					$user_id = $this->request->getSession()->read("user_id");
 					$userD = $this->Users->find()->where(['Users.id' => $user_id])->first();
 					$convRegD = $this->Conventionregistrations->find()->where(['Conventionregistrations.convention_id' => $convention_id,'Conventionregistrations.user_id' => $userD->school_id,'Conventionregistrations.season_id' => $season_id])->first();
 				}
 				
-				if ($this->request->session()->read("user_type") == "Judge")
+				if ($this->request->getSession()->read("user_type") == "Judge")
 				{
-					$user_id = $this->request->session()->read("user_id");
+					$user_id = $this->request->getSession()->read("user_id");
 					$userD = $this->Users->find()->where(['Users.id' => $user_id])->first();
 					$convRegD = $this->Conventionregistrations->find()->where(['Conventionregistrations.convention_id' => $convention_id,'Conventionregistrations.user_id' => $user_id,'Conventionregistrations.season_id' => $season_id])->first();
 					//$this->prx($convRegD);
 				}
 				
-				$this->request->session()->write("sess_selected_convention_registration_id", $convRegD->id);
-				$this->request->session()->write("sess_selected_convention_id", $convention_id);
+				$this->request->getSession()->write("sess_selected_convention_registration_id", $convRegD->id);
+				$this->request->getSession()->write("sess_selected_convention_id", $convention_id);
 			}
 			else
 			{
 				// remove session data for convention registration
-				$this->request->session()->delete('sess_selected_convention_registration_id');
-				$this->request->session()->delete('sess_selected_convention_id');
+				$this->request->getSession()->delete('sess_selected_convention_registration_id');
+				$this->request->getSession()->delete('sess_selected_convention_id');
 			}
 		}
 		
 		
-		if ($this->request->session()->read("user_id") > 0 && ($this->request->session()->read("user_type") == "School"))
+		if ($this->request->getSession()->read("user_id") > 0 && ($this->request->getSession()->read("user_type") == "School"))
 		{
 			if($convention_id >0)
 			{
 				// to get convention registration details
 				$season_id = $this->getCurrentSeason();
 				$seasonD = $this->Seasons->find()->where(['Seasons.id' => $season_id])->first();
-				$user_id = $this->request->session()->read("user_id");
+				$user_id = $this->request->getSession()->read("user_id");
 				
 				$convRegD = $this->Conventionregistrations->find()->where(['Conventionregistrations.convention_id' => $convention_id,'Conventionregistrations.user_id' => $user_id,'Conventionregistrations.season_id' => $season_id])->first();
 				
-				$this->request->session()->write("sess_selected_convention_registration_id", $convRegD->id);
-				$this->request->session()->write("sess_selected_convention_id", $convention_id);
+				$this->request->getSession()->write("sess_selected_convention_registration_id", $convRegD->id);
+				$this->request->getSession()->write("sess_selected_convention_id", $convention_id);
 			}
 			else
 			{
 				// remove session data for convention registration
-				$this->request->session()->delete('sess_selected_convention_registration_id');
-				$this->request->session()->delete('sess_selected_convention_id');
+				$this->request->getSession()->delete('sess_selected_convention_registration_id');
+				$this->request->getSession()->delete('sess_selected_convention_id');
 			}
 		}
 		
@@ -484,7 +507,7 @@ class HomesController extends AppController {
 	
 	public function assignteachertostudent($crs_slug=null,$teacher_id=null)
 	{
-		$sess_selected_convention_registration_id = $this->request->session()->read("sess_selected_convention_registration_id");
+		$sess_selected_convention_registration_id = $this->request->getSession()->read("sess_selected_convention_registration_id");
 		if($sess_selected_convention_registration_id>0)
 		{
 			// update teacher_parent_id for this student
@@ -496,7 +519,7 @@ class HomesController extends AppController {
 	
 	public function eventsubmissions($event_id=null)
 	{
-		$sess_selected_convention_registration_id = $this->request->session()->read("sess_selected_convention_registration_id");
+		$sess_selected_convention_registration_id = $this->request->getSession()->read("sess_selected_convention_registration_id");
 		if($event_id>0)
 		{
 			$returnArr 			= array();
@@ -507,8 +530,8 @@ class HomesController extends AppController {
 			
 			// to check if Teacher_Parent is logged in, then we need to allow actions to those students
 			$studentsArr = array();
-			$user_id 	= $this->request->session()->read("user_id");
-			$user_type 	= $this->request->session()->read("user_type");
+			$user_id 	= $this->request->getSession()->read("user_id");
+			$user_type 	= $this->request->getSession()->read("user_type");
 			if($user_type == "Teacher_Parent")
 			{
 				// to get the students assigned to this teacher
@@ -755,7 +778,7 @@ class HomesController extends AppController {
 		//echo $checkedEventIDS;
 		if($crs_slug && $totalEvChecked>0)
 		{	
-			$sess_selected_convention_registration_id = $this->request->session()->read("sess_selected_convention_registration_id");
+			$sess_selected_convention_registration_id = $this->request->getSession()->read("sess_selected_convention_registration_id");
 			
 			$minMaxEventsArr = $this->getMinMaxEvents($sess_selected_convention_registration_id);
 			
@@ -1148,17 +1171,27 @@ class HomesController extends AppController {
 		
 		//echo $messageToSend;exit;
 		
-		$email = new Email();
-		$email->template('default', 'admintemplate')
-			->emailFormat('html')
-			->to($emailId)
-			//->cc(HEADERS_CC)
-			->from([HEADERS_FROM_EMAIL => HEADERS_FROM_NAME])
-			->subject($subjectToSend)
-			->viewVars(['content_for_layout' => $messageToSend])
-			->send();
+		$mailer = new Mailer('default');
+		if (method_exists($mailer, 'setEmailFormat')) {
+			$mailer->setEmailFormat('html');
+		}
+		if (method_exists($mailer, 'setTo')) {
+			$mailer->setTo($emailId);
+		}
+		if (method_exists($mailer, 'setFrom')) {
+			$mailer->setFrom([HEADERS_FROM_EMAIL => HEADERS_FROM_NAME]);
+		}
+		if (method_exists($mailer, 'setSubject')) {
+			$mailer->setSubject($subjectToSend);
+		}
+
+		if (method_exists($mailer, 'deliver')) {
+			$mailer->deliver($messageToSend);
+		} else {
+			$mailer->send($messageToSend);
+		}
 			
-			$this->prx($email);
+			$this->prx($mailer);
 	}
 
 }

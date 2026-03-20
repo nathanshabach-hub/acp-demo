@@ -29,7 +29,7 @@
 					<div class="form-group">
                       <label class="col-sm-2 control-label">Book Name <span class="require">*</span></label>
                       <div class="col-sm-10">
-                          <?php echo $this->Form->input('Books.book_name', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required', 'placeholder'=>'Book Name', 'autocomplete'=>'off']); ?>
+                          <?php echo $this->Form->control('Books.book_name', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required', 'placeholder'=>'Book Name', 'autocomplete'=>'off']); ?>
                       </div>
                     </div>
 					

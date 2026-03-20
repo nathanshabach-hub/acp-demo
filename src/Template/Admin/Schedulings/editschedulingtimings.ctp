@@ -129,13 +129,13 @@ if(!empty($schedulingtimingsD->finish_time) && isset($schedulingtimingsD->finish
 					<div class="form-group">
                       <label class="col-sm-2 control-label">New Start Time <span class="require">*</span></label>
                       <div class="col-sm-10">
-                          <?php echo $this->Form->input('Schedulingtimings.new_start_time', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required mdtpicker', 'placeholder'=>'New Start Time', 'value'=>$currentStartTime]); ?>
+                          <?php echo $this->Form->control('Schedulingtimings.new_start_time', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required mdtpicker', 'placeholder'=>'New Start Time', 'value'=>$currentStartTime]); ?>
                       </div>
                     </div>
 					<div class="form-group">
                       <label class="col-sm-2 control-label">New Finish Time <span class="require">*</span></label>
                       <div class="col-sm-10">
-                          <?php echo $this->Form->input('Schedulingtimings.new_finish_time', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required mdtpicker', 'placeholder'=>'New Start Time', 'value'=>$currentFinishTime]); ?>
+                          <?php echo $this->Form->control('Schedulingtimings.new_finish_time', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required mdtpicker', 'placeholder'=>'New Start Time', 'value'=>$currentFinishTime]); ?>
                       </div>
                     </div>
 					

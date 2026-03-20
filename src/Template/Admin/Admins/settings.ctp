@@ -29,21 +29,21 @@
 					<div class="form-group">
                       <label class="col-sm-2 control-label">PayPal Email <span class="require">*</span></label>
                       <div class="col-sm-10">
-                          <?php echo $this->Form->input('Settings.paypal_email', ['label'=>false, 'type'=>'text', 'div'=>false, 'class'=>'form-control required email', 'value'=>$settingsInfo->paypal_email]); ?>
+                          <?php echo $this->Form->control('Settings.paypal_email', ['label'=>false, 'type'=>'text', 'div'=>false, 'class'=>'form-control required email', 'value'=>$settingsInfo->paypal_email]); ?>
                       </div>
                     </div>
 					
 					<div class="form-group">
                       <label class="col-sm-2 control-label">Accounts Team Email <span class="require">*</span></label>
                       <div class="col-sm-10">
-                          <?php echo $this->Form->input('Settings.accounts_team_email', ['label'=>false, 'type'=>'text', 'div'=>false, 'class'=>'form-control required email', 'value'=>$settingsInfo->accounts_team_email]); ?>
+                          <?php echo $this->Form->control('Settings.accounts_team_email', ['label'=>false, 'type'=>'text', 'div'=>false, 'class'=>'form-control required email', 'value'=>$settingsInfo->accounts_team_email]); ?>
                       </div>
                     </div>
 					
 					<div class="form-group">
                       <label class="col-sm-2 control-label">Full Registration Price (<?php echo CURR; ?>) <span class="require">*</span></label>
                       <div class="col-sm-10">
-                          <?php echo $this->Form->input('Settings.full_registration_price', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required', 'value'=>$settingsInfo->full_registration_price]); ?>
+                          <?php echo $this->Form->control('Settings.full_registration_price', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required', 'value'=>$settingsInfo->full_registration_price]); ?>
 						  <!--<em class="bugdm">* Contact us form data will receive on this email address.</em>-->
                       </div>
                     </div>
@@ -51,35 +51,35 @@
 					<div class="form-group">
                       <label class="col-sm-2 control-label">Scripture only registration (<?php echo CURR; ?>) <span class="require">*</span></label>
                       <div class="col-sm-10">
-                          <?php echo $this->Form->input('Settings.scripture_only_registration_price', ['label'=>false, 'type'=>'text', 'div'=>false, 'class'=>'form-control required', 'value'=>$settingsInfo->scripture_only_registration_price]); ?>
+                          <?php echo $this->Form->control('Settings.scripture_only_registration_price', ['label'=>false, 'type'=>'text', 'div'=>false, 'class'=>'form-control required', 'value'=>$settingsInfo->scripture_only_registration_price]); ?>
                       </div>
                     </div>
 					
 					<div class="form-group">
                       <label class="col-sm-2 control-label">Scripture Trophy Discount (%) <span class="require">*</span></label>
                       <div class="col-sm-10">
-                          <?php echo $this->Form->input('Settings.scripture_trophy_discount', ['label'=>false, 'min'=>0, 'max'=>100, 'type'=>'text', 'div'=>false, 'class'=>'form-control required', 'value'=>$settingsInfo->scripture_trophy_discount]); ?>
+                          <?php echo $this->Form->control('Settings.scripture_trophy_discount', ['label'=>false, 'min'=>0, 'max'=>100, 'type'=>'text', 'div'=>false, 'class'=>'form-control required', 'value'=>$settingsInfo->scripture_trophy_discount]); ?>
                       </div>
                     </div>
 					
 					<div class="form-group">
                       <label class="col-sm-2 control-label">Min. Event Students <span class="require">*</span></label>
                       <div class="col-sm-10">
-                          <?php echo $this->Form->input('Settings.min_events_student', ['label'=>false, 'min'=>1, 'max'=>100, 'type'=>'number', 'div'=>false, 'class'=>'form-control required', 'value'=>$settingsInfo->min_events_student]); ?>
+                          <?php echo $this->Form->control('Settings.min_events_student', ['label'=>false, 'min'=>1, 'max'=>100, 'type'=>'number', 'div'=>false, 'class'=>'form-control required', 'value'=>$settingsInfo->min_events_student]); ?>
                       </div>
                     </div>
 					
 					<div class="form-group">
                       <label class="col-sm-2 control-label">Max. Event Students <span class="require">*</span></label>
                       <div class="col-sm-10">
-                          <?php echo $this->Form->input('Settings.max_events_student', ['label'=>false, 'min'=>1, 'max'=>100, 'type'=>'number', 'div'=>false, 'class'=>'form-control required', 'value'=>$settingsInfo->max_events_student]); ?>
+                          <?php echo $this->Form->control('Settings.max_events_student', ['label'=>false, 'min'=>1, 'max'=>100, 'type'=>'number', 'div'=>false, 'class'=>'form-control required', 'value'=>$settingsInfo->max_events_student]); ?>
                       </div>
                     </div>
 					
 					<div class="form-group">
                       <label class="col-sm-2 control-label">Judges Low Score Pin <span class="require">*</span></label>
                       <div class="col-sm-10">
-                          <?php echo $this->Form->input('Settings.judges_low_score_saving_pin', ['label'=>false, 'type'=>'text', 'div'=>false, 'class'=>'form-control required', 'value'=>$settingsInfo->judges_low_score_saving_pin]); ?>
+                          <?php echo $this->Form->control('Settings.judges_low_score_saving_pin', ['label'=>false, 'type'=>'text', 'div'=>false, 'class'=>'form-control required', 'value'=>$settingsInfo->judges_low_score_saving_pin]); ?>
                       </div>
                     </div>
 					
@@ -87,7 +87,7 @@
 					<div class="form-group">
                       <label class="col-sm-2 control-label">Tax (%) <span class="require"></span></label>
                       <div class="col-sm-10">
-                          <?php echo $this->Form->input('Settings.tax_percent', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required', 'value'=>$settingsInfo->tax_percent]); ?>
+                          <?php echo $this->Form->control('Settings.tax_percent', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required', 'value'=>$settingsInfo->tax_percent]); ?>
                       </div>
                     </div>
 					-->

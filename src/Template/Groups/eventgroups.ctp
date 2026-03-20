@@ -8,8 +8,8 @@
 <?php
 use Cake\ORM\TableRegistry;
 
-$this->Users = TableRegistry::get('Users');
-$this->Crstudentevents = TableRegistry::get('Crstudentevents');
+$this->Users = TableRegistry::getTableLocator()->get('Users');
+$this->Crstudentevents = TableRegistry::getTableLocator()->get('Crstudentevents');
 
 $condTS = array();
 $condTS[] = "(Crstudentevents.conventionregistration_id = '".$conventionRegD->id."')";
@@ -61,7 +61,7 @@ $totalStudentsEvent = $this->Crstudentevents->find()->where($condTS)->count();
 				<div class="form-group">
 					<label for="name">Group</label>
 
-					<?php echo $this->Form->input('Groups.group_name', ['label' => false, 'type' => 'number', 'div' => false, 'class' => 'form-control required', 'placeholder' => 'Group']); ?>
+					<?php echo $this->Form->control('Groups.group_name', ['label' => false, 'type' => 'number', 'div' => false, 'class' => 'form-control required', 'placeholder' => 'Group']); ?>
 				</div>
 
 				<div class="form-group form-btns" style="padding-top:10px;">

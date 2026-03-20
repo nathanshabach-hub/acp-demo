@@ -28,19 +28,19 @@
                     <div class="form-group">
                       <label class="col-sm-2 control-label">Current Email <span class="require"></span></label>
                       <div class="col-sm-10">
-                          <?php echo $this->Form->input('Admins.old_email', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required', 'value'=>$adminInfo->email, 'readonly'=>true]); ?>
+                          <?php echo $this->Form->control('Admins.old_email', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required', 'value'=>$adminInfo->email, 'readonly'=>true]); ?>
                       </div>
                     </div>
                     <div class="form-group">
                       <label class="col-sm-2 control-label">New Email <span class="require">*</span></label>
                       <div class="col-sm-10">
-                          <?php echo $this->Form->input('Admins.new_email', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required', 'placeholder'=>'New Email', 'autocomplete'=>'off']); ?>
+                          <?php echo $this->Form->control('Admins.new_email', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required', 'placeholder'=>'New Email', 'autocomplete'=>'off']); ?>
                       </div>
                     </div>
                     <div class="form-group">
                       <label class="col-sm-2 control-label">Confirm Email <span class="require">*</span></label>
                       <div class="col-sm-10">
-                          <?php echo $this->Form->input('Admins.conf_email', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required', 'placeholder'=>'Confirm Email', 'autocomplete'=>'off', 'equalTo'=>'#admins-new-email']); ?>
+                          <?php echo $this->Form->control('Admins.conf_email', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required', 'placeholder'=>'Confirm Email', 'autocomplete'=>'off', 'equalTo'=>'#admins-new-email']); ?>
                       </div>
                     </div>
 

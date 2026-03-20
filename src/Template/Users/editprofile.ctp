@@ -3,6 +3,7 @@ $(document).ready(function () {
 	$("#editprofile").validate();
 });
 </script>
+<?php $this->Form->setTemplates(['inputContainer' => '{{content}}']); ?>
 <div class="container-fluid p-0">
 	<div class="row">
 		<?php echo $this->element('user_left_menu'); ?>
@@ -16,62 +17,62 @@ $(document).ready(function () {
 					
 					<?php
 					// for school admin
-					if ($this->request->session()->read("user_id") > 0 && ($this->request->session()->read("user_type") == "School"))
+					if ($this->request->getSession()->read("user_id") > 0 && ($this->request->getSession()->read("user_type") == "School"))
 					{
 					?>
 					<div class="form-group">
 						<label for="name">Customer Code</label>
-						<?php echo $this->Form->input('Users.customer_code_no_save', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required', 'placeholder'=>'Customer Code', 'value'=>$users->customer_code,'readonly','disabled']); ?>
+						<?php echo $this->Form->control('Users.customer_code_no_save', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required', 'placeholder'=>'Customer Code', 'value'=>$users->customer_code, 'readonly' => true, 'disabled' => true]); ?>
 					</div>
 					
 					<div class="form-group">
 						<label for="name">School/HSSP Name</label>
-						<?php echo $this->Form->input('Users.first_name', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required', 'placeholder'=>'School/HSSP Name']); ?>
+						<?php echo $this->Form->control('Users.first_name', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required', 'placeholder'=>'School/HSSP Name']); ?>
 					</div>
 					
 					<div class="form-group">
 						<label for="name">Contact Person</label>
-						<?php echo $this->Form->input('Users.middle_name', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required', 'placeholder'=>'Contact Person']); ?>
+						<?php echo $this->Form->control('Users.middle_name', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required', 'placeholder'=>'Contact Person']); ?>
 					</div>
 					
 					<div class="form-group">
 						<label for="name">Telephone 1</label>
-						<?php echo $this->Form->input('Users.phone', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required', 'placeholder'=>'Telephone 1']); ?>
+						<?php echo $this->Form->control('Users.phone', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required', 'placeholder'=>'Telephone 1']); ?>
 					</div>
 					
 					<div class="form-group">
 						<label for="name">Telephone 2</label>
-						<?php echo $this->Form->input('Users.phone2', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control', 'placeholder'=>'Telephone 2']); ?>
+						<?php echo $this->Form->control('Users.phone2', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control', 'placeholder'=>'Telephone 2']); ?>
 					</div>
 					
 					<div class="form-group">
 						<label for="name">Email Address</label>
-						<?php echo $this->Form->input('Users.email_address_old', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required email', 'placeholder'=>'Email Address', 'value'=>$users->email_address,'readonly','disabled']); ?>
+						<?php echo $this->Form->control('Users.email_address_old', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required email', 'placeholder'=>'Email Address', 'value'=>$users->email_address, 'readonly' => true, 'disabled' => true]); ?>
 					</div>
 					
 					<div class="form-group">
 						<label for="name">Bill To Street</label>
-						<?php echo $this->Form->input('Users.bill_to_street', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required', 'placeholder'=>'Bill To Street']); ?>
+						<?php echo $this->Form->control('Users.bill_to_street', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required', 'placeholder'=>'Bill To Street']); ?>
 					</div>
 					
 					<div class="form-group">
 						<label for="name">Bill To Block</label>
-						<?php echo $this->Form->input('Users.bill_to_block', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control', 'placeholder'=>'Bill To Block']); ?>
+						<?php echo $this->Form->control('Users.bill_to_block', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control', 'placeholder'=>'Bill To Block']); ?>
 					</div>
 					
 					<div class="form-group">
 						<label for="name">Bill To City</label>
-						<?php echo $this->Form->input('Users.bill_to_city', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required', 'placeholder'=>'Bill To City']); ?>
+						<?php echo $this->Form->control('Users.bill_to_city', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required', 'placeholder'=>'Bill To City']); ?>
 					</div>
 					
 					<div class="form-group">
 						<label for="name">Bill To Zip</label>
-						<?php echo $this->Form->input('Users.bill_to_zip', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required', 'placeholder'=>'Bill To Zip']); ?>
+						<?php echo $this->Form->control('Users.bill_to_zip', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required', 'placeholder'=>'Bill To Zip']); ?>
 					</div>
 					
 					<div class="form-group">
 						<label for="name">Bill To Country</label>
-						<?php echo $this->Form->input('Users.bill_to_country', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required', 'placeholder'=>'Bill To Country']); ?>
+						<?php echo $this->Form->control('Users.bill_to_country', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required', 'placeholder'=>'Bill To Country']); ?>
 					</div>
 					<?php
 					}
@@ -79,7 +80,7 @@ $(document).ready(function () {
 					
 					<?php
 					// for teacher_parent or supervisor
-					if ($this->request->session()->read("user_id") > 0 && ($this->request->session()->read("user_type") == "Teacher_Parent"))
+					if ($this->request->getSession()->read("user_id") > 0 && ($this->request->getSession()->read("user_type") == "Teacher_Parent"))
 					{
 					?>
 					
@@ -100,12 +101,12 @@ $(document).ready(function () {
 					
 					<div class="form-group">
 						<label for="name">First Name</label>
-						<?php echo $this->Form->input('Users.first_name', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required', 'placeholder'=>'First Name']); ?>
+						<?php echo $this->Form->control('Users.first_name', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required', 'placeholder'=>'First Name']); ?>
 					</div>
 					
 					<div class="form-group">
 						<label for="name">Last Name</label>
-						<?php echo $this->Form->input('Users.last_name', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required', 'placeholder'=>'Last Name']); ?>
+						<?php echo $this->Form->control('Users.last_name', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required', 'placeholder'=>'Last Name']); ?>
 					</div>
 					
 					

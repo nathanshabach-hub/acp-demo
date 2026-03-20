@@ -1,8 +1,8 @@
 <?php
 use Cake\ORM\TableRegistry;
-$this->Conventionregistrationstudents = TableRegistry::get('Conventionregistrationstudents');
-$this->Eventsubmissions = TableRegistry::get('Eventsubmissions');
-$this->Books = TableRegistry::get('Books');
+$this->Conventionregistrationstudents = TableRegistry::getTableLocator()->get('Conventionregistrationstudents');
+$this->Eventsubmissions = TableRegistry::getTableLocator()->get('Eventsubmissions');
+$this->Books = TableRegistry::getTableLocator()->get('Books');
 
 // certificate theme
 $headerImg 		= HTTP_PATH.'/webroot/img/front/certificates/header_silver_apple_award.png';

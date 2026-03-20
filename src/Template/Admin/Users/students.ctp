@@ -18,7 +18,7 @@
                     <div class="form-group align_box dtpickr_inputs">
                        <span class="hints">Search by First Name, Middle Name, Last Name or Email Address</span>
                        <span class="hint">
-                           <?php echo $this->Form->input('Users.keyword', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control', 'placeholder'=>'Type search criteria....']); ?>
+                           <?php echo $this->Form->control('Users.keyword', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control', 'placeholder'=>'Type search criteria....']); ?>
                        </span>
                       
                        <div class="admin_asearch">

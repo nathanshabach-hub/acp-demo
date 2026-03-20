@@ -1,6 +1,39 @@
 <?php
+$menuStateDefaults = [
+	'active_dashboard',
+	'active_teachers',
+	'active_students',
+	'active_convention_registrations',
+	'active_cr_price_structure',
+	'active_cr_teachers',
+	'active_cr_students',
+	'active_cr_studentevents',
+	'active_cr_studentgroups',
+	'active_cr_eventsheart',
+	'active_cr_eventsubmission',
+	'active_cr_packageregistration',
+	'active_cr_resultpackage',
+	'active_transactions',
+	'active_editprofile',
+	'active_changepassword',
+	'active_applyforjudge',
+	'active_judgeexp',
+	'active_cr_judgeevents',
+];
+
+foreach ($menuStateDefaults as $menuStateKey) {
+	if (!isset(${$menuStateKey})) {
+		${$menuStateKey} = '';
+	}
+}
+
+$currentUserId = isset($currentUserId) ? $currentUserId : null;
+$currentUserType = isset($currentUserType) ? $currentUserType : null;
+$currentSessionProfileType = isset($currentSessionProfileType) ? $currentSessionProfileType : null;
+$sessSelectedConventionRegistrationId = isset($sessSelectedConventionRegistrationId) ? $sessSelectedConventionRegistrationId : null;
+
 // school admin left menu
-if ($this->request->session()->read("user_id") > 0 && ($this->request->session()->read("user_type") == "School"))
+if ($currentUserId > 0 && $currentUserType == "School")
 {
 ?>
 	<div class="sidebar-icon d-md-none"><i class="fa fa-bars"></i>
@@ -25,7 +58,7 @@ if ($this->request->session()->read("user_id") > 0 && ($this->request->session()
 				
 				<?php
 				// to show links related to convention registrations
-				if($this->request->session()->read("sess_selected_convention_registration_id")>0)
+				if($sessSelectedConventionRegistrationId > 0)
 				{
 				?>
 				<hr>
@@ -94,7 +127,7 @@ if ($this->request->session()->read("user_id") > 0 && ($this->request->session()
 
 <?php
 // teacher left menu
-if ($this->request->session()->read("user_id") > 0 && ($this->request->session()->read("user_type") == "Teacher_Parent")) {
+if ($currentUserId > 0 && $currentUserType == "Teacher_Parent") {
 ?>
 	<nav id="sidebarMenu" class="col-md-3 col-lg-2 d-md-block bg-blue sidebar collapse">
 		<div class="position-sticky pt-3 pb-3 sidebar-sticky">
@@ -105,7 +138,7 @@ if ($this->request->session()->read("user_id") > 0 && ($this->request->session()
 				
 				<?php
 				// to show links related to convention registrations
-				if($this->request->session()->read("sess_selected_convention_registration_id")>0 && $this->request->session()->read("current_session_profile_type") == "Supervisor")
+				if($sessSelectedConventionRegistrationId > 0 && $currentSessionProfileType == "Supervisor")
 				{
 				?>
 				<hr>
@@ -142,7 +175,7 @@ if ($this->request->session()->read("user_id") > 0 && ($this->request->session()
 				
 			
 				<?php
-				if ($this->request->session()->read("current_session_profile_type")  == "Judge")
+				if ($currentSessionProfileType == "Judge")
 				{
 				?>
 				<hr>
@@ -171,7 +204,7 @@ if ($this->request->session()->read("user_id") > 0 && ($this->request->session()
 
 <?php
 // judges left menu
-if ($this->request->session()->read("user_id") > 0 && ($this->request->session()->read("user_type") == "Judge"))
+if ($currentUserId > 0 && $currentUserType == "Judge")
 {
 ?>
 	<div class="sidebar-icon d-md-none"><i class="fa fa-bars"></i></div>
@@ -189,7 +222,7 @@ if ($this->request->session()->read("user_id") > 0 && ($this->request->session()
 				
 				<?php
 				// to show links related to convention registrations
-				if($this->request->session()->read("sess_selected_convention_registration_id")>0)
+				if($sessSelectedConventionRegistrationId > 0)
 				{
 				?>
 				<hr>

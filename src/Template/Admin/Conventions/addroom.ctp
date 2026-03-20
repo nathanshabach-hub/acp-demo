@@ -30,14 +30,14 @@
 					<div class="form-group">
                       <label class="col-sm-2 control-label">Room Name <span class="require">*</span></label>
                       <div class="col-sm-10">
-						  <?php echo $this->Form->input('Conventionrooms.room_name', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required', 'placeholder'=>'Room Name', 'autocomplete'=>'off']); ?>
+						  <?php echo $this->Form->control('Conventionrooms.room_name', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required', 'placeholder'=>'Room Name', 'autocomplete'=>'off']); ?>
                       </div>
                     </div>
 					
 					<div class="form-group">
                       <label class="col-sm-2 control-label">Short Description <span class="require">*</span></label>
                       <div class="col-sm-10">
-						  <?php echo $this->Form->input('Conventionrooms.short_description', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required', 'placeholder'=>'Short Description', 'autocomplete'=>'off']); ?>
+						  <?php echo $this->Form->control('Conventionrooms.short_description', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required', 'placeholder'=>'Short Description', 'autocomplete'=>'off']); ?>
                       </div>
                     </div>
                     <div class="box-footer">

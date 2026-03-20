@@ -258,6 +258,15 @@ UPDATE `events` SET  division_id='12' WHERE event_id_number IN(400,450,401,451,4
 UPDATE `events` SET  division_id='13' WHERE event_id_number IN(411,461,412,462,413,463,414,464,415,465,466,467,468);
 
 
+36. Add students per block mapping for room-events
+
+ALTER TABLE `conventionseasonroomevents`
+ADD `students_per_block` TEXT NULL DEFAULT NULL AFTER `event_ids`;
+
+-- Add buffer_minutes to Schedulings table for per-convention student event buffer
+ALTER TABLE `schedulings` ADD `buffer_minutes` INT(4) NULL DEFAULT 5 AFTER `season_year`;
+
+
 
 
 

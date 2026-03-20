@@ -1,7 +1,7 @@
 <?php
 use Cake\ORM\TableRegistry;
-$this->Schedulingtimings = TableRegistry::get('Schedulingtimings');
-$this->Crstudentevents = TableRegistry::get('Crstudentevents
+$this->Schedulingtimings = TableRegistry::getTableLocator()->get('Schedulingtimings');
+$this->Crstudentevents = TableRegistry::getTableLocator()->get('Crstudentevents
 ');
 ?>
 <div class="admin_loader" id="loaderID"><?php echo $this->Html->image('loader_large_blue.gif');?></div>

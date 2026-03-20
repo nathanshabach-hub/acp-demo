@@ -10,7 +10,7 @@ use Cake\Datasource\ConnectionManager;
 class ResultsController extends AppController {
 
     public $paginate = ['limit' => 50, 'order' => ['Conventions.name' => 'asc']];
-    var $components = array('RequestHandler', 'PImage', 'PImageTest');
+    public $components = ['RequestHandler', 'PImage', 'PImageTest'];
 
     //public $helpers = array('Javascript', 'Ajax');
 
@@ -18,8 +18,8 @@ class ResultsController extends AppController {
         parent::initialize();
         $this->loadComponent('Paginator');
         $this->loadComponent('Flash');
-        $action = $this->request->params['action'];
-        $loggedAdminId = $this->request->session()->read('admin_id');
+		$action = $this->request->getParam('action');
+		$loggedAdminId = $this->request->getSession()->read('admin_id');
         if ($action != 'forgotPassword' && $action != 'logout') {
             if (!$loggedAdminId && $action != "login" && $action != 'captcha') {
                 $this->redirect(['controller' => 'admins', 'action' => 'login']);
@@ -43,7 +43,7 @@ class ResultsController extends AppController {
 
     public function index($slug_convention_season = null,$slug_convention = null,$slug_event = null) {
         
-        $this->viewBuilder()->layout('admin');
+        $this->viewBuilder()->setLayout('admin');
         
 		$this->set('manageConventions', '1');
         $this->set('conventionList', '1');
@@ -117,9 +117,9 @@ class ResultsController extends AppController {
 		// to save results
 		if ($this->request->is('post'))
 		{
-			//$this->prx($this->request->data);
+			//$this->prx($this->request->getData());
 			
-			$postData = $this->request->data;
+			$postData = $this->request->getData();
 			
 			//$this->prx($postData);
 			
@@ -428,7 +428,7 @@ class ResultsController extends AppController {
 	
 	public function points($slug_convention_season = null,$slug_convention = null) {
         
-        $this->viewBuilder()->layout('admin');
+        $this->viewBuilder()->setLayout('admin');
         
 		$this->set('manageConventions', '1');
         $this->set('conventionList', '1');
@@ -513,7 +513,7 @@ class ResultsController extends AppController {
 	
 	public function overallpoints($slug_convention_season = null,$slug_convention = null) {
         
-        $this->viewBuilder()->layout('admin');
+        $this->viewBuilder()->setLayout('admin');
         
 		$this->set('manageConventions', '1');
         $this->set('conventionList', '1');
@@ -604,7 +604,7 @@ class ResultsController extends AppController {
 	
 	public function overallpositions($slug_convention_season = null,$slug_convention = null) {
         
-        $this->viewBuilder()->layout('admin');
+        $this->viewBuilder()->setLayout('admin');
         
 		$this->set('manageConventions', '1');
         $this->set('conventionList', '1');
@@ -656,7 +656,7 @@ class ResultsController extends AppController {
 	
 	public function overallpositionsprint($slug_convention_season = null,$slug_convention = null) {
         
-        $this->viewBuilder()->layout('print_reports');
+        $this->viewBuilder()->setLayout('print_reports');
         
 		$this->set('manageConventions', '1');
         $this->set('conventionList', '1');
@@ -850,7 +850,7 @@ class ResultsController extends AppController {
 	
 	public function resulttimes($slug_convention_season = null,$slug_convention = null,$slug_event = null) {
         
-        $this->viewBuilder()->layout('admin');
+        $this->viewBuilder()->setLayout('admin');
         
 		$this->set('manageConventions', '1');
         $this->set('conventionList', '1');
@@ -923,9 +923,9 @@ class ResultsController extends AppController {
 		// to save results
 		if ($this->request->is('post'))
 		{
-			//$this->prx($this->request->data);
+			//$this->prx($this->request->getData());
 			
-			$postData = $this->request->data;
+			$postData = $this->request->getData();
 			
 			//$this->prx($postData);
 			
@@ -1119,7 +1119,7 @@ class ResultsController extends AppController {
 	
 	public function resultdistances($slug_convention_season = null,$slug_convention = null,$slug_event = null) {
         
-        $this->viewBuilder()->layout('admin');
+        $this->viewBuilder()->setLayout('admin');
         
 		$this->set('manageConventions', '1');
         $this->set('conventionList', '1');
@@ -1194,9 +1194,9 @@ class ResultsController extends AppController {
 		// to save results
 		if ($this->request->is('post'))
 		{
-			//$this->prx($this->request->data);
+			//$this->prx($this->request->getData());
 			
-			$postData = $this->request->data;
+			$postData = $this->request->getData();
 			
 			//$this->prx($postData);
 			
@@ -1379,7 +1379,7 @@ class ResultsController extends AppController {
 	
 	public function resultscores($slug_convention_season = null,$slug_convention = null,$slug_event = null) {
         
-        $this->viewBuilder()->layout('admin');
+        $this->viewBuilder()->setLayout('admin');
         
 		$this->set('manageConventions', '1');
         $this->set('conventionList', '1');
@@ -1450,9 +1450,9 @@ class ResultsController extends AppController {
 		// to save results
 		if ($this->request->is('post'))
 		{
-			//$this->prx($this->request->data);
+			//$this->prx($this->request->getData());
 			
-			$postData = $this->request->data;
+			$postData = $this->request->getData();
 			
 			//$this->prx($postData);
 			
@@ -1638,7 +1638,7 @@ class ResultsController extends AppController {
 	public function resultsoccerkick($slug_convention_season = null,$slug_convention = null,$slug_event = null)
 	{
         
-        $this->viewBuilder()->layout('admin');
+        $this->viewBuilder()->setLayout('admin');
         
 		$this->set('manageConventions', '1');
         $this->set('conventionList', '1');
@@ -1706,9 +1706,9 @@ class ResultsController extends AppController {
 		// to save results
 		if ($this->request->is('post'))
 		{
-			//$this->prx($this->request->data);
+			//$this->prx($this->request->getData());
 			
-			$postData = $this->request->data;
+			$postData = $this->request->getData();
 			
 			//$this->prx($postData);
 			
@@ -1892,7 +1892,7 @@ class ResultsController extends AppController {
 	public function resultspellings($slug_convention_season = null,$slug_convention = null,$slug_event = null)
 	{
         
-        $this->viewBuilder()->layout('admin');
+        $this->viewBuilder()->setLayout('admin');
         
 		$this->set('manageConventions', '1');
         $this->set('conventionList', '1');
@@ -1959,9 +1959,9 @@ class ResultsController extends AppController {
 		// to save results
 		if ($this->request->is('post'))
 		{
-			//$this->prx($this->request->data);
+			//$this->prx($this->request->getData());
 			
-			$postData = $this->request->data;
+			$postData = $this->request->getData();
 			
 			//$this->prx($postData);
 			
@@ -2002,7 +2002,7 @@ class ResultsController extends AppController {
 	// Division winners
 	public function divisionwinners($slug_convention_season = null,$slug_convention = null) {
         
-        $this->viewBuilder()->layout('admin');
+        $this->viewBuilder()->setLayout('admin');
         
 		$this->set('manageConventions', '1');
         $this->set('conventionList', '1');
@@ -2091,7 +2091,7 @@ class ResultsController extends AppController {
 	
 	public function divisionwinnercertificatepdf($slug_convention_season = null,$slug_division = null,$slug_student = null) {
         
-        $this->viewbuilder()->layout('');
+        $this->viewBuilder()->setLayout('');
         
 		$this->set('manageConventions', '1');
         $this->set('conventionList', '1');
@@ -2149,7 +2149,7 @@ class ResultsController extends AppController {
 	// 24/7 Certificate
 	public function certificate24by7pdf($slug_convention_season = null,$slug_student = null,$points = null) {
         
-        $this->viewbuilder()->layout('');
+        $this->viewBuilder()->setLayout('');
 		
         if ($slug_convention_season) {
             $conventionSD 			= $this->Conventionseasons->find()->where(['Conventionseasons.slug' => $slug_convention_season])->contain(['Conventions'])->first();

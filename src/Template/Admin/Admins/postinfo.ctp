@@ -29,7 +29,7 @@
 					<div class="form-group">
                       <label class="col-sm-2 control-label">Post Information <span class="require"></span></label>
                       <div class="col-sm-10">
-                          <?php echo $this->Form->input('Settings.postinfo', ['label'=>false, 'type'=>'textarea', 'div'=>false, 'class'=>'form-control', 'value'=>$settingsInfo->postinfo]); ?>
+                          <?php echo $this->Form->control('Settings.postinfo', ['label'=>false, 'type'=>'textarea', 'div'=>false, 'class'=>'form-control', 'value'=>$settingsInfo->postinfo]); ?>
                       </div>
                     </div>
 

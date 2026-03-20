@@ -13,8 +13,9 @@
           <li><?php echo $this->Html->link('<i class="fa fa-dashboard"></i> <span>Dashboard</span> ', ['controller'=>'admins', 'action'=>'dashboard'], ['escape'=>false]);?></li>
           <li><?php echo $this->Html->link('<i class="fa fa-bars"></i> Conventions ', ['controller'=>'conventions', 'action'=>'index'], ['escape'=>false]);?></li>
 		  <li><?php echo $this->Html->link('<i class="fa fa-bullhorn"></i> Seasons ', ['controller'=>'conventions', 'action'=>'seasons',$conventionSD->Conventions['slug']], ['escape'=>false]);?></li>
-          <li class="active">Add Room Events :: Convention - <?php echo $conventionSD->Conventions['name']; ?></li>
+					<li class="active">Add Room Events</li>
       </ol>
+			<div style="clear: both;"></div>
     </section>
 
     <section class="content">
@@ -23,6 +24,11 @@
                 <h3 class="box-title">&nbsp;</h3>
             </div>
             <div class="ersu_message"> <?php echo $this->Flash->render() ?> </div>
+			<div style="padding: 0 15px 10px 15px; text-align: right;">
+				<?php if(count($pendingEventsToRoomsList)>0) { ?>
+				<button type="button" class="btn btn-success" data-toggle="modal" data-target="#myModalPendingEvents">Pending Events (<?php echo count($pendingEventsToRoomsList); ?>)</button>
+				<?php } ?>
+			</div>
             <?php echo $this->Form->create($conventionseasonroomevents, ['id'=>'adminForm', 'type' => 'file']); ?>
                 <div class="form-horizontal">
                     <div class="box-body">
@@ -103,3 +109,31 @@
           </div>
     </section>
   </div>
+
+<?php if(count($pendingEventsToRoomsList)>0) { ?>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
+<div class="modal fade" id="myModalPendingEvents" role="dialog">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal">&times;</button>
+				<h4 class="modal-title">Pending Events <?php echo count($pendingEventsToRoomsList); ?></h4>
+			</div>
+			<div class="modal-body">
+				<?php
+				$cntrPE = 1;
+				foreach($pendingEventsToRoomsList as $pendingev) {
+				?>
+					<p><?php echo $cntrPE.'.&nbsp;&nbsp;'.$pendingev; ?></p>
+				<?php
+				$cntrPE++;
+				}
+				?>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+			</div>
+		</div>
+	</div>
+</div>
+<?php } ?>

@@ -10,7 +10,7 @@ use Cake\Datasource\ConnectionManager;
 class EventsubmissionsController extends AppController {
 
     public $paginate = ['limit' => 50, 'order' => ['Conventions.name' => 'asc']];
-    var $components = array('RequestHandler', 'PImage', 'PImageTest');
+    public $components = ['RequestHandler', 'PImage', 'PImageTest'];
 
     //public $helpers = array('Javascript', 'Ajax');
 
@@ -18,8 +18,8 @@ class EventsubmissionsController extends AppController {
         parent::initialize();
         $this->loadComponent('Paginator');
         $this->loadComponent('Flash');
-        $action = $this->request->params['action'];
-        $loggedAdminId = $this->request->session()->read('admin_id');
+		$action = $this->request->getParam('action');
+		$loggedAdminId = $this->request->getSession()->read('admin_id');
         if ($action != 'forgotPassword' && $action != 'logout') {
             if (!$loggedAdminId && $action != "login" && $action != 'captcha') {
                 $this->redirect(['controller' => 'admins', 'action' => 'login']);
@@ -37,7 +37,7 @@ class EventsubmissionsController extends AppController {
 	public function index($slug=null) {
 
         $this->set('title', ADMIN_TITLE . 'Event submissions');
-        $this->viewBuilder()->layout('admin');
+        $this->viewBuilder()->setLayout('admin');
         $this->set('manageRegistrations', '1');
         $this->set('registrationsList', '1');
 		
@@ -60,7 +60,7 @@ class EventsubmissionsController extends AppController {
         $this->paginate = ['contain' => ['Conventions','Students','Events','Uploadeduser'], 'conditions' => $condition, 'limit' => 1000000000, 'order' => ['Eventsubmissions.id' => 'DESC']];
         $this->set('eventsubmissions', $this->paginate($this->Eventsubmissions));
         if ($this->request->is("ajax")) {
-            $this->viewBuilder()->layout(($this->request->is("ajax")) ? "" : "default");
+            $this->viewBuilder()->setLayout(($this->request->is("ajax")) ? "" : "default");
             $this->viewBuilder()->templatePath('Element' . DS . 'Admin/Eventsubmissions');
             $this->render('index');
         } */
@@ -129,7 +129,7 @@ class EventsubmissionsController extends AppController {
 	public function guidelinebreach($slug=null) {
 
         $this->set('title', ADMIN_TITLE . 'Guideline Breach');
-        $this->viewBuilder()->layout('admin');
+        $this->viewBuilder()->setLayout('admin');
         $this->set('judgeEvaluations', '1');
         $this->set('guidelineBreachList', '1');
 		
@@ -139,7 +139,7 @@ class EventsubmissionsController extends AppController {
 		$condition = array('Eventsubmissions.guideline_breach !=' => 0);
 		
 		// to check if conv season selected from header then filter list
-		$sess_admin_header_season_id = $this->request->session()->read("sess_admin_header_season_id");
+		$sess_admin_header_season_id = $this->request->getSession()->read("sess_admin_header_season_id");
 		if($sess_admin_header_season_id>0)
 		{
 			$condition[] = "(Eventsubmissions.conventionseason_id = '".$sess_admin_header_season_id."')";
@@ -151,7 +151,7 @@ class EventsubmissionsController extends AppController {
         $this->paginate = ['contain' => ['Conventionregistrations','Conventions','Users','Events','Students','Uploadeduser','Judge'], 'conditions' => $condition, 'limit' => 100000, 'order' => ['Eventsubmissions.modified' => 'DESC']];
         $this->set('eventsubmissions', $this->paginate($this->Eventsubmissions));
         if ($this->request->is("ajax")) {
-            $this->viewBuilder()->layout(($this->request->is("ajax")) ? "" : "default");
+			$this->viewBuilder()->setLayout(($this->request->is("ajax")) ? "" : "default");
             $this->viewBuilder()->templatePath('Element' . DS . 'Admin/Eventsubmissions');
             $this->render('guidelinebreach');
         }
@@ -212,7 +212,7 @@ class EventsubmissionsController extends AppController {
 	public function commandperformance($slug=null) {
 
         $this->set('title', ADMIN_TITLE . 'Command Performance');
-        $this->viewBuilder()->layout('admin');
+        $this->viewBuilder()->setLayout('admin');
         $this->set('judgeEvaluations', '1');
         $this->set('commandPerformanceList', '1');
 		
@@ -222,7 +222,7 @@ class EventsubmissionsController extends AppController {
 		$condition = array('Eventsubmissions.command_performance' => 1);
 		
 		// to check if conv season selected from header then filter list
-		$sess_admin_header_season_id = $this->request->session()->read("sess_admin_header_season_id");
+		$sess_admin_header_season_id = $this->request->getSession()->read("sess_admin_header_season_id");
 		if($sess_admin_header_season_id>0)
 		{
 			$condition[] = "(Eventsubmissions.conventionseason_id = '".$sess_admin_header_season_id."')";
@@ -234,7 +234,7 @@ class EventsubmissionsController extends AppController {
         $this->paginate = ['contain' => ['Conventionregistrations','Conventions','Users','Events','Students','Uploadeduser','Judgecommand'], 'conditions' => $condition, 'limit' => 100000, 'order' => ['Eventsubmissions.id' => 'DESC']];
         $this->set('eventsubmissions', $this->paginate($this->Eventsubmissions));
         if ($this->request->is("ajax")) {
-            $this->viewBuilder()->layout(($this->request->is("ajax")) ? "" : "default");
+			$this->viewBuilder()->setLayout(($this->request->is("ajax")) ? "" : "default");
             $this->viewBuilder()->templatePath('Element' . DS . 'Admin/Eventsubmissions');
             $this->render('commandperformance');
         }

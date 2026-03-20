@@ -5,12 +5,11 @@ namespace App\Controller\Admin;
 use App\Controller\AppController;
 use Cake\Core\Configure;
 use Cake\Core\Configure\Engine\PhpConfig;
-use Cake\Mailer\Email;
 
 class ConventionregistrationsController extends AppController {
 
     public $paginate = ['limit' => 50, 'order' => ['Conventionregistrations.name' => 'asc']];
-    var $components = array('RequestHandler', 'PImage', 'PImageTest');
+    public $components = ['RequestHandler', 'PImage', 'PImageTest'];
 
     //public $helpers = array('Javascript', 'Ajax');
 
@@ -18,8 +17,8 @@ class ConventionregistrationsController extends AppController {
         parent::initialize();
         $this->loadComponent('Paginator');
         $this->loadComponent('Flash');
-        $action = $this->request->params['action'];
-        $loggedAdminId = $this->request->session()->read('admin_id');
+        $action = $this->request->getParam('action');
+        $loggedAdminId = $this->request->getSession()->read('admin_id');
         if ($action != 'forgotPassword' && $action != 'logout') {
             if (!$loggedAdminId && $action != "login" && $action != 'captcha') {
                 $this->redirect(['controller' => 'admins', 'action' => 'login']);
@@ -41,7 +40,7 @@ class ConventionregistrationsController extends AppController {
     public function index() {
 
         $this->set('title', ADMIN_TITLE . 'Manage Convention Registrations');
-        $this->viewBuilder()->layout('admin');
+        $this->viewBuilder()->setLayout('admin');
         $this->set('manageRegistrations', '1');
         $this->set('registrationsList', '1');
 
@@ -50,7 +49,7 @@ class ConventionregistrationsController extends AppController {
         //$condition = array('Conventionregistrations.parent_id' => 0);
 		
 		// to check if conv season selected from header then filter list
-		$sess_admin_header_season_id = $this->request->session()->read("sess_admin_header_season_id");
+		$sess_admin_header_season_id = $this->request->getSession()->read("sess_admin_header_season_id");
 		if($sess_admin_header_season_id>0)
 		{
 			$condition[] = "(Conventionregistrations.conventionseason_id = '".$sess_admin_header_season_id."')";
@@ -66,9 +65,9 @@ class ConventionregistrationsController extends AppController {
 		$this->set('seasonsDD', $seasonsDD);
 
         if ($this->request->is('post')) {
-            if (isset($this->request->data['action'])) {
-                $idList = implode(',', $this->request->data['chkRecordId']);
-                $action = $this->request->data['action'];
+            if (isset($this->request->getData()['action'])) {
+                $idList = implode(',', $this->request->getData()['chkRecordId']);
+                $action = $this->request->getData()['action'];
                 if ($idList) {
                     if ($action == "Activate") {
                         $this->Conventionregistrations->updateAll(['status' => '1'], ["id IN ($idList)"]);
@@ -83,15 +82,15 @@ class ConventionregistrationsController extends AppController {
                 }
             }
 
-            if (isset($this->request->data['Conventionregistrations']['convention_id']) && $this->request->data['Conventionregistrations']['convention_id'] != '') {
-                $convention_id = trim($this->request->data['Conventionregistrations']['convention_id']);
+            if (isset($this->request->getData()['Conventionregistrations']['convention_id']) && $this->request->getData()['Conventionregistrations']['convention_id'] != '') {
+                $convention_id = trim($this->request->getData()['Conventionregistrations']['convention_id']);
             }
-			if (isset($this->request->data['Conventionregistrations']['season_year']) && $this->request->data['Conventionregistrations']['season_year'] != '') {
-                $season_year = trim($this->request->data['Conventionregistrations']['season_year']);
+			if (isset($this->request->getData()['Conventionregistrations']['season_year']) && $this->request->getData()['Conventionregistrations']['season_year'] != '') {
+                $season_year = trim($this->request->getData()['Conventionregistrations']['season_year']);
             }
-        } elseif ($this->request->params) {
-            if (isset($this->request->params['pass'][0]) && $this->request->params['pass'][0] != '') {
-                $searchArr = $this->request->params['pass'];
+        } elseif ($this->request->getParam('pass')) {
+            if (isset($this->request->getParam('pass')[0]) && $this->request->getParam('pass')[0] != '') {
+                $searchArr = $this->request->getParam('pass');
                 foreach ($searchArr as $val) {
                     if (strpos($val, ":") !== false) {
                         $vars = explode(":", $val);
@@ -120,7 +119,7 @@ class ConventionregistrationsController extends AppController {
         $this->paginate = ['contain' => ['Conventions','Users'], 'conditions' => $condition, 'limit' => 1000000000, 'order' => ['Conventionregistrations.id' => 'DESC']];
         $this->set('conventionregistrations', $this->paginate($this->Conventionregistrations));
         if ($this->request->is("ajax")) {
-            $this->viewBuilder()->layout(($this->request->is("ajax")) ? "" : "default");
+            $this->viewBuilder()->setLayout(($this->request->is("ajax")) ? "" : "default");
             $this->viewBuilder()->templatePath('Element' . DS . 'Admin/Conventionregistrations');
             $this->render('index');
         } */
@@ -133,7 +132,7 @@ class ConventionregistrationsController extends AppController {
 	public function teachers($slug=null) {
 
         $this->set('title', ADMIN_TITLE . 'Convention Registrations Supervisors');
-        $this->viewBuilder()->layout('admin');
+        $this->viewBuilder()->setLayout('admin');
         $this->set('manageRegistrations', '1');
         $this->set('registrationsList', '1');
 		
@@ -154,9 +153,9 @@ class ConventionregistrationsController extends AppController {
         
 
         if ($this->request->is('post')) {
-            if (isset($this->request->data['action'])) {
-                $idList = implode(',', $this->request->data['chkRecordId']);
-                $action = $this->request->data['action'];
+            if (isset($this->request->getData()['action'])) {
+                $idList = implode(',', $this->request->getData()['chkRecordId']);
+                $action = $this->request->getData()['action'];
                 if ($idList) {
                     if ($action == "Activate") {
                         $this->Conventionregistrationteachers->updateAll(['status' => '1'], ["id IN ($idList)"]);
@@ -171,15 +170,15 @@ class ConventionregistrationsController extends AppController {
                 }
             }
 
-            if (isset($this->request->data['Conventionregistrationteachers']['convention_id']) && $this->request->data['Conventionregistrationteachers']['convention_id'] != '') {
-                $convention_id = trim($this->request->data['Conventionregistrationteachers']['convention_id']);
+            if (isset($this->request->getData()['Conventionregistrationteachers']['convention_id']) && $this->request->getData()['Conventionregistrationteachers']['convention_id'] != '') {
+                $convention_id = trim($this->request->getData()['Conventionregistrationteachers']['convention_id']);
             }
-			if (isset($this->request->data['Conventionregistrationteachers']['season_year']) && $this->request->data['Conventionregistrationteachers']['season_year'] != '') {
-                $season_year = trim($this->request->data['Conventionregistrationteachers']['season_year']);
+			if (isset($this->request->getData()['Conventionregistrationteachers']['season_year']) && $this->request->getData()['Conventionregistrationteachers']['season_year'] != '') {
+                $season_year = trim($this->request->getData()['Conventionregistrationteachers']['season_year']);
             }
-        } elseif ($this->request->params) {
-            if (isset($this->request->params['pass'][0]) && $this->request->params['pass'][0] != '') {
-                $searchArr = $this->request->params['pass'];
+        } elseif ($this->request->getParam('pass')) {
+            if (isset($this->request->getParam('pass')[0]) && $this->request->getParam('pass')[0] != '') {
+                $searchArr = $this->request->getParam('pass');
                 foreach ($searchArr as $val) {
                     if (strpos($val, ":") !== false) {
                         $vars = explode(":", $val);
@@ -206,7 +205,7 @@ class ConventionregistrationsController extends AppController {
         $this->paginate = ['contain' => ['Users','Teachers'], 'conditions' => $condition, 'limit' => 500, 'order' => ['Conventionregistrationteachers.id' => 'DESC']];
         $this->set('conventionregistrationteachers', $this->paginate($this->Conventionregistrationteachers));
         if ($this->request->is("ajax")) {
-            $this->viewBuilder()->layout(($this->request->is("ajax")) ? "" : "default");
+            $this->viewBuilder()->setLayout(($this->request->is("ajax")) ? "" : "default");
             $this->viewBuilder()->templatePath('Element' . DS . 'Admin/Conventionregistrations');
             $this->render('teachers');
         }
@@ -215,7 +214,7 @@ class ConventionregistrationsController extends AppController {
 	public function students($slug=null) {
 
         $this->set('title', ADMIN_TITLE . 'Convention Registrations Students');
-        $this->viewBuilder()->layout('admin');
+        $this->viewBuilder()->setLayout('admin');
         $this->set('manageRegistrations', '1');
         $this->set('registrationsList', '1');
 		
@@ -235,9 +234,9 @@ class ConventionregistrationsController extends AppController {
         
 
         if ($this->request->is('post')) {
-            if (isset($this->request->data['action'])) {
-                $idList = implode(',', $this->request->data['chkRecordId']);
-                $action = $this->request->data['action'];
+            if (isset($this->request->getData()['action'])) {
+                $idList = implode(',', $this->request->getData()['chkRecordId']);
+                $action = $this->request->getData()['action'];
                 if ($idList) {
                     if ($action == "Activate") {
                         $this->Conventionregistrationstudents->updateAll(['status' => '1'], ["id IN ($idList)"]);
@@ -252,15 +251,15 @@ class ConventionregistrationsController extends AppController {
                 }
             }
 
-            if (isset($this->request->data['Conventionregistrationstudents']['convention_id']) && $this->request->data['Conventionregistrationstudents']['convention_id'] != '') {
-                $convention_id = trim($this->request->data['Conventionregistrationstudents']['convention_id']);
+            if (isset($this->request->getData()['Conventionregistrationstudents']['convention_id']) && $this->request->getData()['Conventionregistrationstudents']['convention_id'] != '') {
+                $convention_id = trim($this->request->getData()['Conventionregistrationstudents']['convention_id']);
             }
-			if (isset($this->request->data['Conventionregistrationstudents']['season_year']) && $this->request->data['Conventionregistrationstudents']['season_year'] != '') {
-                $season_year = trim($this->request->data['Conventionregistrationstudents']['season_year']);
+			if (isset($this->request->getData()['Conventionregistrationstudents']['season_year']) && $this->request->getData()['Conventionregistrationstudents']['season_year'] != '') {
+                $season_year = trim($this->request->getData()['Conventionregistrationstudents']['season_year']);
             }
-        } elseif ($this->request->params) {
-            if (isset($this->request->params['pass'][0]) && $this->request->params['pass'][0] != '') {
-                $searchArr = $this->request->params['pass'];
+        } elseif ($this->request->getParam('pass')) {
+            if (isset($this->request->getParam('pass')[0]) && $this->request->getParam('pass')[0] != '') {
+                $searchArr = $this->request->getParam('pass');
                 foreach ($searchArr as $val) {
                     if (strpos($val, ":") !== false) {
                         $vars = explode(":", $val);
@@ -287,7 +286,7 @@ class ConventionregistrationsController extends AppController {
         $this->paginate = ['contain' => ['Users','Students','Teachers'], 'conditions' => $condition, 'limit' => 500, 'order' => ['Conventionregistrationstudents.id' => 'DESC']];
         $this->set('conventionregistrationstudents', $this->paginate($this->Conventionregistrationstudents));
         if ($this->request->is("ajax")) {
-            $this->viewBuilder()->layout(($this->request->is("ajax")) ? "" : "default");
+            $this->viewBuilder()->setLayout(($this->request->is("ajax")) ? "" : "default");
             $this->viewBuilder()->templatePath('Element' . DS . 'Admin/Conventionregistrations');
             $this->render('students');
         }
@@ -296,7 +295,7 @@ class ConventionregistrationsController extends AppController {
 	public function heartevents($slug=null) {
 
         $this->set('title', ADMIN_TITLE . 'Events of the heart');
-        $this->viewBuilder()->layout('admin');
+        $this->viewBuilder()->setLayout('admin');
         $this->set('manageRegistrations', '1');
         $this->set('registrationsList', '1');
 		
@@ -316,9 +315,9 @@ class ConventionregistrationsController extends AppController {
         
 
         if ($this->request->is('post')) {
-            if (isset($this->request->data['action'])) {
-                $idList = implode(',', $this->request->data['chkRecordId']);
-                $action = $this->request->data['action'];
+            if (isset($this->request->getData()['action'])) {
+                $idList = implode(',', $this->request->getData()['chkRecordId']);
+                $action = $this->request->getData()['action'];
                 if ($idList) {
                     if ($action == "Activate") {
                         $this->Heartevents->updateAll(['status' => '1'], ["id IN ($idList)"]);
@@ -333,15 +332,15 @@ class ConventionregistrationsController extends AppController {
                 }
             }
 
-            if (isset($this->request->data['Heartevents']['convention_id']) && $this->request->data['Heartevents']['convention_id'] != '') {
-                $convention_id = trim($this->request->data['Heartevents']['convention_id']);
+            if (isset($this->request->getData()['Heartevents']['convention_id']) && $this->request->getData()['Heartevents']['convention_id'] != '') {
+                $convention_id = trim($this->request->getData()['Heartevents']['convention_id']);
             }
-			if (isset($this->request->data['Heartevents']['season_year']) && $this->request->data['Heartevents']['season_year'] != '') {
-                $season_year = trim($this->request->data['Heartevents']['season_year']);
+			if (isset($this->request->getData()['Heartevents']['season_year']) && $this->request->getData()['Heartevents']['season_year'] != '') {
+                $season_year = trim($this->request->getData()['Heartevents']['season_year']);
             }
-        } elseif ($this->request->params) {
-            if (isset($this->request->params['pass'][0]) && $this->request->params['pass'][0] != '') {
-                $searchArr = $this->request->params['pass'];
+        } elseif ($this->request->getParam('pass')) {
+            if (isset($this->request->getParam('pass')[0]) && $this->request->getParam('pass')[0] != '') {
+                $searchArr = $this->request->getParam('pass');
                 foreach ($searchArr as $val) {
                     if (strpos($val, ":") !== false) {
                         $vars = explode(":", $val);
@@ -368,7 +367,7 @@ class ConventionregistrationsController extends AppController {
         $this->paginate = ['contain' => ['Conventions','Students','Uploadeduser'], 'conditions' => $condition, 'limit' => 50, 'order' => ['Heartevents.id' => 'DESC']];
         $this->set('heartevents', $this->paginate($this->Heartevents));
         if ($this->request->is("ajax")) {
-            $this->viewBuilder()->layout(($this->request->is("ajax")) ? "" : "default");
+            $this->viewBuilder()->setLayout(($this->request->is("ajax")) ? "" : "default");
             $this->viewBuilder()->templatePath('Element' . DS . 'Admin/Heartevents');
             $this->render('heartevents');
         }
@@ -423,15 +422,7 @@ class ConventionregistrationsController extends AppController {
 			
 			//echo $messageToSend; exit;
 			
-			$email = new Email();
-			$email->template('default', 'admintemplate')
-				->emailFormat('html')
-				->to($emailId)
-				->cc(ACCOUNTS_TEAM_ANOTHER_EMAIL)
-				->from([HEADERS_FROM_EMAIL => HEADERS_FROM_NAME])
-				->subject($subjectToSend)
-				->viewVars(['content_for_layout' => $messageToSend])
-				->send();
+            $this->sendLegacyHtmlEmail($emailId, $subjectToSend, $messageToSend, [HEADERS_FROM_EMAIL => HEADERS_FROM_NAME], ACCOUNTS_TEAM_ANOTHER_EMAIL);
 			
 			$this->Flash->success('Registration approved successfully.');
 		
@@ -463,15 +454,7 @@ class ConventionregistrationsController extends AppController {
 			
 			//echo $messageToSend; exit;
 			
-			$email = new Email();
-			$email->template('default', 'admintemplate')
-				->emailFormat('html')
-				->to($emailId)
-				->cc(ACCOUNTS_TEAM_ANOTHER_EMAIL)
-				->from([HEADERS_FROM_EMAIL => HEADERS_FROM_NAME])
-				->subject($subjectToSend)
-				->viewVars(['content_for_layout' => $messageToSend])
-				->send();
+            $this->sendLegacyHtmlEmail($emailId, $subjectToSend, $messageToSend, [HEADERS_FROM_EMAIL => HEADERS_FROM_NAME], ACCOUNTS_TEAM_ANOTHER_EMAIL);
 			
 			$this->Flash->success('Registration approved successfully.');
 		
@@ -486,7 +469,7 @@ class ConventionregistrationsController extends AppController {
 	public function judgeregevents($slug=null) {
 
         $this->set('title', ADMIN_TITLE . 'Judge Events');
-        $this->viewBuilder()->layout('admin');
+        $this->viewBuilder()->setLayout('admin');
         $this->set('manageRegistrations', '1');
         $this->set('registrationsList', '1');
 		
@@ -542,13 +525,13 @@ class ConventionregistrationsController extends AppController {
 			
 			if ($this->request->is('post'))
 			{	
-				//$this->prx($this->request->data);
+				//$this->prx($this->request->getData());
 				
-				$send_email_notification = $this->request->data['send_email_notification'];
+				$send_email_notification = $this->request->getData()['send_email_notification'];
 				
-				if(count($this->request->data['Conventionregistrations']['judges_event_ids']))
+				if(count($this->request->getData()['Conventionregistrations']['judges_event_ids']))
 				{
-					$judges_event_ids 			= implode(",",$this->request->data['Conventionregistrations']['judges_event_ids']);
+					$judges_event_ids 			= implode(",",$this->request->getData()['Conventionregistrations']['judges_event_ids']);
 				}
 				else
 				{
@@ -574,15 +557,7 @@ class ConventionregistrationsController extends AppController {
 					
 					//echo $messageToSend; exit;
 					
-					$email = new Email();
-					$email->template('default', 'admintemplate')
-						->emailFormat('html')
-						->to($emailId)
-						->cc(ACCOUNTS_TEAM_ANOTHER_EMAIL)
-						->from([HEADERS_FROM_EMAIL => HEADERS_FROM_NAME])
-						->subject($subjectToSend)
-						->viewVars(['content_for_layout' => $messageToSend])
-						->send();
+                    $this->sendLegacyHtmlEmail($emailId, $subjectToSend, $messageToSend, [HEADERS_FROM_EMAIL => HEADERS_FROM_NAME], ACCOUNTS_TEAM_ANOTHER_EMAIL);
 					
 					$msgNot = " Email notification sent successfully to judge.";
 				}
@@ -606,10 +581,10 @@ class ConventionregistrationsController extends AppController {
 	public function allschools($conv_season_slug=null) {
 
         $this->set('title', ADMIN_TITLE . 'Convention Registrations Schools');
-        $this->viewBuilder()->layout('admin');
+        $this->viewBuilder()->setLayout('admin');
         $this->set('dashboard', '1');
 		
-		$sess_admin_header_season_id = $this->request->session()->read("sess_admin_header_season_id");
+		$sess_admin_header_season_id = $this->request->getSession()->read("sess_admin_header_season_id");
 		$convSeasonD = $this->Conventionseasons->find()->where(['Conventionseasons.id' => $sess_admin_header_season_id])->first();
 		
 		$this->set('convSeasonD', $convSeasonD);
@@ -626,11 +601,11 @@ class ConventionregistrationsController extends AppController {
 	public function alljudges() {
 
         $this->set('title', ADMIN_TITLE . 'Convention Registrations Judges');
-        $this->viewBuilder()->layout('admin');
+        $this->viewBuilder()->setLayout('admin');
         $this->set('dashboard', '1');
         //$this->set('registrationsList', '1');
 		
-		$sess_admin_header_season_id = $this->request->session()->read("sess_admin_header_season_id");
+		$sess_admin_header_season_id = $this->request->getSession()->read("sess_admin_header_season_id");
 		$convSeasonD = $this->Conventionseasons->find()->where(['Conventionseasons.id' => $sess_admin_header_season_id])->first();
 		
 		$condition[] = "(Conventionregistrations.convention_id = '".$convSeasonD->convention_id."' AND Conventionregistrations.season_id = '".$convSeasonD->season_id."' AND Conventionregistrations.season_year = '".$convSeasonD->season_year."')";

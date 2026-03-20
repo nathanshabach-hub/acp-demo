@@ -6,13 +6,13 @@ use Cake\Datasource\ConnectionManager;
 use App\Controller\AppController;
 use Cake\Core\Configure;
 use Cake\Core\Configure\Engine\PhpConfig;
-use Cake\Mailer\Email;
+use Cake\Mailer\Mailer;
 use Cake\I18n\I18n;
 
 class JudgeevaluationsController extends AppController {
 
     public $paginate = ['limit' => 50];
-    var $components = array('RequestHandler', 'PImage', 'PImageTest');
+    public $components = ['RequestHandler', 'PImage', 'PImageTest'];
 	
 	public function initialize() {
         parent::initialize();
@@ -40,14 +40,14 @@ class JudgeevaluationsController extends AppController {
 		//echo 'ddd';exit;
 		$this->userLoginCheck();
 		
-		$user_id 	= $this->request->session()->read("user_id");
-		$user_type 	= $this->request->session()->read("user_type");
+		$user_id 	= $this->request->getSession()->read("user_id");
+		$user_type 	= $this->request->getSession()->read("user_type");
 		
 		//echo ' fsdf sdf sdf d';exit;
-		$this->viewbuilder()->layout("home");		
+		$this->viewBuilder()->setLayout("home");		
 		$this->set('title_for_layout', 'Low Score '.TITLE_FOR_PAGES);
 		
-		if($this->request->session()->read("sess_selected_convention_registration_id")>0)
+		if($this->request->getSession()->read("sess_selected_convention_registration_id")>0)
 		{
 			$this->set('active_cr_judgeevents','active');
 		}
@@ -60,8 +60,8 @@ class JudgeevaluationsController extends AppController {
 		$this->set('event_submission_slug',$event_submission_slug);
 		
 		// To get data from session
-		$judges_evaluation_low_score_form_data 	= $this->request->session()->read("judges_evaluation_low_score_form_data");
-		$judges_evaluation_low_score 	= $this->request->session()->read("judges_evaluation_low_score");
+		$judges_evaluation_low_score_form_data 	= $this->request->getSession()->read("judges_evaluation_low_score_form_data");
+		$judges_evaluation_low_score 	= $this->request->getSession()->read("judges_evaluation_low_score");
 		$this->set('judges_evaluation_low_score',$judges_evaluation_low_score);
 		
 		// to get eventsubmission details
@@ -89,8 +89,8 @@ class JudgeevaluationsController extends AppController {
 		
 		if ($this->request->is(['post']))
 		{	
-			//$this->prx($this->request->data);
-			$low_score_pin = $this->request->data['low_score_pin'];
+			//$this->prx($this->request->getData());
+			$low_score_pin = $this->request->getData()['low_score_pin'];
 			
 			//Now verify this pin
 			$settingsInfo = $this->Settings->find()->where(['Settings.id' => 1])->first();
@@ -224,8 +224,8 @@ class JudgeevaluationsController extends AppController {
 				}
 				
 				// remove session data
-				$this->request->session()->delete('judges_evaluation_low_score_form_data');
-				$this->request->session()->delete('judges_evaluation_low_score');
+				$this->request->getSession()->delete('judges_evaluation_low_score_form_data');
+				$this->request->getSession()->delete('judges_evaluation_low_score');
 				
 				$this->Flash->success('Evaluation submitted successfully.');
 				$this->redirect(['controller' => 'conventionregistrations', 'action' => 'judgeevententries',$convRegD->slug,$eventD->slug]);
@@ -251,14 +251,14 @@ class JudgeevaluationsController extends AppController {
 		global $romanNumbers;
 		$this->set('romanNumbers', $romanNumbers);
 		
-		$user_id 	= $this->request->session()->read("user_id");
-		$user_type 	= $this->request->session()->read("user_type");
+		$user_id 	= $this->request->getSession()->read("user_id");
+		$user_type 	= $this->request->getSession()->read("user_type");
 		
 		//echo ' fsdf sdf sdf d';exit;
-		$this->viewbuilder()->layout("home");		
+		$this->viewBuilder()->setLayout("home");		
 		$this->set('title_for_layout', 'Judging Form '.TITLE_FOR_PAGES);
 		
-		if($this->request->session()->read("sess_selected_convention_registration_id")>0)
+		if($this->request->getSession()->read("sess_selected_convention_registration_id")>0)
 		{
 			$this->set('active_cr_judgeevents','active');
 		}
@@ -353,15 +353,15 @@ class JudgeevaluationsController extends AppController {
 		
 		if ($this->request->is(['post']))
 		{	
-			//$this->prx($this->request->data);
+			//$this->prx($this->request->getData());
 			
-			$calc_points_allotted = $this->request->data['calc_points_allotted'];
+			$calc_points_allotted = $this->request->getData()['calc_points_allotted'];
 			
 			if($calc_points_allotted<50)
 			{	
 				// Now save the data in session and redirect to a page to ask pin to save low score
-				$this->request->session()->write("judges_evaluation_low_score_form_data", $this->request->data);
-				$this->request->session()->write("judges_evaluation_low_score", $calc_points_allotted);
+				$this->request->getSession()->write("judges_evaluation_low_score_form_data", $this->request->getData());
+				$this->request->getSession()->write("judges_evaluation_low_score", $calc_points_allotted);
 				
 				$this->redirect(['controller' => 'judgeevaluations', 'action' => 'lowscoresave',$conv_reg_slug,$event_submission_slug]);
 			}
@@ -376,22 +376,22 @@ class JudgeevaluationsController extends AppController {
 					$this->Judgeevaluationmarks->deleteAll(["judgeevaluation_id" => $checkEvalJudge->id]);
 				}
 				
-				if(count((array)$this->request->data['division_ids']))
+				if(count((array)$this->request->getData()['division_ids']))
 				{
-					$divSelected = implode(",",$this->request->data['division_ids']);
+					$divSelected = implode(",",$this->request->getData()['division_ids']);
 				}
 				
-				if(count((array)$this->request->data['tags']))
+				if(count((array)$this->request->getData()['tags']))
 				{
-					$tagsSelected = implode(",",$this->request->data['tags']);
+					$tagsSelected = implode(",",$this->request->getData()['tags']);
 				}
 				
-				$max_questions = $this->request->data['max_questions'];
+				$max_questions = $this->request->getData()['max_questions'];
 				
 				
 				// insert new record in judgeevaluations table
 				$judgeevaluations = $this->Judgeevaluations->newEntity();
-				$dataJ = $this->Judgeevaluations->patchEntity($judgeevaluations, $this->request->data);
+				$dataJ = $this->Judgeevaluations->patchEntity($judgeevaluations, $this->request->getData());
 				
 				$dataJ->slug 							= "judge-event-evaluation-".$eventsubmissionD->id.'-'.time();
 				$dataJ->eventsubmission_id				= $eventsubmissionD->id;
@@ -409,7 +409,7 @@ class JudgeevaluationsController extends AppController {
 				$dataJ->evaluationform_id				= $evalFormD->id;
 				$dataJ->division_ids					= $divSelected;
 				$dataJ->tag_ids							= $tagsSelected;
-				$dataJ->comments						= $this->request->data['comments'];
+				$dataJ->comments						= $this->request->getData()['comments'];
 				$dataJ->created 						= date('Y-m-d H:i:s');
 
 				$resultJ = $this->Judgeevaluations->save($dataJ);
@@ -420,15 +420,15 @@ class JudgeevaluationsController extends AppController {
 				$totalMarksObtained = 0;
 				for($cntrQL=1;$cntrQL<=$max_questions;$cntrQL++)
 				{
-					$question_id 					= $this->request->data['question_id_'.$cntrQL];
-					$question_marks_possible		= $this->request->data['question_marks_possible_'.$cntrQL];
-					$question_marks_obtained 		= $this->request->data['question_marks_obtained_'.$cntrQL];
+					$question_id 					= $this->request->getData()['question_id_'.$cntrQL];
+					$question_marks_possible		= $this->request->getData()['question_marks_possible_'.$cntrQL];
+					$question_marks_obtained 		= $this->request->getData()['question_marks_obtained_'.$cntrQL];
 					
 					$totalMarksPossible 			= $totalMarksPossible + $question_marks_possible;
 					$totalMarksObtained 			= intval($totalMarksObtained) + intval($question_marks_obtained);
 					
 					$judgeevaluationmarks = $this->Judgeevaluationmarks->newEntity();
-					$dataM = $this->Judgeevaluationmarks->patchEntity($judgeevaluationmarks, $this->request->data);
+					$dataM = $this->Judgeevaluationmarks->patchEntity($judgeevaluationmarks, $this->request->getData());
 					
 					$dataM->judgeevaluation_id 			= $resultJ->id;
 					$dataM->question_id					= $question_id;
@@ -449,15 +449,15 @@ class JudgeevaluationsController extends AppController {
 				, ["id" => $resultJ->id]);
 				
 				// to check if any negative marks question posted
-				if($this->request->data['negative_question_id'] >0)
+				if($this->request->getData()['negative_question_id'] >0)
 				{
-					$negative_question_id 				= $this->request->data['negative_question_id'];
-					$negative_question_marks_obtained 	= $this->request->data['negative_question_marks_obtained'];
-					$negative_question_marks_possible 	= $this->request->data['negative_question_marks_possible'];
+					$negative_question_id 				= $this->request->getData()['negative_question_id'];
+					$negative_question_marks_obtained 	= $this->request->getData()['negative_question_marks_obtained'];
+					$negative_question_marks_possible 	= $this->request->getData()['negative_question_marks_possible'];
 					
 					// add this negative question in db table
 					$judgeevaluationmarks = $this->Judgeevaluationmarks->newEntity();
-					$dataM = $this->Judgeevaluationmarks->patchEntity($judgeevaluationmarks, $this->request->data);
+					$dataM = $this->Judgeevaluationmarks->patchEntity($judgeevaluationmarks, $this->request->getData());
 					
 					$dataM->judgeevaluation_id 			= $resultJ->id;
 					$dataM->question_id					= $negative_question_id;
@@ -491,8 +491,8 @@ class JudgeevaluationsController extends AppController {
 	{
 		$this->userLoginCheck();
 		
-		$user_id 	= $this->request->session()->read("user_id");
-		$user_type 	= $this->request->session()->read("user_type");
+		$user_id 	= $this->request->getSession()->read("user_id");
+		$user_type 	= $this->request->getSession()->read("user_type");
 		
 		$userDetails = $this->Users->find()->where(['Users.id' => $user_id])->first();
 		$this->set('userDetails', $userDetails);
@@ -547,7 +547,7 @@ class JudgeevaluationsController extends AppController {
 		
 		// insert new record in judgeevaluations table as dis not attent
 		$judgeevaluations = $this->Judgeevaluations->newEntity();
-		$dataJ = $this->Judgeevaluations->patchEntity($judgeevaluations, $this->request->data);
+		$dataJ = $this->Judgeevaluations->patchEntity($judgeevaluations, $this->request->getData());
 		
 		$dataJ->slug 							= "judge-event-evaluation-".$eventsubmissionD->id.'-'.time();
 		$dataJ->eventsubmission_id				= $eventsubmissionD->id;
@@ -589,7 +589,7 @@ class JudgeevaluationsController extends AppController {
 		
 		$this->userLoginCheck();
 		
-        $user_id = $this->request->session()->read("user_id");
+        $user_id = $this->request->getSession()->read("user_id");
 		$userDetails = $this->Users->find()->where(['Users.id' => $user_id])->first();
 		
 		$checkExists = $this->Eventsubmissions->find()->where(['Eventsubmissions.slug' => $eventsubmission_slug])->contain(["Conventionregistrations","Conventions","Users","Events","Students","Uploadeduser"])->first();
@@ -627,24 +627,48 @@ class JudgeevaluationsController extends AppController {
 			
 			//echo $messageToSend; exit;
 			
-			$email = new Email();
-			$email->template('default', 'admintemplate')
-				->emailFormat('html')
-				->to($emailId)
-				->cc(ACCOUNTS_TEAM_ANOTHER_EMAIL)
-				->from([HEADERS_FROM_EMAIL => HEADERS_FROM_NAME])
-				->subject($subjectToSend)
-				->viewVars(['content_for_layout' => $messageToSend])
-				->send();
-				
-			$email = new Email();
-			$email->template('default', 'admintemplate')
-				->emailFormat('html')
-				->to('voizacinc@gmail.com')
-				->from([HEADERS_FROM_EMAIL => HEADERS_FROM_NAME])
-				->subject($subjectToSend)
-				->viewVars(['content_for_layout' => $messageToSend])
-				->send();
+			$mailer = new Mailer('default');
+			if (method_exists($mailer, 'setEmailFormat')) {
+				$mailer->setEmailFormat('html');
+			}
+			if (method_exists($mailer, 'setTo')) {
+				$mailer->setTo($emailId);
+			}
+			if (method_exists($mailer, 'setCc')) {
+				$mailer->setCc(ACCOUNTS_TEAM_ANOTHER_EMAIL);
+			}
+			if (method_exists($mailer, 'setFrom')) {
+				$mailer->setFrom([HEADERS_FROM_EMAIL => HEADERS_FROM_NAME]);
+			}
+			if (method_exists($mailer, 'setSubject')) {
+				$mailer->setSubject($subjectToSend);
+			}
+
+			if (method_exists($mailer, 'deliver')) {
+				$mailer->deliver($messageToSend);
+			} else {
+				$mailer->send($messageToSend);
+			}
+
+			$mailer = new Mailer('default');
+			if (method_exists($mailer, 'setEmailFormat')) {
+				$mailer->setEmailFormat('html');
+			}
+			if (method_exists($mailer, 'setTo')) {
+				$mailer->setTo('voizacinc@gmail.com');
+			}
+			if (method_exists($mailer, 'setFrom')) {
+				$mailer->setFrom([HEADERS_FROM_EMAIL => HEADERS_FROM_NAME]);
+			}
+			if (method_exists($mailer, 'setSubject')) {
+				$mailer->setSubject($subjectToSend);
+			}
+
+			if (method_exists($mailer, 'deliver')) {
+				$mailer->deliver($messageToSend);
+			} else {
+				$mailer->send($messageToSend);
+			}
 			
 			$this->redirect(['controller' => 'conventionregistrations', 'action' => 'judgeevententries',$checkExists->Conventionregistrations['slug'],$checkExists->Events['slug']]);
 			 
@@ -662,7 +686,7 @@ class JudgeevaluationsController extends AppController {
 		
 		$this->userLoginCheck();
 		
-        $user_id = $this->request->session()->read("user_id");
+        $user_id = $this->request->getSession()->read("user_id");
 		$userDetails = $this->Users->find()->where(['Users.id' => $user_id])->first();
 		
 		$checkExists = $this->Eventsubmissions->find()->where(['Eventsubmissions.slug' => $eventsubmission_slug])->contain(["Conventionregistrations","Conventions","Users","Events","Students","Uploadeduser"])->first();
@@ -689,7 +713,7 @@ class JudgeevaluationsController extends AppController {
         $this->schoolAdminLoginCheck();
 		
         $this->set("title_for_layout", "Submission Evaluation" . TITLE_FOR_PAGES);
-        $this->viewbuilder()->layout('home');
+        $this->viewBuilder()->setLayout('home');
         
 		$this->set('event_submission_slug',$event_submission_slug);
 		
@@ -697,16 +721,16 @@ class JudgeevaluationsController extends AppController {
 		
         $msgString = '';
 
-		$user_id = $this->request->session()->read("user_id");
-		$user_type 	= $this->request->session()->read("user_type");
+		$user_id = $this->request->getSession()->read("user_id");
+		$user_type 	= $this->request->getSession()->read("user_type");
 		$userDetails = $this->Users->find()->where(['Users.id' => $user_id])->first();
         $this->set('userDetails', $userDetails);
 		
         $condition = array();
 		
-		if($this->request->session()->read("sess_selected_convention_registration_id")>0)
+		if($this->request->getSession()->read("sess_selected_convention_registration_id")>0)
 		{
-			$condition[] = "(Eventsubmissions.conventionregistration_id = '".$this->request->session()->read("sess_selected_convention_registration_id")."')";
+			$condition[] = "(Eventsubmissions.conventionregistration_id = '".$this->request->getSession()->read("sess_selected_convention_registration_id")."')";
 		}
 		else
 		{
@@ -727,7 +751,7 @@ class JudgeevaluationsController extends AppController {
         $this->schoolAdminLoginCheck();
 		
         $this->set("title_for_layout", "Submission Evaluation" . TITLE_FOR_PAGES);
-        $this->viewbuilder()->layout('home');
+        $this->viewBuilder()->setLayout('home');
         
 		$this->set('event_submission_slug',$event_submission_slug);
 		$this->set('evaulation_slug',$evaulation_slug);
@@ -736,16 +760,16 @@ class JudgeevaluationsController extends AppController {
 		
         $msgString = '';
 
-		$user_id = $this->request->session()->read("user_id");
-		$user_type 	= $this->request->session()->read("user_type");
+		$user_id = $this->request->getSession()->read("user_id");
+		$user_type 	= $this->request->getSession()->read("user_type");
 		$userDetails = $this->Users->find()->where(['Users.id' => $user_id])->first();
         $this->set('userDetails', $userDetails);
 		
         $condition = array();
 		
-		if($this->request->session()->read("sess_selected_convention_registration_id")>0)
+		if($this->request->getSession()->read("sess_selected_convention_registration_id")>0)
 		{
-			$condition[] = "(Eventsubmissions.conventionregistration_id = '".$this->request->session()->read("sess_selected_convention_registration_id")."')";
+			$condition[] = "(Eventsubmissions.conventionregistration_id = '".$this->request->getSession()->read("sess_selected_convention_registration_id")."')";
 		}
 		else
 		{
@@ -766,7 +790,7 @@ class JudgeevaluationsController extends AppController {
         $this->schoolAdminLoginCheck();
 		
         $this->set("title_for_layout", "Print Judge(s) Evaluations" . TITLE_FOR_PAGES);
-        $this->viewbuilder()->layout('print_reports');
+        $this->viewBuilder()->setLayout('print_reports');
         
 		$this->set('event_submission_slug',$event_submission_slug);
 		
@@ -774,16 +798,16 @@ class JudgeevaluationsController extends AppController {
 		
         $msgString = '';
 
-		$user_id = $this->request->session()->read("user_id");
-		$user_type 	= $this->request->session()->read("user_type");
+		$user_id = $this->request->getSession()->read("user_id");
+		$user_type 	= $this->request->getSession()->read("user_type");
 		$userDetails = $this->Users->find()->where(['Users.id' => $user_id])->first();
         $this->set('userDetails', $userDetails);
 		
         $condition = array();
 		
-		if($this->request->session()->read("sess_selected_convention_registration_id")>0)
+		if($this->request->getSession()->read("sess_selected_convention_registration_id")>0)
 		{
-			$condition[] = "(Eventsubmissions.conventionregistration_id = '".$this->request->session()->read("sess_selected_convention_registration_id")."')";
+			$condition[] = "(Eventsubmissions.conventionregistration_id = '".$this->request->getSession()->read("sess_selected_convention_registration_id")."')";
 		}
 		else
 		{
@@ -803,14 +827,14 @@ class JudgeevaluationsController extends AppController {
 	/* Individual result package */
 	public function indrespackprint($conv_reg_student_slug=null)
 	{
-		$this->viewbuilder()->layout('print_reports');
+		$this->viewBuilder()->setLayout('print_reports');
 		
 		global $resultPositions;
 		$this->set('resultPositions', $resultPositions);
 		
-		if($this->request->session()->read("sess_selected_convention_registration_id")>0)
+		if($this->request->getSession()->read("sess_selected_convention_registration_id")>0)
 		{
-			$sess_selected_convention_registration_id = $this->request->session()->read("sess_selected_convention_registration_id");
+			$sess_selected_convention_registration_id = $this->request->getSession()->read("sess_selected_convention_registration_id");
 		}
 		else
 		{

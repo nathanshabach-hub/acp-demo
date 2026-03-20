@@ -11,7 +11,7 @@ use Cake\Datasource\ConnectionManager;
 class SchedulingsController extends AppController {
 
     public $paginate = ['limit' => 50, 'order' => ['Schedulings.name' => 'asc']];
-    var $components = array('RequestHandler', 'PImage', 'PImageTest');
+    public $components = ['RequestHandler', 'PImage', 'PImageTest'];
 
     //public $helpers = array('Javascript', 'Ajax');
 
@@ -19,8 +19,8 @@ class SchedulingsController extends AppController {
         parent::initialize();
         $this->loadComponent('Paginator');
         $this->loadComponent('Flash');
-        $action = $this->request->params['action'];
-        $loggedAdminId = $this->request->session()->read('admin_id');
+        $action = $this->request->getParam('action');
+        $loggedAdminId = $this->request->getSession()->read('admin_id');
         if ($action != 'forgotPassword' && $action != 'logout') {
             if (!$loggedAdminId && $action != "login" && $action != 'captcha') {
                 $this->redirect(['controller' => 'admins', 'action' => 'login']);
@@ -165,9 +165,237 @@ class SchedulingsController extends AppController {
 		return $eventCategoryNameById;
 	}
 
+	private function ensureSchedulingAutoassignRunsTable() {
+		try {
+			$connection = ConnectionManager::get('default');
+			$connection->execute(
+				"CREATE TABLE IF NOT EXISTS scheduling_autoassign_runs (
+					id INT AUTO_INCREMENT PRIMARY KEY,
+					conventionseason_id INT NOT NULL,
+					schedule_category INT NULL,
+					assigned_count INT NOT NULL DEFAULT 0,
+					remaining_count INT NOT NULL DEFAULT 0,
+					overflow_before INT NOT NULL DEFAULT 0,
+					overflow_after INT NOT NULL DEFAULT 0,
+					filter_days VARCHAR(255) NULL,
+					filter_rooms TEXT NULL,
+					trigger_source VARCHAR(64) NOT NULL DEFAULT 'manual',
+					created DATETIME NOT NULL,
+					INDEX idx_csid_created (conventionseason_id, created),
+					INDEX idx_csid_category (conventionseason_id, schedule_category)
+				) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
+			);
+		} catch (Exception $e) {
+			// Keep schedulecategory resilient if DDL fails.
+		}
+	}
+
+	private function getOverflowTrendRows($conventionSeasonId, $limit = 12) {
+		$this->ensureSchedulingAutoassignRunsTable();
+		try {
+			$connection = ConnectionManager::get('default');
+			$rows = $connection->execute(
+				"SELECT id, schedule_category, assigned_count, remaining_count, overflow_before, overflow_after, filter_days, filter_rooms, trigger_source, created
+				 FROM scheduling_autoassign_runs
+				 WHERE conventionseason_id = :csid
+				 ORDER BY id DESC
+				 LIMIT :row_limit",
+				['csid' => (int)$conventionSeasonId, 'row_limit' => (int)$limit],
+				['csid' => 'integer', 'row_limit' => 'integer']
+			)->fetchAll('assoc');
+
+			return is_array($rows) ? $rows : [];
+		} catch (Exception $e) {
+			return [];
+		}
+	}
+
+	private function buildScheduleHealthMetrics($conventionSeasonId, $schedulingD) {
+		$metrics = [
+			'room_conflicts' => 0,
+			'same_category_participant_conflicts' => 0,
+			'cross_category_participant_conflicts' => 0,
+			'room_utilization' => [],
+			'average_room_utilization_pct' => 0.0,
+		];
+
+		if (empty($schedulingD)) {
+			return $metrics;
+		}
+
+		try {
+			$connection = ConnectionManager::get('default');
+
+			$roomConflictRow = $connection->execute(
+				"SELECT COUNT(*) AS cnt
+				 FROM schedulingtimings a
+				 JOIN schedulingtimings b
+				   ON a.conventionseasons_id=b.conventionseasons_id
+				  AND a.id < b.id
+				  AND a.day=b.day
+				  AND a.room_id=b.room_id
+				  AND a.start_time < b.finish_time
+				  AND a.finish_time > b.start_time
+				 WHERE a.conventionseasons_id = :csid
+				   AND a.day IS NOT NULL
+				   AND a.room_id IS NOT NULL
+				   AND a.start_time IS NOT NULL
+				   AND a.finish_time IS NOT NULL
+				   AND b.start_time IS NOT NULL
+				   AND b.finish_time IS NOT NULL",
+				['csid' => (int)$conventionSeasonId],
+				['csid' => 'integer']
+			)->fetch('assoc');
+			$metrics['room_conflicts'] = !empty($roomConflictRow['cnt']) ? (int)$roomConflictRow['cnt'] : 0;
+
+			$sameCategoryRow = $connection->execute(
+				"SELECT COUNT(*) AS cnt
+				 FROM (
+				   SELECT id AS timing_id, schedule_category, day, start_time, finish_time, event_id_number, user_id AS participant_id
+				   FROM schedulingtimings
+				   WHERE conventionseasons_id = :csid AND user_id IS NOT NULL AND day IS NOT NULL AND start_time IS NOT NULL AND finish_time IS NOT NULL
+				   UNION ALL
+				   SELECT id AS timing_id, schedule_category, day, start_time, finish_time, event_id_number, user_id_opponent AS participant_id
+				   FROM schedulingtimings
+				   WHERE conventionseasons_id = :csid AND user_id_opponent IS NOT NULL AND day IS NOT NULL AND start_time IS NOT NULL AND finish_time IS NOT NULL
+				 ) a
+				 JOIN (
+				   SELECT id AS timing_id, schedule_category, day, start_time, finish_time, event_id_number, user_id AS participant_id
+				   FROM schedulingtimings
+				   WHERE conventionseasons_id = :csid AND user_id IS NOT NULL AND day IS NOT NULL AND start_time IS NOT NULL AND finish_time IS NOT NULL
+				   UNION ALL
+				   SELECT id AS timing_id, schedule_category, day, start_time, finish_time, event_id_number, user_id_opponent AS participant_id
+				   FROM schedulingtimings
+				   WHERE conventionseasons_id = :csid AND user_id_opponent IS NOT NULL AND day IS NOT NULL AND start_time IS NOT NULL AND finish_time IS NOT NULL
+				 ) b
+				   ON a.timing_id < b.timing_id
+				  AND a.participant_id = b.participant_id
+				  AND a.schedule_category = b.schedule_category
+				  AND a.day = b.day
+				  AND a.start_time < b.finish_time
+				  AND a.finish_time > b.start_time
+				  AND IFNULL(a.event_id_number,'') <> IFNULL(b.event_id_number,'')
+				 WHERE a.participant_id > 0",
+				['csid' => (int)$conventionSeasonId],
+				['csid' => 'integer']
+			)->fetch('assoc');
+			$metrics['same_category_participant_conflicts'] = !empty($sameCategoryRow['cnt']) ? (int)$sameCategoryRow['cnt'] : 0;
+
+			$crossCategoryRow = $connection->execute(
+				"SELECT COUNT(*) AS cnt
+				 FROM (
+				   SELECT id AS timing_id, schedule_category, day, start_time, finish_time, event_id_number, user_id AS participant_id
+				   FROM schedulingtimings
+				   WHERE conventionseasons_id = :csid AND user_id IS NOT NULL AND day IS NOT NULL AND start_time IS NOT NULL AND finish_time IS NOT NULL
+				   UNION ALL
+				   SELECT id AS timing_id, schedule_category, day, start_time, finish_time, event_id_number, user_id_opponent AS participant_id
+				   FROM schedulingtimings
+				   WHERE conventionseasons_id = :csid AND user_id_opponent IS NOT NULL AND day IS NOT NULL AND start_time IS NOT NULL AND finish_time IS NOT NULL
+				 ) a
+				 JOIN (
+				   SELECT id AS timing_id, schedule_category, day, start_time, finish_time, event_id_number, user_id AS participant_id
+				   FROM schedulingtimings
+				   WHERE conventionseasons_id = :csid AND user_id IS NOT NULL AND day IS NOT NULL AND start_time IS NOT NULL AND finish_time IS NOT NULL
+				   UNION ALL
+				   SELECT id AS timing_id, schedule_category, day, start_time, finish_time, event_id_number, user_id_opponent AS participant_id
+				   FROM schedulingtimings
+				   WHERE conventionseasons_id = :csid AND user_id_opponent IS NOT NULL AND day IS NOT NULL AND start_time IS NOT NULL AND finish_time IS NOT NULL
+				 ) b
+				   ON a.timing_id < b.timing_id
+				  AND a.participant_id = b.participant_id
+				  AND a.schedule_category <> b.schedule_category
+				  AND a.day = b.day
+				  AND a.start_time < b.finish_time
+				  AND a.finish_time > b.start_time
+				  AND IFNULL(a.event_id_number,'') <> IFNULL(b.event_id_number,'')
+				 WHERE a.participant_id > 0",
+				['csid' => (int)$conventionSeasonId],
+				['csid' => 'integer']
+			)->fetch('assoc');
+			$metrics['cross_category_participant_conflicts'] = !empty($crossCategoryRow['cnt']) ? (int)$crossCategoryRow['cnt'] : 0;
+
+			$roomRows = $this->Schedulingtimings->find()
+				->select(['room_id'])
+				->where([
+					'Schedulingtimings.conventionseasons_id' => (int)$conventionSeasonId,
+					'Schedulingtimings.day IN' => ['Monday', 'Tuesday', 'Wednesday', 'Thursday'],
+					'Schedulingtimings.room_id IS NOT' => null,
+					'Schedulingtimings.start_time IS NOT' => null,
+					'Schedulingtimings.finish_time IS NOT' => null,
+				])
+				->group(['room_id'])
+				->enableHydration(false)
+				->toArray();
+
+			$roomIds = array_map('intval', array_column($roomRows, 'room_id'));
+			if (!empty($roomIds)) {
+				$rooms = $this->Conventionrooms->find()->where(['Conventionrooms.id IN' => $roomIds])->all()->toArray();
+				$roomNameMap = [];
+				foreach ($rooms as $room) {
+					$roomNameMap[(int)$room->id] = $room->room_name;
+				}
+
+				$firstDay = !empty($schedulingD->first_day) ? $schedulingD->first_day : 'Monday';
+				$capacityPerDay = 0;
+				$lunchStart = !empty($schedulingD->lunch_time_start) ? date('H:i:s', strtotime($schedulingD->lunch_time_start)) : null;
+				$lunchEnd = !empty($schedulingD->lunch_time_end) ? date('H:i:s', strtotime($schedulingD->lunch_time_end)) : null;
+
+				foreach (['Monday', 'Tuesday', 'Wednesday', 'Thursday'] as $dayName) {
+					$dayStart = date('H:i:s', strtotime($schedulingD->normal_starting_time));
+					$dayFinish = date('H:i:s', strtotime($schedulingD->normal_finish_time));
+					if ((int)$schedulingD->starting_different_time_first_day_yes_no === 1 && $dayName === $firstDay) {
+						$dayStart = date('H:i:s', strtotime($schedulingD->different_first_day_start_time));
+						$dayFinish = date('H:i:s', strtotime($schedulingD->different_first_day_end_time));
+					}
+					$minutes = max(0, (int)round((strtotime($dayFinish) - strtotime($dayStart)) / 60));
+					if (!empty($lunchStart) && !empty($lunchEnd) && strtotime($lunchEnd) > strtotime($lunchStart)) {
+						$minutes -= (int)round((strtotime($lunchEnd) - strtotime($lunchStart)) / 60);
+					}
+					$capacityPerDay += max(0, $minutes);
+				}
+
+				$totalPct = 0.0;
+				$roomCount = 0;
+				foreach ($roomIds as $roomId) {
+					$usedRow = $connection->execute(
+						"SELECT COALESCE(SUM(TIMESTAMPDIFF(MINUTE, start_time, finish_time)), 0) AS used_minutes
+						 FROM schedulingtimings
+						 WHERE conventionseasons_id = :csid
+						   AND room_id = :rid
+						   AND day IN ('Monday','Tuesday','Wednesday','Thursday')
+						   AND start_time IS NOT NULL
+						   AND finish_time IS NOT NULL",
+						['csid' => (int)$conventionSeasonId, 'rid' => (int)$roomId],
+						['csid' => 'integer', 'rid' => 'integer']
+					)->fetch('assoc');
+
+					$minutesUsed = !empty($usedRow['used_minutes']) ? (int)$usedRow['used_minutes'] : 0;
+					$utilPct = $capacityPerDay > 0 ? round(($minutesUsed / $capacityPerDay) * 100, 1) : 0.0;
+					$metrics['room_utilization'][] = [
+						'room_id' => (int)$roomId,
+						'room_name' => isset($roomNameMap[(int)$roomId]) ? $roomNameMap[(int)$roomId] : ('Room '.$roomId),
+						'minutes_used' => $minutesUsed,
+						'capacity_minutes' => $capacityPerDay,
+						'utilization_pct' => $utilPct,
+					];
+					$totalPct += $utilPct;
+					$roomCount++;
+				}
+
+				if ($roomCount > 0) {
+					$metrics['average_room_utilization_pct'] = round($totalPct / $roomCount, 1);
+				}
+			}
+		} catch (Exception $e) {
+			return $metrics;
+		}
+
+		return $metrics;
+	}
+
     public function precheck($convention_season_slug=null) {
         $this->set('title', ADMIN_TITLE . 'Scheduling Pre-check');
-        $this->viewBuilder()->layout('admin');
+        $this->viewBuilder()->setLayout('admin');
 		
         $this->set('manageConventions', '1');
         $this->set('conventionList', '1');
@@ -470,7 +698,7 @@ class SchedulingsController extends AppController {
 	
 	public function wizard($convention_season_slug=null) {
         $this->set('title', ADMIN_TITLE . 'Scheduling Wizard');
-        $this->viewBuilder()->layout('admin');
+        $this->viewBuilder()->setLayout('admin');
 		
         $this->set('manageConventions', '1');
         $this->set('conventionList', '1');
@@ -495,9 +723,10 @@ class SchedulingsController extends AppController {
 		
 		$schedulings = $this->Schedulings->get($schedulingD->id);
         if ($this->request->is(['post', 'put'])) {
-            $data = $this->Schedulings->patchEntity($schedulings, $this->request->data);
+			$requestData = $this->request->getData();
+			$data = $this->Schedulings->patchEntity($schedulings, $requestData);
 			
-            if (count($data->errors()) == 0) {
+			if (count($data->getErrors()) == 0) {
 				$data->modified = date("Y-m-d");
                 
 				//$this->prx($data);
@@ -564,9 +793,15 @@ class SchedulingsController extends AppController {
 					$data->sports_day_other_finish_time 				= NULL;
 				}
 				
-				// Settling time defaults to 15 if not set
-				if(!isset($data->settling_time_minutes) || $data->settling_time_minutes === '' || $data->settling_time_minutes === null) {
-					$data->settling_time_minutes = 15;
+				// Backward compatibility: if legacy field is posted, map it to persisted buffer_minutes.
+				if ((isset($data->settling_time_minutes) && $data->settling_time_minutes !== '' && $data->settling_time_minutes !== null)
+					&& (!isset($data->buffer_minutes) || $data->buffer_minutes === '' || $data->buffer_minutes === null)) {
+					$data->buffer_minutes = (int)$data->settling_time_minutes;
+				}
+
+				// Settling/buffer time defaults to 15 if not set.
+				if(!isset($data->buffer_minutes) || $data->buffer_minutes === '' || $data->buffer_minutes === null) {
+					$data->buffer_minutes = 15;
 				}
 				
 				// Elimination rounds buffer defaults to 3 if not set
@@ -597,7 +832,7 @@ class SchedulingsController extends AppController {
 	
 	public function schedulecategory($convention_season_slug=null) {
         $this->set('title', ADMIN_TITLE . 'Schedule category');
-        $this->viewBuilder()->layout('admin');
+        $this->viewBuilder()->setLayout('admin');
 		
         $this->set('manageConventions', '1');
         $this->set('conventionList', '1');
@@ -817,7 +1052,33 @@ class SchedulingsController extends AppController {
 			$dayLoadMeta['target_slots_per_day'] = round($dayLoadMeta['total_slots'] / $dayLoadMeta['day_count'], 2);
 		}
 
-		$totalRoomCount = (int)$this->Conventionrooms->find()->where(['Conventionrooms.convention_id' => $conventionSD->convention_id])->count();
+		$seasonRoomIdRows = $this->Conventionseasonroomevents->find()
+			->select(['room_id'])
+			->where(['Conventionseasonroomevents.conventionseasons_id' => $conventionSD->id])
+			->group(['room_id'])
+			->enableHydration(false)
+			->toArray();
+		$seasonRoomIds = array_values(array_unique(array_map(function($row) {
+			return isset($row['room_id']) ? (int)$row['room_id'] : 0;
+		}, (array)$seasonRoomIdRows)));
+		$seasonRoomIds = array_values(array_filter($seasonRoomIds, function($id) {
+			return $id > 0;
+		}));
+
+		// Fallback: if no season room events are configured yet, use all convention rooms.
+		if (empty($seasonRoomIds)) {
+			$allRoomIdRows = $this->Conventionrooms->find()
+				->select(['id'])
+				->where(['Conventionrooms.convention_id' => $conventionSD->convention_id])
+				->enableHydration(false)
+				->toArray();
+			$seasonRoomIds = array_values(array_map(function($row) {
+				return (int)$row['id'];
+			}, (array)$allRoomIdRows));
+		}
+
+		$seasonRoomScope = array_fill_keys($seasonRoomIds, true);
+		$totalRoomCount = count($seasonRoomIds);
 		$schedulingConfig = $this->Schedulings->find()->where(['Schedulings.conventionseasons_id' => $conventionSD->id])->first();
 		$dayStartTime = !empty($schedulingConfig->normal_starting_time) ? date('H:i:s', strtotime($schedulingConfig->normal_starting_time)) : '08:30:00';
 		$dayFinishTime = !empty($schedulingConfig->normal_finish_time) ? date('H:i:s', strtotime($schedulingConfig->normal_finish_time)) : '17:30:00';
@@ -941,6 +1202,9 @@ class SchedulingsController extends AppController {
 						if ((int)$rinfo['room_id'] <= 0 || empty($rinfo['start_time']) || empty($rinfo['finish_time'])) {
 							continue;
 						}
+						if (!isset($seasonRoomScope[(int)$rinfo['room_id']])) {
+							continue;
+						}
 						$rowStartTs = strtotime($dayData['date'].' '.$rinfo['start_time']);
 						$rowEndTs = strtotime($dayData['date'].' '.$rinfo['finish_time']);
 						if ($rowEndTs <= $rowStartTs) {
@@ -998,6 +1262,8 @@ class SchedulingsController extends AppController {
 
 		$this->set('dayLoadRows', $dayLoadRows);
 		$this->set('dayLoadMeta', $dayLoadMeta);
+		$this->set('scheduleHealth', $this->buildScheduleHealthMetrics((int)$conventionSD->id, $schedulingConfig));
+		$this->set('overflowTrendRows', $this->getOverflowTrendRows((int)$conventionSD->id, 12));
 		
 		
     }
@@ -1005,7 +1271,7 @@ class SchedulingsController extends AppController {
 	
 	public function reports($convention_season_slug=null) {
         $this->set('title', ADMIN_TITLE . 'Scheduling Wizard');
-        $this->viewBuilder()->layout('admin');
+        $this->viewBuilder()->setLayout('admin');
 		
         $this->set('manageConventions', '1');
         $this->set('conventionList', '1');
@@ -1020,12 +1286,60 @@ class SchedulingsController extends AppController {
 		// to fetch scheduling data and send to template
 		$schedulingD = $this->Schedulings->find()->where(['Schedulings.conventionseasons_id' => $conventionSD->id])->first();
 		$this->set('schedulingD', $schedulingD);
+
+		$totalScheduleRows = 0;
+		try {
+			$totalScheduleRows = (int)$this->Schedulingtimings->find()
+				->where(['Schedulingtimings.conventionseasons_id' => $conventionSD->id])
+				->count();
+		} catch (Exception $e) {
+			$totalScheduleRows = 0;
+		}
+
+		$parityReady = $totalScheduleRows > 0;
+		$phase4ReportParityRows = [
+			[
+				'legacy_key' => 'Schedule by Event',
+				'acp_label' => 'Report By Events/Sport',
+				'route' => ['controller' => 'schedulingreports', 'action' => 'byevents', $convention_season_slug],
+				'printable' => true,
+				'csv' => false,
+				'status' => $parityReady ? 'Ready' : 'No schedule rows yet',
+			],
+			[
+				'legacy_key' => 'Schedule by Location',
+				'acp_label' => 'Report By Rooms/Location',
+				'route' => ['controller' => 'schedulingreports', 'action' => 'byrooms', $convention_season_slug],
+				'printable' => true,
+				'csv' => true,
+				'status' => $parityReady ? 'Ready' : 'No schedule rows yet',
+			],
+			[
+				'legacy_key' => 'Schedule by Student',
+				'acp_label' => 'Report By Students',
+				'route' => ['controller' => 'schedulingreports', 'action' => 'bystudents', $convention_season_slug],
+				'printable' => true,
+				'csv' => false,
+				'status' => $parityReady ? 'Ready' : 'No schedule rows yet',
+			],
+			[
+				'legacy_key' => 'Schedule by Match',
+				'acp_label' => 'Report By Match',
+				'route' => ['controller' => 'schedulingreports', 'action' => 'bymatchshow', $convention_season_slug],
+				'printable' => true,
+				'csv' => true,
+				'status' => $parityReady ? 'Ready' : 'No schedule rows yet',
+			],
+		];
+
+		$this->set('phase4ReportParityRows', $phase4ReportParityRows);
+		$this->set('phase4ReportParityReady', $parityReady);
 		
     }
 	
 	public function finalizeschedule($convention_season_slug=null) {
 		$this->set('title', ADMIN_TITLE . 'Finalize Schedule');
-		$this->viewBuilder()->layout('admin');
+		$this->viewBuilder()->setLayout('admin');
 
 		$this->set('manageConventions', '1');
 		$this->set('conventionList', '1');
@@ -1058,7 +1372,7 @@ class SchedulingsController extends AppController {
 
 	public function overwritetimings($convention_season_slug=null) {
         $this->set('title', ADMIN_TITLE . 'Overwrite Timings');
-        $this->viewBuilder()->layout('admin');
+        $this->viewBuilder()->setLayout('admin');
 		
         $this->set('manageConventions', '1');
         $this->set('conventionList', '1');
@@ -1499,7 +1813,7 @@ class SchedulingsController extends AppController {
 				}
 
 				if ($cntrTotRec > 0) {
-					$loggedAdminId = $this->request->session()->read('admin_id');
+					$loggedAdminId = $this->request->getSession()->read('admin_id');
 					$this->insertOverwriteAudit(
 						$conventionSD->id,
 						$loggedAdminId,
@@ -1658,7 +1972,7 @@ class SchedulingsController extends AppController {
 			}
 
 			if ($cntrTotRec > 0) {
-				$loggedAdminId = $this->request->session()->read('admin_id');
+				$loggedAdminId = $this->request->getSession()->read('admin_id');
 				$this->insertOverwriteAudit(
 					$conventionSD->id,
 					$loggedAdminId,
@@ -1730,7 +2044,7 @@ class SchedulingsController extends AppController {
 			$restored++;
 		}
 
-		$loggedAdminId = $this->request->session()->read('admin_id');
+		$loggedAdminId = $this->request->getSession()->read('admin_id');
 		$this->markOverwriteAuditUndone($latestAudit['id'], $loggedAdminId);
 
 		if ($restored > 0) {
@@ -1800,9 +2114,11 @@ class SchedulingsController extends AppController {
 				if (empty($userConflictRecords))
 				{
 					// No conflict found, then remove this from Conflict
-					$nextUserIDSConflicts = array_filter($userIDSConflict, function($item) use ($userId) {
-						return $item !== $userId;
-					});
+					$currentSchedulingD = $this->Schedulings->find()->select(['id', 'conflict_user_ids'])->where(['Schedulings.id' => $schedulingD->id])->first();
+					$currentUserIDSConflict = !empty($currentSchedulingD->conflict_user_ids) ? explode(",", $currentSchedulingD->conflict_user_ids) : [];
+					$nextUserIDSConflicts = array_values(array_filter($currentUserIDSConflict, function($item) use ($userId) {
+						return (string)$item !== (string)$userId;
+					}));
 					
 					// Now update record
 					if(count($nextUserIDSConflicts))
@@ -1874,9 +2190,11 @@ class SchedulingsController extends AppController {
 						]);
 						
 						// remove user id from database because conflict resolved
-						$nextUserIDSConflicts = array_filter($userIDSConflict, function($item) use ($userId) {
-							return $item !== $userId;
-						});
+						$currentSchedulingD = $this->Schedulings->find()->select(['id', 'conflict_user_ids'])->where(['Schedulings.id' => $schedulingD->id])->first();
+						$currentUserIDSConflict = !empty($currentSchedulingD->conflict_user_ids) ? explode(",", $currentSchedulingD->conflict_user_ids) : [];
+						$nextUserIDSConflicts = array_values(array_filter($currentUserIDSConflict, function($item) use ($userId) {
+							return (string)$item !== (string)$userId;
+						}));
 						
 						// Now update record
 						if(count($nextUserIDSConflicts))
@@ -2235,7 +2553,7 @@ class SchedulingsController extends AppController {
 	
 	public function editschedulingtimings($convention_season_slug=null,$sch_auto_id=null) {
         $this->set('title', ADMIN_TITLE . 'Scheduling Wizard');
-        $this->viewBuilder()->layout('admin');
+        $this->viewBuilder()->setLayout('admin');
 		
         $this->set('manageConventions', '1');
         $this->set('conventionList', '1');
@@ -2257,9 +2575,9 @@ class SchedulingsController extends AppController {
 		
         if ($this->request->is(['post', 'put'])) {
             
-			//$this->prx($this->request->data['Schedulingtimings']);
+			//$this->prx($this->request->getData()['Schedulingtimings']);
 			
-			$data = $this->request->data['Schedulingtimings'];
+			$data = $this->request->getData()['Schedulingtimings'];
 			
 			
 			
@@ -2473,7 +2791,7 @@ class SchedulingsController extends AppController {
 	 */
 	public function roomrestrictions($convention_season_slug=null) {
 		$this->set('title', ADMIN_TITLE . 'Room Restrictions');
-		$this->viewBuilder()->layout('admin');
+		$this->viewBuilder()->setLayout('admin');
 		
 		$this->set('manageConventions', '1');
 		$this->set('conventionList', '1');

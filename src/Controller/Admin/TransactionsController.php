@@ -5,12 +5,11 @@ namespace App\Controller\Admin;
 use App\Controller\AppController;
 use Cake\Core\Configure;
 use Cake\Core\Configure\Engine\PhpConfig;
-use Cake\Mailer\Email;
 
 class TransactionsController extends AppController {
 
     public $paginate = ['limit' => 50, 'order' => ['Transactions.name' => 'asc']];
-    var $components = array('RequestHandler', 'PImage', 'PImageTest');
+    public $components = ['RequestHandler', 'PImage', 'PImageTest'];
 
     //public $helpers = array('Javascript', 'Ajax');
 
@@ -18,8 +17,8 @@ class TransactionsController extends AppController {
         parent::initialize();
         $this->loadComponent('Paginator');
         $this->loadComponent('Flash');
-        $action = $this->request->params['action'];
-        $loggedAdminId = $this->request->session()->read('admin_id');
+		$action = $this->request->getParam('action');
+		$loggedAdminId = $this->request->getSession()->read('admin_id');
         if ($action != 'forgotPassword' && $action != 'logout') {
             if (!$loggedAdminId && $action != "login" && $action != 'captcha') {
                 $this->redirect(['controller' => 'admins', 'action' => 'login']);
@@ -38,7 +37,7 @@ class TransactionsController extends AppController {
     public function index() {
 
         $this->set('title', ADMIN_TITLE . 'Manage Transactions');
-        $this->viewBuilder()->layout('admin');
+        $this->viewBuilder()->setLayout('admin');
         $this->set('manageTransactions', '1');
         $this->set('transactionsList', '1');
 
@@ -46,7 +45,7 @@ class TransactionsController extends AppController {
         $condition = array();
         
 		// to check if conv season selected from header then filter list
-		$sess_admin_header_season_id = $this->request->session()->read("sess_admin_header_season_id");
+		$sess_admin_header_season_id = $this->request->getSession()->read("sess_admin_header_season_id");
 		if($sess_admin_header_season_id>0)
 		{
 			$condition[] = "(Transactions.conventionseason_id = '".$sess_admin_header_season_id."')";
@@ -65,9 +64,10 @@ class TransactionsController extends AppController {
 		$this->set('seasonsDD', $seasonsDD);
 
         if ($this->request->is('post')) {
-            if (isset($this->request->data['action'])) {
-                $idList = implode(',', $this->request->data['chkRecordId']);
-                $action = $this->request->data['action'];
+			$requestData = $this->request->getData();
+			if (isset($requestData['action'])) {
+				$idList = implode(',', $requestData['chkRecordId']);
+				$action = $requestData['action'];
                 if ($idList) {
                     if ($action == "Activate") {
                         $this->Transactions->updateAll(['status' => '1'], ["id IN ($idList)"]);
@@ -82,15 +82,15 @@ class TransactionsController extends AppController {
                 }
             }
 
-            if (isset($this->request->data['Transactions']['convention_id']) && $this->request->data['Transactions']['convention_id'] != '') {
-                $convention_id = trim($this->request->data['Transactions']['convention_id']);
+			if (isset($requestData['Transactions']['convention_id']) && $requestData['Transactions']['convention_id'] != '') {
+				$convention_id = trim($requestData['Transactions']['convention_id']);
             }
-			if (isset($this->request->data['Transactions']['season_year']) && $this->request->data['Transactions']['season_year'] != '') {
-                $season_year = trim($this->request->data['Transactions']['season_year']);
+			if (isset($requestData['Transactions']['season_year']) && $requestData['Transactions']['season_year'] != '') {
+				$season_year = trim($requestData['Transactions']['season_year']);
             }
-        } elseif ($this->request->params) {
-            if (isset($this->request->params['pass'][0]) && $this->request->params['pass'][0] != '') {
-                $searchArr = $this->request->params['pass'];
+        } elseif ($this->request->getParam('pass')) {
+            if (isset($this->request->getParam('pass')[0]) && $this->request->getParam('pass')[0] != '') {
+                $searchArr = $this->request->getParam('pass');
                 foreach ($searchArr as $val) {
                     if (strpos($val, ":") !== false) {
                         $vars = explode(":", $val);
@@ -117,7 +117,7 @@ class TransactionsController extends AppController {
         $this->paginate = ['contain' => ['Conventions','Users'], 'conditions' => $condition, 'limit' => 50, 'order' => ['Transactions.id' => 'DESC']];
         $this->set('transactions', $this->paginate($this->Transactions));
         if ($this->request->is("ajax")) {
-            $this->viewBuilder()->layout(($this->request->is("ajax")) ? "" : "default");
+            $this->viewBuilder()->setLayout(($this->request->is("ajax")) ? "" : "default");
             $this->viewBuilder()->templatePath('Element' . DS . 'Admin/Transactions');
             $this->render('index');
         }
@@ -125,7 +125,7 @@ class TransactionsController extends AppController {
 	
 	public function viewdetails($slug = null) {
         $this->set('title', ADMIN_TITLE . 'Transaction details');
-        $this->viewBuilder()->layout('admin');
+        $this->viewBuilder()->setLayout('admin');
         $this->set('manageTransactions', '1');
         $this->set('transactionsList', '1');
 		
@@ -159,12 +159,13 @@ class TransactionsController extends AppController {
 				// save form data
 				if ($this->request->is('post'))
 				{
-					//$this->prx($this->request->data);
+					//$this->prx($this->request->getData());
+					$requestData = $this->request->getData();
 					
 					if($transactionD->status == 2 || $transactionD->status == 3)
 					{
-						$transaction_id_received 	= $this->request->data['Transactions']['transaction_id_received'];
-						$transaction_data 			= $this->request->data['Transactions']['transaction_data'];
+						$transaction_id_received 	= $requestData['Transactions']['transaction_id_received'];
+						$transaction_data 			= $requestData['Transactions']['transaction_data'];
 						
 						$this->Transactions->updateAll(['status' => '1','transaction_id_received' => $transaction_id_received,'transaction_data' => $transaction_data], ["slug" => $slug]);
 						
@@ -187,15 +188,7 @@ class TransactionsController extends AppController {
 						
 						//echo $messageToSend; exit;
 						
-						$email = new Email();
-						$email->template('default', 'admintemplate')
-							->emailFormat('html')
-							->to($emailId)
-							->cc(HEADERS_CC)
-							->from([HEADERS_FROM_EMAIL => HEADERS_FROM_NAME])
-							->subject($subjectToSend)
-							->viewVars(['content_for_layout' => $messageToSend])
-							->send();
+						$this->sendLegacyHtmlEmail($emailId, $subjectToSend, $messageToSend, [HEADERS_FROM_EMAIL => HEADERS_FROM_NAME], HEADERS_CC);
 						
 						$this->Flash->success('Payment transaction status confirmed successfully.');
 					}

@@ -78,5 +78,3 @@ Router::scope('/', function (RouteBuilder $routes) {
 });
 Router::connect('/privacy_policy', array('controller' => 'pages', 'action' => 'privacyPolicy'));
 Router::connect('/terms_and_conditions', array('controller' => 'pages', 'action' => 'termsAndConditions'));
-
-Plugin::routes();

@@ -6,13 +6,12 @@ use Cake\Datasource\ConnectionManager;
 use App\Controller\AppController;
 use Cake\Core\Configure;
 use Cake\Core\Configure\Engine\PhpConfig;
-use Cake\Mailer\Email;
 use Cake\I18n\I18n;
 
 class EventsubmissionsController extends AppController {
 
     public $paginate = ['limit' => 50];
-    var $components = array('RequestHandler', 'PImage', 'PImageTest');
+    public $components = ['RequestHandler', 'PImage', 'PImageTest'];
 	
 	public function initialize() {
         parent::initialize();
@@ -38,22 +37,22 @@ class EventsubmissionsController extends AppController {
 		$this->multiLoginCheck(array("School","Teacher_Parent"));
 		
         $this->set("title_for_layout", "View/Edit Event Submissions" . TITLE_FOR_PAGES);
-        $this->viewbuilder()->layout('home');
+        $this->viewBuilder()->setLayout('home');
         
 		$this->set('active_cr_eventsubmission','active');
 		
         $msgString = '';
 
-		$user_id = $this->request->session()->read("user_id");
-		$user_type 	= $this->request->session()->read("user_type");
+		$user_id = $this->request->getSession()->read("user_id");
+		$user_type 	= $this->request->getSession()->read("user_type");
 		$userDetails = $this->Users->find()->where(['Users.id' => $user_id])->first();
         $this->set('userDetails', $userDetails);
 		
         $condition = array();
 		
-		if($this->request->session()->read("sess_selected_convention_registration_id")>0)
+		if($this->request->getSession()->read("sess_selected_convention_registration_id")>0)
 		{
-			$condition[] = "(Eventsubmissions.conventionregistration_id = '".$this->request->session()->read("sess_selected_convention_registration_id")."')";
+			$condition[] = "(Eventsubmissions.conventionregistration_id = '".$this->request->getSession()->read("sess_selected_convention_registration_id")."')";
 		}
 		else
 		{
@@ -72,7 +71,7 @@ class EventsubmissionsController extends AppController {
 		//$this->prx($condition);
 		
 		// to check if result released or not
-		$sess_selected_convention_registration_id = $this->request->session()->read("sess_selected_convention_registration_id");
+		$sess_selected_convention_registration_id = $this->request->getSession()->read("sess_selected_convention_registration_id");
 			
 		// to get convention registration details
 		$conventionRegD = $this->Conventionregistrations->find()->where(['Conventionregistrations.id' => $sess_selected_convention_registration_id])->contain(["Conventionseasons"])->first();
@@ -86,24 +85,28 @@ class EventsubmissionsController extends AppController {
 		$this->multiLoginCheck(array("School","Teacher_Parent"));
 		
 		//echo ' fsdf sdf sdf d';exit;
-		$this->viewbuilder()->layout("home");
+		$this->viewBuilder()->setLayout("home");
         $this->set("title_for_layout", "Submit New Event " . TITLE_FOR_PAGES);
 		
 		$this->set('active_cr_eventsubmission','active');
 		
-        $user_id = $this->request->session()->read("user_id");
+        $user_id = $this->request->getSession()->read("user_id");
 		$userDetails = $this->Users->find()->where(['Users.id' => $user_id])->first();
         $this->set('userDetails', $userDetails);
 		
-		if($this->request->session()->read("sess_selected_convention_registration_id")>0)
+		if($this->request->getSession()->read("sess_selected_convention_registration_id")>0)
 		{
-			$sess_selected_convention_registration_id = $this->request->session()->read("sess_selected_convention_registration_id");
+			$sess_selected_convention_registration_id = $this->request->getSession()->read("sess_selected_convention_registration_id");
 			
 			// to get convention registration details
 			$conventionRegD = $this->Conventionregistrations->find()->where(['Conventionregistrations.id' => $sess_selected_convention_registration_id])->first();
 			$this->set('conventionRegD', $conventionRegD);
 			
-			$this->checkRegistrationStillOpen($this->request->session()->read("sess_selected_convention_registration_id"));
+			$this->checkRegistrationStillOpen($this->request->getSession()->read("sess_selected_convention_registration_id"));
+
+			if (!$this->checkEventSubmissionOpen($sess_selected_convention_registration_id, ['controller' => 'eventsubmissions', 'action' => 'viewlist'])) {
+				return;
+			}
 			
 			// to get the list of event ids chosen in this convention for this season
 			$arrConvSeasonEvents = array();
@@ -136,10 +139,10 @@ class EventsubmissionsController extends AppController {
 		
         $eventsubmissions = $this->Eventsubmissions->newEntity();
         if ($this->request->is('post')) {
-            $data = $this->Eventsubmissions->patchEntity($eventsubmissions, $this->request->data);
-            if (count($data->errors()) == 0) {
+            $data = $this->Eventsubmissions->patchEntity($eventsubmissions, $this->request->getData());
+            if (count($data->getErrors()) == 0) {
 				
-				$book_ids = $this->request->data['Eventsubmissions']['book_ids'];
+				$book_ids = $this->request->getData()['Eventsubmissions']['book_ids'];
 				//$this->prx($book_ids);
 				
 				if(isset($book_ids) && count((array)$book_ids))
@@ -153,49 +156,49 @@ class EventsubmissionsController extends AppController {
 				
 				$eventD = $this->Events->find()->where(["Events.id" => $data->event_id])->first();
 				
-				if(!empty($this->request->data['Eventsubmissions']['event_document']['name']))
+				if(!empty($this->request->getData()['Eventsubmissions']['event_document']['name']))
 				{
-					$data->mediafile_original_file_name =  $this->request->data['Eventsubmissions']['event_document']['name'];
+					$data->mediafile_original_file_name =  $this->request->getData()['Eventsubmissions']['event_document']['name'];
 					
 					$specialCharacters = array('#', '$', '%', '@', '+', '=', '\\', '/', '"', ' ', "'", ':', '~', '`', '!', '^', '*', '(', ')', '|', "'", "&");
 					$toReplace = "-";
-					$this->request->data['Eventsubmissions']['event_document']['name'] = str_replace($specialCharacters, $toReplace, $this->request->data['Eventsubmissions']['event_document']['name']);
-					$imageArray = $this->request->data['Eventsubmissions']['event_document'];
+					$this->request->getData()['Eventsubmissions']['event_document']['name'] = str_replace($specialCharacters, $toReplace, $this->request->getData()['Eventsubmissions']['event_document']['name']);
+					$imageArray = $this->request->getData()['Eventsubmissions']['event_document'];
 					$returnedUploadImageArray = $this->PImage->upload($imageArray, UPLOAD_EVENTS_SUBMISSION_DOCUMENT_PATH); 
 					 
 					$data->mediafile_file_system_name =  $returnedUploadImageArray[0];
 				}
 				
-				if(!empty($this->request->data['Eventsubmissions']['report']['name']))
+				if(!empty($this->request->getData()['Eventsubmissions']['report']['name']))
 				{
-					$data->report =  $this->request->data['Eventsubmissions']['report']['name'];
+					$data->report =  $this->request->getData()['Eventsubmissions']['report']['name'];
 					
 					$specialCharacters = array('#', '$', '%', '@', '+', '=', '\\', '/', '"', ' ', "'", ':', '~', '`', '!', '^', '*', '(', ')', '|', "'", "&");
 					$toReplace = "-";
-					$this->request->data['Eventsubmissions']['report']['name'] = str_replace($specialCharacters, $toReplace, $this->request->data['Eventsubmissions']['report']['name']);
-					$imageArray = $this->request->data['Eventsubmissions']['report'];
+					$this->request->getData()['Eventsubmissions']['report']['name'] = str_replace($specialCharacters, $toReplace, $this->request->getData()['Eventsubmissions']['report']['name']);
+					$imageArray = $this->request->getData()['Eventsubmissions']['report'];
 					$returnedUploadImageArray = $this->PImage->upload($imageArray, UPLOAD_EVENTS_SUBMISSION_DOCUMENT_PATH); 
 					 
 					$data->report =  $returnedUploadImageArray[0];
 				}
 				
-				if(!empty($this->request->data['Eventsubmissions']['score_sheet']['name']))
+				if(!empty($this->request->getData()['Eventsubmissions']['score_sheet']['name']))
 				{
 					$specialCharacters = array('#', '$', '%', '@', '+', '=', '\\', '/', '"', ' ', "'", ':', '~', '`', '!', '^', '*', '(', ')', '|', "'", "&");
 					$toReplace = "-";
-					$this->request->data['Eventsubmissions']['score_sheet']['name'] = str_replace($specialCharacters, $toReplace, $this->request->data['Eventsubmissions']['score_sheet']['name']);
-					$imageArray = $this->request->data['Eventsubmissions']['score_sheet'];
+					$this->request->getData()['Eventsubmissions']['score_sheet']['name'] = str_replace($specialCharacters, $toReplace, $this->request->getData()['Eventsubmissions']['score_sheet']['name']);
+					$imageArray = $this->request->getData()['Eventsubmissions']['score_sheet'];
 					$returnedUploadImageArray = $this->PImage->upload($imageArray, UPLOAD_EVENTS_SUBMISSION_DOCUMENT_PATH); 
 					 
 					$data->score_sheet =  $returnedUploadImageArray[0];
 				}
 				
-				if(!empty($this->request->data['Eventsubmissions']['additional_documents']['name']))
+				if(!empty($this->request->getData()['Eventsubmissions']['additional_documents']['name']))
 				{
 					$specialCharacters = array('#', '$', '%', '@', '+', '=', '\\', '/', '"', ' ', "'", ':', '~', '`', '!', '^', '*', '(', ')', '|', "'", "&");
 					$toReplace = "-";
-					$this->request->data['Eventsubmissions']['additional_documents']['name'] = str_replace($specialCharacters, $toReplace, $this->request->data['Eventsubmissions']['additional_documents']['name']);
-					$imageArray = $this->request->data['Eventsubmissions']['additional_documents'];
+					$this->request->getData()['Eventsubmissions']['additional_documents']['name'] = str_replace($specialCharacters, $toReplace, $this->request->getData()['Eventsubmissions']['additional_documents']['name']);
+					$imageArray = $this->request->getData()['Eventsubmissions']['additional_documents'];
 					$returnedUploadImageArray = $this->PImage->upload($imageArray, UPLOAD_EVENTS_SUBMISSION_DOCUMENT_PATH); 
 					 
 					$data->additional_documents =  $returnedUploadImageArray[0];
@@ -244,13 +247,13 @@ class EventsubmissionsController extends AppController {
 		
 		$this->schoolAdminLoginCheck();
 		
-        $user_id = $this->request->session()->read("user_id");
+        $user_id = $this->request->getSession()->read("user_id");
 		$userDetails = $this->Users->find()->where(['Users.id' => $user_id])->first();
         $this->set('userDetails', $userDetails);
 		
-		if($this->request->session()->read("sess_selected_convention_registration_id")>0)
+		if($this->request->getSession()->read("sess_selected_convention_registration_id")>0)
 		{
-			$sess_selected_convention_registration_id = $this->request->session()->read("sess_selected_convention_registration_id");
+			$sess_selected_convention_registration_id = $this->request->getSession()->read("sess_selected_convention_registration_id");
 			
 			// to check if slug exists
 			$checkExists = $this->Eventsubmissions->find()->where(['Eventsubmissions.slug' => $eventsubmission_slug,'Eventsubmissions.conventionregistration_id' => $sess_selected_convention_registration_id])->first();
@@ -302,15 +305,15 @@ class EventsubmissionsController extends AppController {
         $this->multiLoginCheck(array("School","Teacher_Parent"));
 		
 		// to check if registration is still open
-		$this->checkRegistrationStillOpen($this->request->session()->read("sess_selected_convention_registration_id"));
+		$this->checkRegistrationStillOpen($this->request->getSession()->read("sess_selected_convention_registration_id"));
 		
 		//echo ' fsdf sdf sdf d';exit;
-		$this->viewbuilder()->layout("home");
+		$this->viewBuilder()->setLayout("home");
         $this->set("title_for_layout", "Submit Student Event " . TITLE_FOR_PAGES);
 		
 		$this->set('active_cr_packageregistration','active');
 		
-        $user_id = $this->request->session()->read("user_id");
+        $user_id = $this->request->getSession()->read("user_id");
 		$userDetails = $this->Users->find()->where(['Users.id' => $user_id])->first();
         $this->set('userDetails', $userDetails);
 		
@@ -343,6 +346,10 @@ class EventsubmissionsController extends AppController {
 			// to get convention registration details
 			$conventionRegD = $this->Conventionregistrations->find()->where(['Conventionregistrations.id' => $convRegStudentD->conventionregistration_id])->first();
 			$this->set('conventionRegD', $conventionRegD);
+
+			if (!$this->checkEventSubmissionOpen($conventionRegD->id, ['controller' => 'conventionregistrations', 'action' => 'packageregistration'])) {
+				return;
+			}
 		}
 		else
 		{
@@ -353,10 +360,10 @@ class EventsubmissionsController extends AppController {
 		
         $eventsubmissions = $this->Eventsubmissions->newEntity();
         if ($this->request->is('post')) {
-            $data = $this->Eventsubmissions->patchEntity($eventsubmissions, $this->request->data);
-            if (count($data->errors()) == 0) {
+            $data = $this->Eventsubmissions->patchEntity($eventsubmissions, $this->request->getData());
+            if (count($data->getErrors()) == 0) {
 				
-				$book_ids = $this->request->data['Eventsubmissions']['book_ids'];
+				$book_ids = $this->request->getData()['Eventsubmissions']['book_ids'];
 				//$this->prx($book_ids);
 				
 				if(isset($book_ids) && count((array)$book_ids))
@@ -368,49 +375,49 @@ class EventsubmissionsController extends AppController {
 					$data->book_ids = '';
 				}
 				
-				if(!empty($this->request->data['Eventsubmissions']['event_document']['name']))
+				if(!empty($this->request->getData()['Eventsubmissions']['event_document']['name']))
 				{
-					$data->mediafile_original_file_name =  $this->request->data['Eventsubmissions']['event_document']['name'];
+					$data->mediafile_original_file_name =  $this->request->getData()['Eventsubmissions']['event_document']['name'];
 					
 					$specialCharacters = array('#', '$', '%', '@', '+', '=', '\\', '/', '"', ' ', "'", ':', '~', '`', '!', '^', '*', '(', ')', '|', "'", "&");
 					$toReplace = "-";
-					$this->request->data['Eventsubmissions']['event_document']['name'] = str_replace($specialCharacters, $toReplace, $this->request->data['Eventsubmissions']['event_document']['name']);
-					$imageArray = $this->request->data['Eventsubmissions']['event_document'];
+					$this->request->getData()['Eventsubmissions']['event_document']['name'] = str_replace($specialCharacters, $toReplace, $this->request->getData()['Eventsubmissions']['event_document']['name']);
+					$imageArray = $this->request->getData()['Eventsubmissions']['event_document'];
 					$returnedUploadImageArray = $this->PImage->upload($imageArray, UPLOAD_EVENTS_SUBMISSION_DOCUMENT_PATH); 
 					 
 					$data->mediafile_file_system_name =  $returnedUploadImageArray[0];
 				}
 				
-				if(!empty($this->request->data['Eventsubmissions']['report']['name']))
+				if(!empty($this->request->getData()['Eventsubmissions']['report']['name']))
 				{
-					$data->report =  $this->request->data['Eventsubmissions']['report']['name'];
+					$data->report =  $this->request->getData()['Eventsubmissions']['report']['name'];
 					
 					$specialCharacters = array('#', '$', '%', '@', '+', '=', '\\', '/', '"', ' ', "'", ':', '~', '`', '!', '^', '*', '(', ')', '|', "'", "&");
 					$toReplace = "-";
-					$this->request->data['Eventsubmissions']['report']['name'] = str_replace($specialCharacters, $toReplace, $this->request->data['Eventsubmissions']['report']['name']);
-					$imageArray = $this->request->data['Eventsubmissions']['report'];
+					$this->request->getData()['Eventsubmissions']['report']['name'] = str_replace($specialCharacters, $toReplace, $this->request->getData()['Eventsubmissions']['report']['name']);
+					$imageArray = $this->request->getData()['Eventsubmissions']['report'];
 					$returnedUploadImageArray = $this->PImage->upload($imageArray, UPLOAD_EVENTS_SUBMISSION_DOCUMENT_PATH); 
 					 
 					$data->report =  $returnedUploadImageArray[0];
 				}
 				
-				if(!empty($this->request->data['Eventsubmissions']['score_sheet']['name']))
+				if(!empty($this->request->getData()['Eventsubmissions']['score_sheet']['name']))
 				{
 					$specialCharacters = array('#', '$', '%', '@', '+', '=', '\\', '/', '"', ' ', "'", ':', '~', '`', '!', '^', '*', '(', ')', '|', "'", "&");
 					$toReplace = "-";
-					$this->request->data['Eventsubmissions']['score_sheet']['name'] = str_replace($specialCharacters, $toReplace, $this->request->data['Eventsubmissions']['score_sheet']['name']);
-					$imageArray = $this->request->data['Eventsubmissions']['score_sheet'];
+					$this->request->getData()['Eventsubmissions']['score_sheet']['name'] = str_replace($specialCharacters, $toReplace, $this->request->getData()['Eventsubmissions']['score_sheet']['name']);
+					$imageArray = $this->request->getData()['Eventsubmissions']['score_sheet'];
 					$returnedUploadImageArray = $this->PImage->upload($imageArray, UPLOAD_EVENTS_SUBMISSION_DOCUMENT_PATH); 
 					 
 					$data->score_sheet =  $returnedUploadImageArray[0];
 				}
 				
-				if(!empty($this->request->data['Eventsubmissions']['additional_documents']['name']))
+				if(!empty($this->request->getData()['Eventsubmissions']['additional_documents']['name']))
 				{
 					$specialCharacters = array('#', '$', '%', '@', '+', '=', '\\', '/', '"', ' ', "'", ':', '~', '`', '!', '^', '*', '(', ')', '|', "'", "&");
 					$toReplace = "-";
-					$this->request->data['Eventsubmissions']['additional_documents']['name'] = str_replace($specialCharacters, $toReplace, $this->request->data['Eventsubmissions']['additional_documents']['name']);
-					$imageArray = $this->request->data['Eventsubmissions']['additional_documents'];
+					$this->request->getData()['Eventsubmissions']['additional_documents']['name'] = str_replace($specialCharacters, $toReplace, $this->request->getData()['Eventsubmissions']['additional_documents']['name']);
+					$imageArray = $this->request->getData()['Eventsubmissions']['additional_documents'];
 					$returnedUploadImageArray = $this->PImage->upload($imageArray, UPLOAD_EVENTS_SUBMISSION_DOCUMENT_PATH); 
 					 
 					$data->additional_documents =  $returnedUploadImageArray[0];
@@ -455,12 +462,12 @@ class EventsubmissionsController extends AppController {
         $this->multiLoginCheck(array("School","Teacher_Parent"));
 		
 		//echo ' fsdf sdf sdf d';exit;
-		$this->viewbuilder()->layout("home");
+		$this->viewBuilder()->setLayout("home");
         $this->set("title_for_layout", "Submit Group Event " . TITLE_FOR_PAGES);
 		
 		$this->set('active_cr_packageregistration','active');
 		
-        $user_id = $this->request->session()->read("user_id");
+        $user_id = $this->request->getSession()->read("user_id");
 		$userDetails = $this->Users->find()->where(['Users.id' => $user_id])->first();
         $this->set('userDetails', $userDetails);
 		
@@ -499,6 +506,10 @@ class EventsubmissionsController extends AppController {
 			// to get convention registration details
 			$conventionRegD = $this->Conventionregistrations->find()->where(['Conventionregistrations.id' => $crstudentEventsD->conventionregistration_id])->first();
 			$this->set('conventionRegD', $conventionRegD);
+
+			if (!$this->checkEventSubmissionOpen($conventionRegD->id, ['controller' => 'conventionregistrations', 'action' => 'packageregistration'])) {
+				return;
+			}
 		}
 		else
 		{
@@ -537,11 +548,11 @@ class EventsubmissionsController extends AppController {
 		
         $eventsubmissions = $this->Eventsubmissions->newEntity();
         if ($this->request->is('post')) {
-            $data = $this->Eventsubmissions->patchEntity($eventsubmissions, $this->request->data);
-            if (count($data->errors()) == 0) {
+            $data = $this->Eventsubmissions->patchEntity($eventsubmissions, $this->request->getData());
+            if (count($data->getErrors()) == 0) {
 				
-				$book_ids = $this->request->data['Eventsubmissions']['book_ids'];
-				//$this->prx($this->request->data);
+				$book_ids = $this->request->getData()['Eventsubmissions']['book_ids'];
+				//$this->prx($this->request->getData());
 				
 				if(isset($book_ids) && count((array)$book_ids))
 				{
@@ -552,49 +563,49 @@ class EventsubmissionsController extends AppController {
 					$data->book_ids = '';
 				}
 				
-				if(!empty($this->request->data['Eventsubmissions']['event_document']['name']))
+				if(!empty($this->request->getData()['Eventsubmissions']['event_document']['name']))
 				{
-					$data->mediafile_original_file_name =  $this->request->data['Eventsubmissions']['event_document']['name'];
+					$data->mediafile_original_file_name =  $this->request->getData()['Eventsubmissions']['event_document']['name'];
 					
 					$specialCharacters = array('#', '$', '%', '@', '+', '=', '\\', '/', '"', ' ', "'", ':', '~', '`', '!', '^', '*', '(', ')', '|', "'", "&");
 					$toReplace = "-";
-					$this->request->data['Eventsubmissions']['event_document']['name'] = str_replace($specialCharacters, $toReplace, $this->request->data['Eventsubmissions']['event_document']['name']);
-					$imageArray = $this->request->data['Eventsubmissions']['event_document'];
+					$this->request->getData()['Eventsubmissions']['event_document']['name'] = str_replace($specialCharacters, $toReplace, $this->request->getData()['Eventsubmissions']['event_document']['name']);
+					$imageArray = $this->request->getData()['Eventsubmissions']['event_document'];
 					$returnedUploadImageArray = $this->PImage->upload($imageArray, UPLOAD_EVENTS_SUBMISSION_DOCUMENT_PATH); 
 					 
 					$data->mediafile_file_system_name =  $returnedUploadImageArray[0];
 				}
 				
-				if(!empty($this->request->data['Eventsubmissions']['report']['name']))
+				if(!empty($this->request->getData()['Eventsubmissions']['report']['name']))
 				{
-					$data->report =  $this->request->data['Eventsubmissions']['report']['name'];
+					$data->report =  $this->request->getData()['Eventsubmissions']['report']['name'];
 					
 					$specialCharacters = array('#', '$', '%', '@', '+', '=', '\\', '/', '"', ' ', "'", ':', '~', '`', '!', '^', '*', '(', ')', '|', "'", "&");
 					$toReplace = "-";
-					$this->request->data['Eventsubmissions']['report']['name'] = str_replace($specialCharacters, $toReplace, $this->request->data['Eventsubmissions']['report']['name']);
-					$imageArray = $this->request->data['Eventsubmissions']['report'];
+					$this->request->getData()['Eventsubmissions']['report']['name'] = str_replace($specialCharacters, $toReplace, $this->request->getData()['Eventsubmissions']['report']['name']);
+					$imageArray = $this->request->getData()['Eventsubmissions']['report'];
 					$returnedUploadImageArray = $this->PImage->upload($imageArray, UPLOAD_EVENTS_SUBMISSION_DOCUMENT_PATH); 
 					 
 					$data->report =  $returnedUploadImageArray[0];
 				}
 				
-				if(!empty($this->request->data['Eventsubmissions']['score_sheet']['name']))
+				if(!empty($this->request->getData()['Eventsubmissions']['score_sheet']['name']))
 				{
 					$specialCharacters = array('#', '$', '%', '@', '+', '=', '\\', '/', '"', ' ', "'", ':', '~', '`', '!', '^', '*', '(', ')', '|', "'", "&");
 					$toReplace = "-";
-					$this->request->data['Eventsubmissions']['score_sheet']['name'] = str_replace($specialCharacters, $toReplace, $this->request->data['Eventsubmissions']['score_sheet']['name']);
-					$imageArray = $this->request->data['Eventsubmissions']['score_sheet'];
+					$this->request->getData()['Eventsubmissions']['score_sheet']['name'] = str_replace($specialCharacters, $toReplace, $this->request->getData()['Eventsubmissions']['score_sheet']['name']);
+					$imageArray = $this->request->getData()['Eventsubmissions']['score_sheet'];
 					$returnedUploadImageArray = $this->PImage->upload($imageArray, UPLOAD_EVENTS_SUBMISSION_DOCUMENT_PATH); 
 					 
 					$data->score_sheet =  $returnedUploadImageArray[0];
 				}
 				
-				if(!empty($this->request->data['Eventsubmissions']['additional_documents']['name']))
+				if(!empty($this->request->getData()['Eventsubmissions']['additional_documents']['name']))
 				{
 					$specialCharacters = array('#', '$', '%', '@', '+', '=', '\\', '/', '"', ' ', "'", ':', '~', '`', '!', '^', '*', '(', ')', '|', "'", "&");
 					$toReplace = "-";
-					$this->request->data['Eventsubmissions']['additional_documents']['name'] = str_replace($specialCharacters, $toReplace, $this->request->data['Eventsubmissions']['additional_documents']['name']);
-					$imageArray = $this->request->data['Eventsubmissions']['additional_documents'];
+					$this->request->getData()['Eventsubmissions']['additional_documents']['name'] = str_replace($specialCharacters, $toReplace, $this->request->getData()['Eventsubmissions']['additional_documents']['name']);
+					$imageArray = $this->request->getData()['Eventsubmissions']['additional_documents'];
 					$returnedUploadImageArray = $this->PImage->upload($imageArray, UPLOAD_EVENTS_SUBMISSION_DOCUMENT_PATH); 
 					 
 					$data->additional_documents =  $returnedUploadImageArray[0];
@@ -639,11 +650,11 @@ class EventsubmissionsController extends AppController {
         $this->multiLoginCheck(['Teacher_Parent','Judge']);
 		
         $this->set("title_for_layout", "Times Event Entries" . TITLE_FOR_PAGES);
-        $this->viewbuilder()->layout('home');
+        $this->viewBuilder()->setLayout('home');
 		
-		$user_id 	= $this->request->session()->read("user_id");
+		$user_id 	= $this->request->getSession()->read("user_id");
 		
-		if($this->request->session()->read("sess_selected_convention_registration_id")>0)
+		if($this->request->getSession()->read("sess_selected_convention_registration_id")>0)
 		{
 			$this->set('active_cr_judgeevents','active');
 		}
@@ -656,8 +667,8 @@ class EventsubmissionsController extends AppController {
 		
         $msgString = '';
 
-		$user_id = $this->request->session()->read("user_id");
-		$user_type 	= $this->request->session()->read("user_type");
+		$user_id = $this->request->getSession()->read("user_id");
+		$user_type 	= $this->request->getSession()->read("user_type");
 		$userDetails = $this->Users->find()->where(['Users.id' => $user_id])->first();
         $this->set('userDetails', $userDetails);
 		
@@ -701,15 +712,15 @@ class EventsubmissionsController extends AppController {
 		
 		if ($this->request->is(['post']))
 		{
-			//$this->prx($this->request->data);
+			//$this->prx($this->request->getData());
 			
-			$total_records = $this->request->data['total_records'];
+			$total_records = $this->request->getData()['total_records'];
 			
 			for($cntrE=1;$cntrE<=$total_records;$cntrE++)
 			{
-				$time_score			= $this->request->data['time_score_'.$cntrE];
-				$submission_id		= $this->request->data['submission_id_'.$cntrE];
-				if(isset($this->request->data['withdrawn_'.$cntrE]))
+				$time_score			= $this->request->getData()['time_score_'.$cntrE];
+				$submission_id		= $this->request->getData()['submission_id_'.$cntrE];
+				if(isset($this->request->getData()['withdrawn_'.$cntrE]))
 				{
 					$withdraw_yes_no = 1;
 				}
@@ -783,11 +794,11 @@ class EventsubmissionsController extends AppController {
         $this->multiLoginCheck(['Teacher_Parent','Judge']);
 		
         $this->set("title_for_layout", "Distance Event Entries" . TITLE_FOR_PAGES);
-        $this->viewbuilder()->layout('home');
+        $this->viewBuilder()->setLayout('home');
 		
-		$user_id 	= $this->request->session()->read("user_id");
+		$user_id 	= $this->request->getSession()->read("user_id");
 		
-		if($this->request->session()->read("sess_selected_convention_registration_id")>0)
+		if($this->request->getSession()->read("sess_selected_convention_registration_id")>0)
 		{
 			$this->set('active_cr_judgeevents','active');
 		}
@@ -800,8 +811,8 @@ class EventsubmissionsController extends AppController {
 		
         $msgString = '';
 
-		$user_id = $this->request->session()->read("user_id");
-		$user_type 	= $this->request->session()->read("user_type");
+		$user_id = $this->request->getSession()->read("user_id");
+		$user_type 	= $this->request->getSession()->read("user_type");
 		$userDetails = $this->Users->find()->where(['Users.id' => $user_id])->first();
         $this->set('userDetails', $userDetails);
 		
@@ -845,20 +856,20 @@ class EventsubmissionsController extends AppController {
 		
 		if ($this->request->is(['post']))
 		{
-			//$this->prx($this->request->data);
+			//$this->prx($this->request->getData());
 			
-			$total_records = $this->request->data['total_records'];
+			$total_records = $this->request->getData()['total_records'];
 			
 			for($cntrE=1;$cntrE<=$total_records;$cntrE++)
 			{
 				$arrBestD = array();
 				
-				$distance_attempt_1			= $this->request->data['distance_attempt_1_'.$cntrE];
-				$distance_attempt_2			= $this->request->data['distance_attempt_2_'.$cntrE];
-				$distance_attempt_3			= $this->request->data['distance_attempt_3_'.$cntrE];
+				$distance_attempt_1			= $this->request->getData()['distance_attempt_1_'.$cntrE];
+				$distance_attempt_2			= $this->request->getData()['distance_attempt_2_'.$cntrE];
+				$distance_attempt_3			= $this->request->getData()['distance_attempt_3_'.$cntrE];
 				
-				$submission_id			= $this->request->data['submission_id_'.$cntrE];
-				if(isset($this->request->data['withdrawn_'.$cntrE]))
+				$submission_id			= $this->request->getData()['submission_id_'.$cntrE];
+				if(isset($this->request->getData()['withdrawn_'.$cntrE]))
 				{
 					$withdraw_yes_no = 1;
 				}
@@ -972,11 +983,11 @@ class EventsubmissionsController extends AppController {
         $this->multiLoginCheck(['Teacher_Parent','Judge']);
 		
         $this->set("title_for_layout", "Scores Event Entries" . TITLE_FOR_PAGES);
-        $this->viewbuilder()->layout('home');
+        $this->viewBuilder()->setLayout('home');
 		
-		$user_id 	= $this->request->session()->read("user_id");
+		$user_id 	= $this->request->getSession()->read("user_id");
 		
-		if($this->request->session()->read("sess_selected_convention_registration_id")>0)
+		if($this->request->getSession()->read("sess_selected_convention_registration_id")>0)
 		{
 			$this->set('active_cr_judgeevents','active');
 		}
@@ -989,8 +1000,8 @@ class EventsubmissionsController extends AppController {
 		
         $msgString = '';
 
-		$user_id = $this->request->session()->read("user_id");
-		$user_type 	= $this->request->session()->read("user_type");
+		$user_id = $this->request->getSession()->read("user_id");
+		$user_type 	= $this->request->getSession()->read("user_type");
 		$userDetails = $this->Users->find()->where(['Users.id' => $user_id])->first();
         $this->set('userDetails', $userDetails);
 		
@@ -1034,7 +1045,7 @@ class EventsubmissionsController extends AppController {
 		
 		if ($this->request->is(['post']))
 		{
-			//$this->prx($this->request->data);
+			//$this->prx($this->request->getData());
 			
 			$posScoresArr = array(
 				'pos_1' => 5,
@@ -1048,11 +1059,11 @@ class EventsubmissionsController extends AppController {
 				'pos_9' => 5
 			);
 			
-			$total_records = $this->request->data['total_records'];
+			$total_records = $this->request->getData()['total_records'];
 			
 			for($cntrE=1;$cntrE<=$total_records;$cntrE++)
 			{	
-				$submission_id			= $this->request->data['submission_id_'.$cntrE];
+				$submission_id			= $this->request->getData()['submission_id_'.$cntrE];
 				
 				$arrPosYN 		= array();
 				$arrPosScore 	= array();
@@ -1060,7 +1071,7 @@ class EventsubmissionsController extends AppController {
 				
 				for($cntPPS=1;$cntPPS<=9;$cntPPS++)
 				{
-					if(isset($this->request->data['pos_'.$cntPPS.'_'.$cntrE]) && !empty($this->request->data['pos_'.$cntPPS.'_'.$cntrE]))
+					if(isset($this->request->getData()['pos_'.$cntPPS.'_'.$cntrE]) && !empty($this->request->getData()['pos_'.$cntPPS.'_'.$cntrE]))
 					{
 						$arrPosYN[$cntPPS] 			= 1;
 						$arrPosScore[$cntPPS] 		= $posScoresArr['pos_'.$cntPPS];
@@ -1076,9 +1087,9 @@ class EventsubmissionsController extends AppController {
 				
 				
 				
-				$comp_choice_pos_1				= $this->request->data['comp_choice_pos_1_'.$cntrE];
-				$comp_choice_pos_2				= $this->request->data['comp_choice_pos_2_'.$cntrE];
-				$comp_choice_pos_3				= $this->request->data['comp_choice_pos_3_'.$cntrE];
+				$comp_choice_pos_1				= $this->request->getData()['comp_choice_pos_1_'.$cntrE];
+				$comp_choice_pos_2				= $this->request->getData()['comp_choice_pos_2_'.$cntrE];
+				$comp_choice_pos_3				= $this->request->getData()['comp_choice_pos_3_'.$cntrE];
 				
 				
 				if(isset($comp_choice_pos_1) && !empty($comp_choice_pos_1))
@@ -1113,7 +1124,7 @@ class EventsubmissionsController extends AppController {
 				
 				
 				
-				if(isset($this->request->data['withdrawn_'.$cntrE]))
+				if(isset($this->request->getData()['withdrawn_'.$cntrE]))
 				{
 					$withdraw_yes_no = 1;
 				}
@@ -1236,11 +1247,11 @@ class EventsubmissionsController extends AppController {
         $this->multiLoginCheck(['Teacher_Parent','Judge']);
 		
         $this->set("title_for_layout", "Soccer Kick Event Entries" . TITLE_FOR_PAGES);
-        $this->viewbuilder()->layout('home');
+        $this->viewBuilder()->setLayout('home');
 		
-		$user_id 	= $this->request->session()->read("user_id");
+		$user_id 	= $this->request->getSession()->read("user_id");
 		
-		if($this->request->session()->read("sess_selected_convention_registration_id")>0)
+		if($this->request->getSession()->read("sess_selected_convention_registration_id")>0)
 		{
 			$this->set('active_cr_judgeevents','active');
 		}
@@ -1253,8 +1264,8 @@ class EventsubmissionsController extends AppController {
 		
         $msgString = '';
 
-		$user_id = $this->request->session()->read("user_id");
-		$user_type 	= $this->request->session()->read("user_type");
+		$user_id = $this->request->getSession()->read("user_id");
+		$user_type 	= $this->request->getSession()->read("user_type");
 		$userDetails = $this->Users->find()->where(['Users.id' => $user_id])->first();
         $this->set('userDetails', $userDetails);
 		
@@ -1298,17 +1309,17 @@ class EventsubmissionsController extends AppController {
 		
 		if ($this->request->is(['post']))
 		{
-			//$this->prx($this->request->data);
+			//$this->prx($this->request->getData());
 			
-			$total_records = $this->request->data['total_records'];
+			$total_records = $this->request->getData()['total_records'];
 			
 			for($cntrE=1;$cntrE<=$total_records;$cntrE++)
 			{
 				$arrBestKick = array();
 				$arrAllKicks = array();
 				
-				$submission_id			= $this->request->data['submission_id_'.$cntrE];
-				if(isset($this->request->data['withdrawn_'.$cntrE]))
+				$submission_id			= $this->request->getData()['submission_id_'.$cntrE];
+				if(isset($this->request->getData()['withdrawn_'.$cntrE]))
 				{
 					$withdraw_yes_no = 1;
 				}
@@ -1323,7 +1334,7 @@ class EventsubmissionsController extends AppController {
 					{
 						$nameCB = $cntrE.'_'.$cntrKD.'m_'.$cntrAtt;
 						
-						$valSK 	= $this->request->data[$nameCB];
+						$valSK 	= $this->request->getData()[$nameCB];
 						
 						if(isset($valSK) && $valSK>0)
 						{
@@ -1407,11 +1418,11 @@ class EventsubmissionsController extends AppController {
         $this->multiLoginCheck(['Teacher_Parent','Judge']);
 		
         $this->set("title_for_layout", "Spelling Event Entries" . TITLE_FOR_PAGES);
-        $this->viewbuilder()->layout('home');
+        $this->viewBuilder()->setLayout('home');
 		
-		$user_id 	= $this->request->session()->read("user_id");
+		$user_id 	= $this->request->getSession()->read("user_id");
 		
-		if($this->request->session()->read("sess_selected_convention_registration_id")>0)
+		if($this->request->getSession()->read("sess_selected_convention_registration_id")>0)
 		{
 			$this->set('active_cr_judgeevents','active');
 		}
@@ -1424,8 +1435,8 @@ class EventsubmissionsController extends AppController {
 		
         $msgString = '';
 
-		$user_id = $this->request->session()->read("user_id");
-		$user_type 	= $this->request->session()->read("user_type");
+		$user_id = $this->request->getSession()->read("user_id");
+		$user_type 	= $this->request->getSession()->read("user_type");
 		$userDetails = $this->Users->find()->where(['Users.id' => $user_id])->first();
         $this->set('userDetails', $userDetails);
 		
@@ -1469,14 +1480,14 @@ class EventsubmissionsController extends AppController {
 		
 		if ($this->request->is(['post']))
 		{
-			//$this->prx($this->request->data);
+			//$this->prx($this->request->getData());
 			
-			$total_records = $this->request->data['total_records'];
+			$total_records = $this->request->getData()['total_records'];
 			
 			for($cntrE=1;$cntrE<=$total_records;$cntrE++)
 			{	
-				$submission_id			= $this->request->data['submission_id_'.$cntrE];
-				if(isset($this->request->data['withdrawn_'.$cntrE]))
+				$submission_id			= $this->request->getData()['submission_id_'.$cntrE];
+				if(isset($this->request->getData()['withdrawn_'.$cntrE]))
 				{
 					$withdraw_yes_no = 1;
 				}
@@ -1499,7 +1510,7 @@ class EventsubmissionsController extends AppController {
 					// update record
 					$this->Judgeevaluations->updateAll(
 					[
-						'spelling_score' 	=> $this->request->data['spelling_score_'.$cntrE],
+						'spelling_score' 	=> $this->request->getData()['spelling_score_'.$cntrE],
 						'withdraw_yes_no' 	=> $withdraw_yes_no,
 					], 
 					[
@@ -1526,7 +1537,7 @@ class EventsubmissionsController extends AppController {
 					$dataJ->student_id						= $eventsubmissionD->student_id;
 					$dataJ->uploaded_by_user_id				= $user_id;
 					
-					$dataJ->spelling_score					= $this->request->data['spelling_score_'.$cntrE];
+					$dataJ->spelling_score					= $this->request->getData()['spelling_score_'.$cntrE];
 					$dataJ->withdraw_yes_no					= $withdraw_yes_no;
 					$dataJ->created 						= date('Y-m-d H:i:s');
 

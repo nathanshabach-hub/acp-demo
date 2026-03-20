@@ -14,8 +14,8 @@ class PastorsController extends AppController {
         $this->loadComponent('Paginator');
         $this->loadComponent('Flash');
         
-        $action = $this->request->params['action'];
-        $loggedAdminId = $this->request->session()->read('admin_id');
+        $action = $this->request->getParam('action');
+        $loggedAdminId = $this->request->getSession()->read('admin_id');
         if ($action != 'forgotPassword' && $action != 'logout') {
             if (!$loggedAdminId && $action != "login" && $action != 'captcha') {
                 $this->redirect(['controller' => 'admins', 'action' => 'login']);
@@ -25,7 +25,7 @@ class PastorsController extends AppController {
 
     public function index() {
         $this->set('title', ADMIN_TITLE . 'Manage Pastors');
-        $this->viewBuilder()->layout('admin');
+        $this->viewBuilder()->setLayout('admin');
         $this->set('managePastors', '1');
         $this->set('pastorsList', '1');
 
@@ -33,9 +33,10 @@ class PastorsController extends AppController {
         $condition = array();
 
         if ($this->request->is('post')) {
-            if (isset($this->request->data['action'])) {
-                $idList = implode(',', $this->request->data['chkRecordId']);
-                $action = $this->request->data['action'];
+            $requestData = $this->request->getData();
+            if (isset($requestData['action'])) {
+                $idList = implode(',', $requestData['chkRecordId']);
+                $action = $requestData['action'];
                 if ($idList) {
                     if ($action == "Activate") {
                         $this->Pastors->updateAll(['status' => '1'], ["id IN ($idList)"]);
@@ -50,12 +51,12 @@ class PastorsController extends AppController {
                 }
             }
 
-            if (isset($this->request->data['Pastors']['search_name']) && $this->request->data['Pastors']['search_name'] != '') {
-                $search_name = trim($this->request->data['Pastors']['search_name']);
+            if (isset($requestData['Pastors']['search_name']) && $requestData['Pastors']['search_name'] != '') {
+                $search_name = trim($requestData['Pastors']['search_name']);
             }
-        } elseif ($this->request->params) {
-            if (isset($this->request->params['pass'][0]) && $this->request->params['pass'][0] != '') {
-                $searchArr = $this->request->params['pass'];
+        } elseif ($this->request->getParam('pass')) {
+            if (isset($this->request->getParam('pass')[0]) && $this->request->getParam('pass')[0] != '') {
+                $searchArr = $this->request->getParam('pass');
                 foreach ($searchArr as $val) {
                     if (strpos($val, ":") !== false) {
                         $vars = explode(":", $val);
@@ -77,7 +78,7 @@ class PastorsController extends AppController {
         $this->set('pastors', $this->paginate($this->Pastors));
         
         if ($this->request->is("ajax")) {
-            $this->viewBuilder()->layout(($this->request->is("ajax")) ? "" : "default");
+            $this->viewBuilder()->setLayout(($this->request->is("ajax")) ? "" : "default");
             $this->viewBuilder()->templatePath('Element' . DS . 'Admin/Pastors');
             $this->render('index');
         }
@@ -85,7 +86,7 @@ class PastorsController extends AppController {
 
     public function add() {
         $this->set('title', ADMIN_TITLE . 'Add Pastor');
-        $this->viewBuilder()->layout('admin');
+        $this->viewBuilder()->setLayout('admin');
         $this->set('managePastors', '1');
         $this->set('addPastor', '1');
 
@@ -106,7 +107,7 @@ class PastorsController extends AppController {
 
     public function edit($id = null) {
         $this->set('title', ADMIN_TITLE . 'Edit Pastor');
-        $this->viewBuilder()->layout('admin');
+        $this->viewBuilder()->setLayout('admin');
         $this->set('managePastors', '1');
         $this->set('editPastor', '1');
 

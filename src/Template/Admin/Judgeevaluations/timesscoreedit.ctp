@@ -76,7 +76,7 @@ else
                     <div class="form-group">
                       <label class="col-sm-2 control-label">Time <span class="require">*</span></label>
                       <div class="col-sm-10">
-                          <?php echo $this->Form->input('Judgeevaluations.time_score', ['label'=>false, 'type'=>'text', 'div'=>false, 'class'=>'form-control required', 'placeholder'=>'', 'autocomplete'=>'off', 'value' => $formattedTime]); ?>
+                          <?php echo $this->Form->control('Judgeevaluations.time_score', ['label'=>false, 'type'=>'text', 'div'=>false, 'class'=>'form-control required', 'placeholder'=>'', 'autocomplete'=>'off', 'value' => $formattedTime]); ?>
 						  <span class="help_text"><i>Please enter time in format hh:mm:ss.ms</i></span>
                       </div>
                     </div>
@@ -84,14 +84,14 @@ else
                     <div class="form-group">
                       <label class="col-sm-2 control-label">Place <span class="require">*</span></label>
                       <div class="col-sm-10">
-                          <?php echo $this->Form->input('Judgeevaluations.place', ['label'=>false, 'type'=>'number', 'div'=>false, 'min'=>1, 'class'=>'form-control required', 'placeholder'=>'', 'autocomplete'=>'off']); ?>
+                          <?php echo $this->Form->control('Judgeevaluations.place', ['label'=>false, 'type'=>'number', 'div'=>false, 'min'=>1, 'class'=>'form-control required', 'placeholder'=>'', 'autocomplete'=>'off']); ?>
                       </div>
                     </div>
 					
 					<div class="form-group">
                       <label class="col-sm-2 control-label">Withdraw </label>
                       <div class="col-sm-10">
-                          <?php echo $this->Form->input('Judgeevaluations.withdraw_yes_no', ['label'=>false, 'type'=>'checkbox', 'div'=>false,  'placeholder'=>'', 'autocomplete'=>'off','style' => 'width:6%;', $checkedS]); ?>
+                          <?php echo $this->Form->control('Judgeevaluations.withdraw_yes_no', ['label'=>false, 'type'=>'checkbox', 'div'=>false,  'placeholder'=>'', 'autocomplete'=>'off','style' => 'width:6%;', $checkedS]); ?>
                       </div>
                     </div>
 

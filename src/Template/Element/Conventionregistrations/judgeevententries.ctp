@@ -1,8 +1,8 @@
 <?php
 use Cake\ORM\TableRegistry;
-$this->Users 				= TableRegistry::get('Users');
-$this->Judgeevaluations 	= TableRegistry::get('Judgeevaluations');
-$this->Crstudentevents 		= TableRegistry::get('Crstudentevents');
+$this->Users 				= TableRegistry::getTableLocator()->get('Users');
+$this->Judgeevaluations 	= TableRegistry::getTableLocator()->get('Judgeevaluations');
+$this->Crstudentevents 		= TableRegistry::getTableLocator()->get('Crstudentevents');
 ?>
 
 <div class="admin_loader" id="loaderID"><?php echo $this->Html->image('loader_large_blue.gif');?></div>
@@ -198,7 +198,7 @@ $this->Crstudentevents 		= TableRegistry::get('Crstudentevents');
 							// to check if this entry judged by this judge or not
 							$condCheckJudging = array();
 							$condCheckJudging[] = "(Judgeevaluations.eventsubmission_id = '".$datarecord->id."')";
-							$condCheckJudging[] = "(Judgeevaluations.uploaded_by_user_id = '".$this->request->session()->read("user_id")."')";
+							$condCheckJudging[] = "(Judgeevaluations.uploaded_by_user_id = '".$this->request->getSession()->read("user_id")."')";
 							$checkJudging = $this->Judgeevaluations->find()->where($condCheckJudging)->count();
 							if($checkJudging>0)
 							{

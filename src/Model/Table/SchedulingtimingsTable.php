@@ -4,7 +4,7 @@ namespace App\Model\Table;
 
 use ArrayObject;
 use Cake\Datasource\EntityInterface;
-use Cake\Event\Event;
+use Cake\Event\EventInterface;
 use Cake\ORM\Table;
 use Cake\Validation\Validator;
 
@@ -60,7 +60,7 @@ class SchedulingtimingsTable extends Table {
         ]);
     }
 
-    public function beforeSave(Event $event, EntityInterface $entity, ArrayObject $options)
+    public function beforeSave(EventInterface $event, EntityInterface $entity, ArrayObject $options)
     {
         if ($entity->has('is_bye') && $entity->is_bye === null) {
             $entity->is_bye = 0;

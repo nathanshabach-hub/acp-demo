@@ -6,14 +6,14 @@ use Cake\Datasource\ConnectionManager;
 use App\Controller\AppController;
 use Cake\Core\Configure;
 use Cake\Core\Configure\Engine\PhpConfig;
-use Cake\Mailer\Email;
+use Cake\Mailer\Mailer;
 use Cake\I18n\I18n;
 
 
 class CombinerequestsController extends AppController {
 
     public $paginate = ['limit' => 50];
-    var $components = array('RequestHandler', 'PImage', 'PImageTest');
+    public $components = ['RequestHandler', 'PImage', 'PImageTest'];
 	
 	public function initialize() {
         parent::initialize();
@@ -37,23 +37,23 @@ class CombinerequestsController extends AppController {
 		$this->multiLoginCheck(['School','Teacher_Parent']);
 		
         $this->set("title_for_layout", "Combined Team/Group Events " . TITLE_FOR_PAGES);
-        $this->viewbuilder()->layout('home');
+        $this->viewBuilder()->setLayout('home');
         
 		$this->set('active_cr_studentgroups','active');
 		
         $msgString = '';
 
-		$user_id = $this->request->session()->read("user_id");
-		$user_type 	= $this->request->session()->read("user_type");
+		$user_id = $this->request->getSession()->read("user_id");
+		$user_type 	= $this->request->getSession()->read("user_type");
 		$userDetails = $this->Users->find()->where(['Users.id' => $user_id])->first();
         $this->set('userDetails', $userDetails);
 
         $separator = array();
         $condition = array();
 		
-		if($this->request->session()->read("sess_selected_convention_registration_id")>0)
+		if($this->request->getSession()->read("sess_selected_convention_registration_id")>0)
 		{
-			$condition[] = "(Combinerequests.conventionregistration_id = '".$this->request->session()->read("sess_selected_convention_registration_id")."')";
+			$condition[] = "(Combinerequests.conventionregistration_id = '".$this->request->getSession()->read("sess_selected_convention_registration_id")."')";
 		}
 		else
 		{
@@ -72,9 +72,9 @@ class CombinerequestsController extends AppController {
 		}
 
         if ($this->request->is('post')) {
-            if (isset($this->request->data['action'])) {
-                $idList = implode(',', $this->request->data['chkRecordId']);
-                $action = $this->request->data['action'];
+            if (isset($this->request->getData()['action'])) {
+                $idList = implode(',', $this->request->getData()['chkRecordId']);
+                $action = $this->request->getData()['action'];
                 if ($idList) {
                     if ($action == "Activate") {
                         $this->Combinerequests->updateAll(['status' => '1'], ["id IN ($idList)"]);
@@ -89,12 +89,12 @@ class CombinerequestsController extends AppController {
                 }
             }
 
-            if (isset($this->request->data['Combinerequests']['keyword']) && $this->request->data['Combinerequests']['keyword'] != '') {
-                $keyword = trim($this->request->data['Combinerequests']['keyword']);
+            if (isset($this->request->getData()['Combinerequests']['keyword']) && $this->request->getData()['Combinerequests']['keyword'] != '') {
+                $keyword = trim($this->request->getData()['Combinerequests']['keyword']);
             }
-        } elseif ($this->request->params) {
-            if (isset($this->request->params['pass'][0]) && $this->request->params['pass'][0] != '') {
-                $searchArr = $this->request->params['pass'];
+        } elseif ($this->request->getParam('pass')) {
+            if (isset($this->request->getParam('pass')[0]) && $this->request->getParam('pass')[0] != '') {
+                $searchArr = $this->request->getParam('pass');
                 foreach ($searchArr as $val) {
                     if (strpos($val, ":") !== false) {
                         $vars = explode(":", $val);
@@ -115,7 +115,7 @@ class CombinerequestsController extends AppController {
         $this->paginate = ['contain' => ['Conventions','Combineduser','Events'],'conditions' => $condition, 'limit' => 30, 'order' => ['combinerequests.season_year' => 'DESC']];
         $this->set('combinerequests', $this->paginate($this->Combinerequests));
         if ($this->request->is("ajax")) {
-            $this->viewBuilder()->layout(($this->request->is("ajax")) ? "" : "default");
+            $this->viewBuilder()->setLayout(($this->request->is("ajax")) ? "" : "default");
             $this->viewBuilder()->templatePath('Element' . DS . 'Combinerequests');
             $this->render('viewlist');
         }
@@ -128,18 +128,18 @@ class CombinerequestsController extends AppController {
 		$this->multiLoginCheck(['School','Teacher_Parent']);
 		
 		//echo ' fsdf sdf sdf d';exit;
-		$this->viewbuilder()->layout("home");
+		$this->viewBuilder()->setLayout("home");
         $this->set("title_for_layout", "Combined Team/Group Events - Add Request " . TITLE_FOR_PAGES);
 		
 		$this->set('active_cr_studentgroups','active');
 		
-        $user_id = $this->request->session()->read("user_id");
+        $user_id = $this->request->getSession()->read("user_id");
 		$userDetails = $this->Users->find()->where(['Users.id' => $user_id])->first();
         $this->set('userDetails', $userDetails);
 		
-		if($this->request->session()->read("sess_selected_convention_registration_id")>0)
+		if($this->request->getSession()->read("sess_selected_convention_registration_id")>0)
 		{
-			$sess_selected_convention_registration_id = $this->request->session()->read("sess_selected_convention_registration_id");
+			$sess_selected_convention_registration_id = $this->request->getSession()->read("sess_selected_convention_registration_id");
 			
 			// to get convention registration details
 			$conventionRegD = $this->Conventionregistrations->find()->where(['Conventionregistrations.id' => $sess_selected_convention_registration_id])->contain(['Conventions'])->first();
@@ -200,8 +200,8 @@ class CombinerequestsController extends AppController {
         $combinerequests = $this->Combinerequests->newEntity();
 		if ($this->request->is('post')) {
 			
-			$data = $this->Combinerequests->patchEntity($combinerequests, $this->request->data);
-            if (count($data->errors()) == 0) {
+			$data = $this->Combinerequests->patchEntity($combinerequests, $this->request->getData());
+            if (count($data->getErrors()) == 0) {
 
 				//$this->prx($data);
 				
@@ -236,15 +236,28 @@ class CombinerequestsController extends AppController {
 					
 					//echo $messageToSend; exit;
 					
-					$email = new Email();
-					$email->template('default', 'admintemplate')
-						->emailFormat('html')
-						->to($emailId)
-						->cc(ACCOUNTS_TEAM_ANOTHER_EMAIL)
-						->from([HEADERS_FROM_EMAIL => HEADERS_FROM_NAME])
-						->subject($subjectToSend)
-						->viewVars(['content_for_layout' => $messageToSend])
-						->send();
+					$mailer = new Mailer('default');
+					if (method_exists($mailer, 'setEmailFormat')) {
+						$mailer->setEmailFormat('html');
+					}
+					if (method_exists($mailer, 'setTo')) {
+						$mailer->setTo($emailId);
+					}
+					if (method_exists($mailer, 'setCc')) {
+						$mailer->setCc(ACCOUNTS_TEAM_ANOTHER_EMAIL);
+					}
+					if (method_exists($mailer, 'setFrom')) {
+						$mailer->setFrom([HEADERS_FROM_EMAIL => HEADERS_FROM_NAME]);
+					}
+					if (method_exists($mailer, 'setSubject')) {
+						$mailer->setSubject($subjectToSend);
+					}
+
+					if (method_exists($mailer, 'deliver')) {
+						$mailer->deliver($messageToSend);
+					} else {
+						$mailer->send($messageToSend);
+					}
 					
 					
 					

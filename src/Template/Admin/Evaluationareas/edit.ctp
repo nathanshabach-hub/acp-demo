@@ -41,7 +41,7 @@ if(!empty($evaluationareas->evaluationquestion_ids))
 									$('#evaluationcategory_id').select2();
 								});
 							</script>
-							<?php echo $this->Form->input('Evaluationareas.evaluationcategory_id_old', ['value'=>$evaluationareas->evaluationcategory_id, 'type'=>'hidden']); ?>
+							<?php echo $this->Form->control('Evaluationareas.evaluationcategory_id_old', ['value'=>$evaluationareas->evaluationcategory_id, 'type'=>'hidden']); ?>
                       </div>
                     </div>
 					
@@ -59,7 +59,7 @@ if(!empty($evaluationareas->evaluationquestion_ids))
                     
                     <div class="box-footer">
                         <label class="col-sm-2 control-label" for="inputPassword3">&nbsp;</label>
-                        <?php echo $this->Form->input('Evaluationareas.id', ['label'=>false, 'type'=>'hidden']); ?>
+                        <?php echo $this->Form->control('Evaluationareas.id', ['label'=>false, 'type'=>'hidden']); ?>
                         <?php echo $this->Form->button('Save', ['type'=>'submit', 'class' => 'btn btn-info', 'div'=>false]); ?>
                         <?php echo $this->Html->link('Cancel', ['controller'=>'evaluationareas', 'action' => 'index',$form_slug], ['class'=>'btn btn-default canlcel_le']); ?>
                     </div>

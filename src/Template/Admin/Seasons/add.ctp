@@ -60,7 +60,7 @@
 					<div class="form-group">
                       <label class="col-sm-2 control-label">Season Year <span class="require">*</span></label>
                       <div class="col-sm-10">
-                          <?php echo $this->Form->input('Seasons.season_year', ['label'=>false, 'type'=>'number',  'div'=>false, 'class'=>'form-control required', 'placeholder'=>'Season Year', 'autocomplete'=>'off']); ?>
+                          <?php echo $this->Form->control('Seasons.season_year', ['label'=>false, 'type'=>'number',  'div'=>false, 'class'=>'form-control required', 'placeholder'=>'Season Year', 'autocomplete'=>'off']); ?>
                       </div>
                     </div>
 					

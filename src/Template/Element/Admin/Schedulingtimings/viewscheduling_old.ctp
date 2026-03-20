@@ -1,6 +1,6 @@
 <?php
 use Cake\ORM\TableRegistry;
-$this->Events = TableRegistry::get('Events');
+$this->Events = TableRegistry::getTableLocator()->get('Events');
 ?>
 <div class="admin_loader" id="loaderID"><?php echo $this->Html->image('loader_large_blue.gif');?></div>
 <?php if (!$schedulingTimingsList->isEmpty()) { ?> 
@@ -88,7 +88,7 @@ $this->Events = TableRegistry::get('Events');
          
         <?php 
         if (isset($keyword) && $keyword != '') {
-            echo $this->Form->input('Divisions.keyword', ['label'=>false, 'type'=>'hidden', 'value'=>$keyword]);
+            echo $this->Form->control('Divisions.keyword', ['label'=>false, 'type'=>'hidden', 'value'=>$keyword]);
         }?>
         <?php echo $this->Form->end(); ?>
     

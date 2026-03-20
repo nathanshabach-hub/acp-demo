@@ -18,7 +18,7 @@
                     <div class="form-group align_box dtpickr_inputs">
                        <span class="hints">Search by Season Year</span>
                        <span class="hint">
-                           <?php echo $this->Form->input('Seasons.keyword', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control', 'placeholder'=>'Search by Season Year']); ?>
+                           <?php echo $this->Form->control('Seasons.keyword', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control', 'placeholder'=>'Search by Season Year']); ?>
                        </span>
                       
                        <div class="admin_asearch">

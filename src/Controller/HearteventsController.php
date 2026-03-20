@@ -6,13 +6,12 @@ use Cake\Datasource\ConnectionManager;
 use App\Controller\AppController;
 use Cake\Core\Configure;
 use Cake\Core\Configure\Engine\PhpConfig;
-use Cake\Mailer\Email;
 use Cake\I18n\I18n;
 
 class HearteventsController extends AppController {
 
     public $paginate = ['limit' => 50];
-    var $components = array('RequestHandler', 'PImage', 'PImageTest');
+    public $components = ['RequestHandler', 'PImage', 'PImageTest'];
 	
 	public function initialize() {
         parent::initialize();
@@ -33,23 +32,23 @@ class HearteventsController extends AppController {
         $this->multiLoginCheck(array("School","Teacher_Parent"));
 		
         $this->set("title_for_layout", "Events of the Heart" . TITLE_FOR_PAGES);
-        $this->viewbuilder()->layout('home');
+        $this->viewBuilder()->setLayout('home');
         
 		$this->set('active_cr_eventsheart','active');
 		
         $msgString = '';
 
-		$user_id = $this->request->session()->read("user_id");
-		$user_type 	= $this->request->session()->read("user_type");
+		$user_id = $this->request->getSession()->read("user_id");
+		$user_type 	= $this->request->getSession()->read("user_type");
 		$userDetails = $this->Users->find()->where(['Users.id' => $user_id])->first();
         $this->set('userDetails', $userDetails);
 
         $separator = array();
         $condition = array();
 		
-		if($this->request->session()->read("sess_selected_convention_registration_id")>0)
+		if($this->request->getSession()->read("sess_selected_convention_registration_id")>0)
 		{
-			$condition[] = "(Heartevents.conventionregistration_id = '".$this->request->session()->read("sess_selected_convention_registration_id")."')";
+			$condition[] = "(Heartevents.conventionregistration_id = '".$this->request->getSession()->read("sess_selected_convention_registration_id")."')";
 		}
 		else
 		{
@@ -64,9 +63,9 @@ class HearteventsController extends AppController {
 		}
 
         if ($this->request->is('post')) {
-            if (isset($this->request->data['action'])) {
-                $idList = implode(',', $this->request->data['chkRecordId']);
-                $action = $this->request->data['action'];
+            if (isset($this->request->getData()['action'])) {
+                $idList = implode(',', $this->request->getData()['chkRecordId']);
+                $action = $this->request->getData()['action'];
                 if ($idList) {
                     if ($action == "Activate") {
                         $this->Heartevents->updateAll(['status' => '1'], ["id IN ($idList)"]);
@@ -81,12 +80,12 @@ class HearteventsController extends AppController {
                 }
             }
 
-            if (isset($this->request->data['Heartevents']['keyword']) && $this->request->data['Heartevents']['keyword'] != '') {
-                $keyword = trim($this->request->data['Heartevents']['keyword']);
+            if (isset($this->request->getData()['Heartevents']['keyword']) && $this->request->getData()['Heartevents']['keyword'] != '') {
+                $keyword = trim($this->request->getData()['Heartevents']['keyword']);
             }
-        } elseif ($this->request->params) {
-            if (isset($this->request->params['pass'][0]) && $this->request->params['pass'][0] != '') {
-                $searchArr = $this->request->params['pass'];
+        } elseif ($this->request->getParam('pass')) {
+            if (isset($this->request->getParam('pass')[0]) && $this->request->getParam('pass')[0] != '') {
+                $searchArr = $this->request->getParam('pass');
                 foreach ($searchArr as $val) {
                     if (strpos($val, ":") !== false) {
                         $vars = explode(":", $val);
@@ -107,7 +106,7 @@ class HearteventsController extends AppController {
         $this->paginate = ['contain' => ['Conventions','Students','Uploadeduser'],'conditions' => $condition, 'limit' => 30, 'order' => ['Heartevents.season_year' => 'DESC','Heartevents.id' => 'DESC']];
         $this->set('heartevents', $this->paginate($this->Heartevents));
         if ($this->request->is("ajax")) {
-            $this->viewBuilder()->layout(($this->request->is("ajax")) ? "" : "default");
+            $this->viewBuilder()->setLayout(($this->request->is("ajax")) ? "" : "default");
             $this->viewBuilder()->templatePath('Element' . DS . 'Heartevents');
             $this->render('viewlist');
         }
@@ -119,19 +118,19 @@ class HearteventsController extends AppController {
 		$this->multiLoginCheck(array("School","Teacher_Parent"));
 		
 		//echo ' fsdf sdf sdf d';exit;
-		$this->viewbuilder()->layout("home");
+		$this->viewBuilder()->setLayout("home");
         $this->set("title_for_layout", "Add Events of the Heart " . TITLE_FOR_PAGES);
 		
 		$this->set('active_cr_eventsheart','active');
 		
-        $user_id = $this->request->session()->read("user_id");
-		$user_type 	= $this->request->session()->read("user_type");
+        $user_id = $this->request->getSession()->read("user_id");
+		$user_type 	= $this->request->getSession()->read("user_type");
 		$userDetails = $this->Users->find()->where(['Users.id' => $user_id])->first();
         $this->set('userDetails', $userDetails);
 		
-		if($this->request->session()->read("sess_selected_convention_registration_id")>0)
+		if($this->request->getSession()->read("sess_selected_convention_registration_id")>0)
 		{
-			$sess_selected_convention_registration_id = $this->request->session()->read("sess_selected_convention_registration_id");
+			$sess_selected_convention_registration_id = $this->request->getSession()->read("sess_selected_convention_registration_id");
 			
 			// to get convention registration details
 			$conventionRegD = $this->Conventionregistrations->find()->where(['Conventionregistrations.id' => $sess_selected_convention_registration_id])->first();
@@ -177,17 +176,17 @@ class HearteventsController extends AppController {
 		
         $heartevents = $this->Heartevents->newEntity();
         if ($this->request->is('post')) {
-            $data = $this->Heartevents->patchEntity($heartevents, $this->request->data);
-            if (count($data->errors()) == 0) {
+            $data = $this->Heartevents->patchEntity($heartevents, $this->request->getData());
+            if (count($data->getErrors()) == 0) {
 				
-				if(!empty($this->request->data['Heartevents']['event_document']['name']))
+				if(!empty($this->request->getData()['Heartevents']['event_document']['name']))
 				{
-					$data->mediafile_original_file_name =  $this->request->data['Heartevents']['event_document']['name'];
+					$data->mediafile_original_file_name =  $this->request->getData()['Heartevents']['event_document']['name'];
 					
 					$specialCharacters = array('#', '$', '%', '@', '+', '=', '\\', '/', '"', ' ', "'", ':', '~', '`', '!', '^', '*', '(', ')', '|', "'", "&");
 					$toReplace = "-";
-					$this->request->data['Heartevents']['event_document']['name'] = str_replace($specialCharacters, $toReplace, $this->request->data['Heartevents']['event_document']['name']);
-					$imageArray = $this->request->data['Heartevents']['event_document'];
+					$this->request->getData()['Heartevents']['event_document']['name'] = str_replace($specialCharacters, $toReplace, $this->request->getData()['Heartevents']['event_document']['name']);
+					$imageArray = $this->request->getData()['Heartevents']['event_document'];
 					$returnedUploadImageArray = $this->PImage->upload($imageArray, UPLOAD_EVENTS_HEART_PATH); 
 					 
 					$data->mediafile_file_system_name =  $returnedUploadImageArray[0];
@@ -222,13 +221,13 @@ class HearteventsController extends AppController {
 		$this->userLoginCheck();
 		$this->schoolAdminLoginCheck();
 		
-        $user_id = $this->request->session()->read("user_id");
+        $user_id = $this->request->getSession()->read("user_id");
 		$userDetails = $this->Users->find()->where(['Users.id' => $user_id])->first();
         $this->set('userDetails', $userDetails);
 		
-		if($this->request->session()->read("sess_selected_convention_registration_id")>0)
+		if($this->request->getSession()->read("sess_selected_convention_registration_id")>0)
 		{
-			$sess_selected_convention_registration_id = $this->request->session()->read("sess_selected_convention_registration_id");
+			$sess_selected_convention_registration_id = $this->request->getSession()->read("sess_selected_convention_registration_id");
 			
 			// to check if slug exists
 			$checkExists = $this->Heartevents->find()->where(['Heartevents.slug' => $eventheart_slug,'Heartevents.conventionregistration_id' => $sess_selected_convention_registration_id])->first();

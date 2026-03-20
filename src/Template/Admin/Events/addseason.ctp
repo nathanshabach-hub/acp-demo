@@ -67,14 +67,14 @@
 					<div class="form-group">
                       <label class="col-sm-2 control-label">Registration Start Date <span class="require">*</span></label>
                       <div class="col-sm-10">
-                          <?php echo $this->Form->input('Conventionseasons.registration_start_date', ['id'=>'registration_start_date', 'label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required', 'placeholder'=>'Registration Start Date', 'autocomplete'=>'off']); ?>
+                          <?php echo $this->Form->control('Conventionseasons.registration_start_date', ['id'=>'registration_start_date', 'label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required', 'placeholder'=>'Registration Start Date', 'autocomplete'=>'off']); ?>
                       </div>
                     </div>
 					
 					<div class="form-group">
                       <label class="col-sm-2 control-label">Registration End Date <span class="require">*</span></label>
                       <div class="col-sm-10">
-                          <?php echo $this->Form->input('Conventionseasons.registration_end_date', ['id'=>'registration_end_date', 'label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required', 'placeholder'=>'Registration End Date', 'autocomplete'=>'off']); ?>
+                          <?php echo $this->Form->control('Conventionseasons.registration_end_date', ['id'=>'registration_end_date', 'label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required', 'placeholder'=>'Registration End Date', 'autocomplete'=>'off']); ?>
                       </div>
                     </div>
 					

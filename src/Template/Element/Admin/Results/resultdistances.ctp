@@ -1,7 +1,7 @@
 <?php
 use Cake\ORM\TableRegistry;
-$this->Eventsubmissions = TableRegistry::get('Eventsubmissions');
-$this->Judgeevaluations = TableRegistry::get('Judgeevaluations');
+$this->Eventsubmissions = TableRegistry::getTableLocator()->get('Eventsubmissions');
+$this->Judgeevaluations = TableRegistry::getTableLocator()->get('Judgeevaluations');
 
 
 ?>

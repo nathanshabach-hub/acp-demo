@@ -72,13 +72,13 @@ if(!empty($seasons->registration_end_date) && $seasons->registration_end_date !=
 					<div class="form-group">
                       <label class="col-sm-2 control-label">Season Year <span class="require"></span></label>
                       <div class="col-sm-10">
-                          <?php echo $this->Form->input('Seasons.season_year_no_change', ['label'=>false, 'type'=>'number',  'div'=>false, 'class'=>'form-control required', 'placeholder'=>'Season Year', 'autocomplete'=>'off', 'value'=>$seasons->season_year, 'readonly']); ?>
+                          <?php echo $this->Form->control('Seasons.season_year_no_change', ['label'=>false, 'type'=>'number',  'div'=>false, 'class'=>'form-control required', 'placeholder'=>'Season Year', 'autocomplete'=>'off', 'value'=>$seasons->season_year, 'readonly']); ?>
                       </div>
                     </div>
                     
                     <div class="box-footer">
                         <label class="col-sm-2 control-label" for="inputPassword3">&nbsp;</label>
-                        <?php echo $this->Form->input('Seasons.id', ['label'=>false, 'type'=>'hidden']); ?>
+                        <?php echo $this->Form->control('Seasons.id', ['label'=>false, 'type'=>'hidden']); ?>
                         <?php echo $this->Form->button('Save', ['type'=>'submit', 'class' => 'btn btn-info', 'div'=>false]); ?>
                         <?php echo $this->Html->link('Cancel', ['controller'=>'seasons', 'action' => 'index'], ['class'=>'btn btn-default canlcel_le']); ?>
                     </div>

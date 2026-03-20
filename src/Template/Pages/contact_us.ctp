@@ -46,14 +46,14 @@
 										<div class="col-md-6">
 											<div class="form-group">
 												<div class="input text">
-													<?php echo $this->Form->input('Contact.first_name', ['label'=>false, 'type'=>'text', 'autocomplete'=>'off', 'div'=>false, 'class'=>'form-control required', 'placeholder'=>'First Name']); ?>
+													<?php echo $this->Form->control('Contact.first_name', ['label'=>false, 'type'=>'text', 'autocomplete'=>'off', 'div'=>false, 'class'=>'form-control required', 'placeholder'=>'First Name']); ?>
 												</div>
 											</div>
 										</div>
 										<div class="col-md-6">
 											<div class="form-group">
 												<div class="input text">
-													<?php echo $this->Form->input('Contact.last_name', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required', 'placeholder'=>'Last Name']); ?>
+													<?php echo $this->Form->control('Contact.last_name', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required', 'placeholder'=>'Last Name']); ?>
 												</div>
 											</div>
 										</div>
@@ -62,7 +62,7 @@
 										<div class="col-md-12">
 											<div class="form-group">
 												<div class="input text">
-													<?php echo $this->Form->input('Contact.email_address', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required email', 'placeholder'=>'Email']); ?>
+													<?php echo $this->Form->control('Contact.email_address', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required email', 'placeholder'=>'Email']); ?>
 												</div>
 											</div>
 										</div>
@@ -71,7 +71,7 @@
 										<div class="col-md-12">
 											<div class="form-group">
 												<div class="input textarea">
-													<?php echo $this->Form->input('Contact.message', ['label'=>false, 'type'=>'textarea',  'div'=>false, 'class'=>'form-control required', 'placeholder'=>'Message','style'=>'margin-left:0px;']); ?>
+													<?php echo $this->Form->control('Contact.message', ['label'=>false, 'type'=>'textarea',  'div'=>false, 'class'=>'form-control required', 'placeholder'=>'Message','style'=>'margin-left:0px;']); ?>
 												</div>
 											</div>
 										</div>

@@ -27,12 +27,12 @@
 						<div>
 							<div class="lables">
 								<span class="col-4">Email Address</span>
-								<?php echo $this->Form->input('Users.email_address', ['label' => false, 'type' => 'text', 'autocomplete' => 'off', 'div' => false, 'class' => 'form-control required email', 'placeholder' => 'Email Address']); ?>
+								<?php echo $this->Form->control('Users.email_address', ['label' => false, 'type' => 'text', 'autocomplete' => 'off', 'div' => false, 'class' => 'form-control required email', 'placeholder' => 'Email Address']); ?>
 							</div>
 
 							<div class="lables">
 								<span class="col-4">Password</span>
-								<?php echo $this->Form->input('Users.password', ['label' => '', 'type' => 'password', 'label' => false, 'div' => false, 'class' => "form-control required", 'placeholder' => 'Password']); ?>
+								<?php echo $this->Form->control('Users.password', ['label' => '', 'type' => 'password', 'label' => false, 'div' => false, 'class' => "form-control required", 'placeholder' => 'Password']); ?>
 							</div>
 
 							<div class="lables">

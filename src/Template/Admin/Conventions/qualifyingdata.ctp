@@ -61,7 +61,7 @@
 					<div class="form-group">
                       <label class="col-sm-2 control-label">Qualifying Time <span class="require">*</span></label>
                       <div class="col-sm-10">
-                          <?php //echo $this->Form->input('Conventions.name', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required', 'placeholder'=>'Convention Name', 'autocomplete'=>'off']); ?>
+                          <?php //echo $this->Form->control('Conventions.name', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required', 'placeholder'=>'Convention Name', 'autocomplete'=>'off']); ?>
 						  <input class="form-control required" type="text" name="qualifying_time_score" id="qualifying_time_score" value="<?php echo $formattedTime; ?>">
                       </div>
                     </div>

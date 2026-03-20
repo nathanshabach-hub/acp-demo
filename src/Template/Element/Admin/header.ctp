@@ -1,12 +1,12 @@
 <?php
 use Cake\ORM\TableRegistry;
-$this->Seasons = TableRegistry::get('Seasons');
-$this->Conventionseasons = TableRegistry::get('Conventionseasons');
+$this->Seasons = TableRegistry::getTableLocator()->get('Seasons');
+$this->Conventionseasons = TableRegistry::getTableLocator()->get('Conventionseasons');
 
-$sess_admin_header_season_id = $this->request->session()->read("sess_admin_header_season_id");
+$sess_admin_header_season_id = $this->request->getSession()->read("sess_admin_header_season_id");
 
-// to get list of all active seasons
-$seasonLAdH = $this->Seasons->find()->where(["status"=> 1])->order(["season_year"=> 'DESC'])->all();
+// to get list of all seasons so admin can access any convention/season year
+$seasonLAdH = $this->Seasons->find()->order(["season_year"=> 'DESC'])->all();
 ?>
 <script type="text/javascript">
 $(document).ready(function(){
@@ -54,7 +54,7 @@ $(document).ready(function(){
 									else
 										$selectADHCSR = '';
 					?>
-								<option value="<?php echo $adhcsrecord->id; ?>" <?php echo $selectADHCSR; ?>><?php echo $adhcsrecord->Conventions['name']; ?> (<?php echo $seasadh->season_year; ?>)</option>
+								<option value="<?php echo $adhcsrecord->id; ?>" <?php echo $selectADHCSR; ?>><?php echo $adhcsrecord->Conventions['name']; ?> (<?php echo $adhcsrecord->season_year; ?>)</option>
 					<?php
 								}
 							}
@@ -76,7 +76,7 @@ $(document).ready(function(){
                 <li class="dropdown user user-menu">
                     <a href="javascript:void(0);" class="dropdown-toggle" data-toggle="dropdown">
                         <?php //echo $this->Html->image('user2-160x160.jpg', ['alt' => SITE_TITLE, "class" => "user-image"]); ?>
-                        <span class="hidden-xs"><?php echo $this->request->session()->read('admin_username') ?></span>
+						<span class="hidden-xs"><?php echo $this->request->getSession()->read('admin_username') ?></span>
                     </a>
                 </li>
                 <li><?php echo $this->Html->link('<i class="fa fa-sign-out fa-lg"></i> Logout', ['controller' => 'admins', 'action' => 'logout'], ['escape' => false]); ?>  </li>

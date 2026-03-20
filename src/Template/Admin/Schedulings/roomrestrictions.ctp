@@ -169,11 +169,11 @@
         </div>
         <div class="form-group">
           <label>Available From</label>
-          <?php echo $this->Form->input('restricted_start_time', ['label'=>false, 'type'=>'time', 'class'=>'form-control', 'value' => $room->restricted_start_time ? date('H:i', strtotime($room->restricted_start_time)) : '']); ?>
+          <?php echo $this->Form->control('restricted_start_time', ['label'=>false, 'type'=>'time', 'class'=>'form-control', 'value' => $room->restricted_start_time ? date('H:i', strtotime($room->restricted_start_time)) : '']); ?>
         </div>
         <div class="form-group">
           <label>Available To</label>
-          <?php echo $this->Form->input('restricted_finish_time', ['label'=>false, 'type'=>'time', 'class'=>'form-control', 'value' => $room->restricted_finish_time ? date('H:i', strtotime($room->restricted_finish_time)) : '']); ?>
+          <?php echo $this->Form->control('restricted_finish_time', ['label'=>false, 'type'=>'time', 'class'=>'form-control', 'value' => $room->restricted_finish_time ? date('H:i', strtotime($room->restricted_finish_time)) : '']); ?>
         </div>
       </div>
       <div class="modal-footer">

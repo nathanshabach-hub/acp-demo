@@ -26,6 +26,7 @@
                 <ul class="treeview-menu">
                     <li class="<?php if(isset($manageEventCategories)){ echo 'active';} ?>"><?php echo $this->Html->link('<i class="fa fa-circle-o"></i> Categories', ['controller'=>'eventcategories', 'action' => 'index'], ['escape'=>false]); ?></li>
 					<li class="<?php if(isset($manageDivisions)){ echo 'active';} ?>"><?php echo $this->Html->link('<i class="fa fa-circle-o"></i> Divisions', ['controller'=>'divisions', 'action' => 'index'], ['escape'=>false]); ?></li>
+					<li class="<?php if(isset($manageRooms)){ echo 'active';} ?>"><?php echo $this->Html->link('<i class="fa fa-circle-o"></i> Rooms', ['controller'=>'rooms', 'action' => 'index'], ['escape'=>false]); ?></li>
 					<li class="<?php if(isset($eventList)){ echo 'active';} ?>"><?php echo $this->Html->link('<i class="fa fa-circle-o"></i> List Events', ['controller'=>'events', 'action' => 'index'], ['escape'=>false]); ?></li>
                     <li class="<?php if(isset($eventAdd)){ echo 'active';} ?>"><?php echo $this->Html->link('<i class="fa fa-circle-o"></i> Add Event', ['controller'=>'events', 'action' => 'add'], ['escape'=>false]); ?></li>
                 </ul>
@@ -131,7 +132,7 @@
 			
 			
 			<?php
-			if($this->request->session()->read("sess_admin_header_season_id") >0)
+            if($this->request->getSession()->read("sess_admin_header_season_id") >0)
 			{
 			?>
 			

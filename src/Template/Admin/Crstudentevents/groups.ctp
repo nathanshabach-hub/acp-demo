@@ -6,9 +6,9 @@
 <?php
 use Cake\ORM\TableRegistry;
 
-$this->Users = TableRegistry::get('Users');
-$this->Events = TableRegistry::get('Events');
-$this->Crstudentevents = TableRegistry::get('Crstudentevents');
+$this->Users = TableRegistry::getTableLocator()->get('Users');
+$this->Events = TableRegistry::getTableLocator()->get('Events');
+$this->Crstudentevents = TableRegistry::getTableLocator()->get('Crstudentevents');
 ?>
 <div class="content-wrapper">
     <section class="content-header">

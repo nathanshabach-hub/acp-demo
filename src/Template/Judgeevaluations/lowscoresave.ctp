@@ -24,7 +24,7 @@ $(document).ready(function () {
 					
 					<div class="form-group">
 						<label for="name">Enter Pin To Save Low Score</label>
-						<?php echo $this->Form->input('low_score_pin', ['id'=>'low_score_pin', 'label'=>false, 'type'=>'password',  'div'=>false, 'class'=>'form-control required', 'placeholder'=>'Enter Pin To Save Low Score','autocomplete' => 'off']); ?>
+						<?php echo $this->Form->control('low_score_pin', ['id'=>'low_score_pin', 'label'=>false, 'type'=>'password',  'div'=>false, 'class'=>'form-control required', 'placeholder'=>'Enter Pin To Save Low Score','autocomplete' => 'off']); ?>
 					</div>
 					
 					<div class="form-group form-btns">

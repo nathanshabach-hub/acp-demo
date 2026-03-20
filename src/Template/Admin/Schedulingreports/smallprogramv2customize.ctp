@@ -142,41 +142,41 @@
                     <div class="sp2-customize-form">
                         <div class="form-group">
                             <label>Report Title</label>
-                            <?php echo $this->Form->input('report_title', ['label'=>false, 'type'=>'text', 'class'=>'form-control', 'id'=>'report-title', 'placeholder'=>'Small Program']); ?>
+                            <?php echo $this->Form->control('report_title', ['label'=>false, 'type'=>'text', 'class'=>'form-control', 'id'=>'report-title', 'placeholder'=>'Small Program']); ?>
                         </div>
 
                         <div class="form-group">
                             <label>Report Subtitle</label>
-                            <?php echo $this->Form->input('report_subtitle', ['label'=>false, 'type'=>'text', 'class'=>'form-control', 'id'=>'report-subtitle', 'placeholder'=>'Convention name and season year']); ?>
+                            <?php echo $this->Form->control('report_subtitle', ['label'=>false, 'type'=>'text', 'class'=>'form-control', 'id'=>'report-subtitle', 'placeholder'=>'Convention name and season year']); ?>
                         </div>
 
                         <div class="form-group">
                             <label>Intro Note</label>
-                            <?php echo $this->Form->input('intro_note', ['label'=>false, 'type'=>'textarea', 'rows'=>4, 'class'=>'form-control', 'id'=>'intro-note', 'placeholder'=>'Shown above the program tables']); ?>
+                            <?php echo $this->Form->control('intro_note', ['label'=>false, 'type'=>'textarea', 'rows'=>4, 'class'=>'form-control', 'id'=>'intro-note', 'placeholder'=>'Shown above the program tables']); ?>
                         </div>
 
                         <div class="form-group">
                             <label>Footer Note</label>
-                            <?php echo $this->Form->input('footer_note', ['label'=>false, 'type'=>'textarea', 'rows'=>4, 'class'=>'form-control', 'id'=>'footer-note', 'placeholder'=>'Shown below the program tables']); ?>
+                            <?php echo $this->Form->control('footer_note', ['label'=>false, 'type'=>'textarea', 'rows'=>4, 'class'=>'form-control', 'id'=>'footer-note', 'placeholder'=>'Shown below the program tables']); ?>
                         </div>
 
                         <div class="row">
                             <div class="col-sm-4">
                                 <div class="form-group">
                                     <label>Morning Label</label>
-                                    <?php echo $this->Form->input('morning_label', ['label'=>false, 'type'=>'text', 'class'=>'form-control', 'id'=>'morning-label', 'placeholder'=>'Convention Events']); ?>
+                                    <?php echo $this->Form->control('morning_label', ['label'=>false, 'type'=>'text', 'class'=>'form-control', 'id'=>'morning-label', 'placeholder'=>'Convention Events']); ?>
                                 </div>
                             </div>
                             <div class="col-sm-4">
                                 <div class="form-group">
                                     <label>Afternoon Label</label>
-                                    <?php echo $this->Form->input('afternoon_label', ['label'=>false, 'type'=>'text', 'class'=>'form-control', 'id'=>'afternoon-label', 'placeholder'=>'Convention Events']); ?>
+                                    <?php echo $this->Form->control('afternoon_label', ['label'=>false, 'type'=>'text', 'class'=>'form-control', 'id'=>'afternoon-label', 'placeholder'=>'Convention Events']); ?>
                                 </div>
                             </div>
                             <div class="col-sm-4">
                                 <div class="form-group">
                                     <label>Lunch Label</label>
-                                    <?php echo $this->Form->input('lunch_label', ['label'=>false, 'type'=>'text', 'class'=>'form-control', 'id'=>'lunch-label', 'placeholder'=>'LUNCH']); ?>
+                                    <?php echo $this->Form->control('lunch_label', ['label'=>false, 'type'=>'text', 'class'=>'form-control', 'id'=>'lunch-label', 'placeholder'=>'LUNCH']); ?>
                                 </div>
                             </div>
                         </div>
@@ -184,28 +184,28 @@
                         <div class="form-group">
                             <label>Primary Color</label>
                             <div class="sp2-color-field">
-                                <?php echo $this->Form->input('primary_color', ['label'=>false, 'type'=>'text', 'class'=>'form-control', 'id'=>'primary-color', 'placeholder'=>'#1a3a5c']); ?>
+                                <?php echo $this->Form->control('primary_color', ['label'=>false, 'type'=>'text', 'class'=>'form-control', 'id'=>'primary-color', 'placeholder'=>'#1a3a5c']); ?>
                                 <input type="color" id="primary-color-picker" value="#1a3a5c">
                             </div>
                         </div>
                         <div class="form-group">
                             <label>Secondary Color</label>
                             <div class="sp2-color-field">
-                                <?php echo $this->Form->input('secondary_color', ['label'=>false, 'type'=>'text', 'class'=>'form-control', 'id'=>'secondary-color', 'placeholder'=>'#2e6da4']); ?>
+                                <?php echo $this->Form->control('secondary_color', ['label'=>false, 'type'=>'text', 'class'=>'form-control', 'id'=>'secondary-color', 'placeholder'=>'#2e6da4']); ?>
                                 <input type="color" id="secondary-color-picker" value="#2e6da4">
                             </div>
                         </div>
                         <div class="form-group">
                             <label>Table Header Color</label>
                             <div class="sp2-color-field">
-                                <?php echo $this->Form->input('table_header_color', ['label'=>false, 'type'=>'text', 'class'=>'form-control', 'id'=>'table-header-color', 'placeholder'=>'#ddeeff']); ?>
+                                <?php echo $this->Form->control('table_header_color', ['label'=>false, 'type'=>'text', 'class'=>'form-control', 'id'=>'table-header-color', 'placeholder'=>'#ddeeff']); ?>
                                 <input type="color" id="table-header-color-picker" value="#ddeeff">
                             </div>
                         </div>
 
                         <div class="form-group">
                             <label>Logo Image</label>
-                            <?php echo $this->Form->input('logo_file', ['label'=>false, 'type'=>'file', 'class'=>'form-control', 'id'=>'logo-file', 'accept'=>'image/png,image/jpeg,image/gif']); ?>
+                            <?php echo $this->Form->control('logo_file', ['label'=>false, 'type'=>'file', 'class'=>'form-control', 'id'=>'logo-file', 'accept'=>'image/png,image/jpeg,image/gif']); ?>
                             <p class="help-block">Upload a PNG, JPG, JPEG or GIF logo for this convention season.</p>
                             <?php if (!empty($customization->logo_path)): ?>
                             <div style="margin-top:10px;">
@@ -221,12 +221,12 @@
 
                         <div class="form-group">
                             <label>Logo Alt Text</label>
-                            <?php echo $this->Form->input('logo_alt_text', ['label'=>false, 'type'=>'text', 'class'=>'form-control', 'id'=>'logo-alt-text', 'placeholder'=>'Convention logo']); ?>
+                            <?php echo $this->Form->control('logo_alt_text', ['label'=>false, 'type'=>'text', 'class'=>'form-control', 'id'=>'logo-alt-text', 'placeholder'=>'Convention logo']); ?>
                         </div>
 
                         <div class="form-group">
                             <label>Custom CSS</label>
-                            <?php echo $this->Form->input('custom_css', ['label'=>false, 'type'=>'textarea', 'rows'=>8, 'class'=>'form-control', 'id'=>'custom-css', 'placeholder'=>'.sp2-event { font-weight: bold; }']); ?>
+                            <?php echo $this->Form->control('custom_css', ['label'=>false, 'type'=>'textarea', 'rows'=>8, 'class'=>'form-control', 'id'=>'custom-css', 'placeholder'=>'.sp2-event { font-weight: bold; }']); ?>
                             <p class="help-block">This is injected into the Small Program v2 page and print view. Use trusted CSS only.</p>
                         </div>
 

@@ -1,6 +1,6 @@
 <?php
 use Cake\ORM\TableRegistry;
-$this->Transactionstudents = TableRegistry::get('Transactionstudents');
+$this->Transactionstudents = TableRegistry::getTableLocator()->get('Transactionstudents');
 ?>
 <div class="admin_loader" id="loaderID"><?php echo $this->Html->image('loader_large_blue.gif');?></div>
 <?php if (!$conventionregistrationstudents->isEmpty()) { ?>

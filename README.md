@@ -1,12 +1,12 @@
 # ACP Demo Portal
 
-ACP Demo Portal is a legacy CakePHP 3.x application used for convention
+ACP Demo Portal is a CakePHP 5 application used for convention
 registrations, scheduling, submissions, judging, and reporting.
 
 ## Stack
 
-- PHP 7.4 + Apache
-- CakePHP ~3.2
+- PHP 8.2 + Apache
+- CakePHP 5.x
 - MySQL (expected host name: `mysql-db`)
 
 ## Project Layout
@@ -40,7 +40,7 @@ docker network create acp-net
 docker run -d --name mysql-db --network acp-net \
 	-e MYSQL_ROOT_PASSWORD=rootpass \
 	-e MYSQL_DATABASE=convention_acpdemo \
-	-p 3306:3306 mysql:5.7
+	-p 3306:3306 mysql:8.0
 
 docker build -t acp-web -f Dockerfile .
 docker run -d --name acp-web --network acp-net \

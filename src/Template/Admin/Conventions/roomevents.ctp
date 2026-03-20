@@ -2,14 +2,15 @@
 <div class="content-wrapper">
     <section class="content-header">
       <h1>
-			Manage Room Events - <?php echo $conventionSD->Conventions['name']; ?>
+			Manage Room Events
       </h1>
       <ol class="breadcrumb">
           <li><?php echo $this->Html->link('<i class="fa fa-dashboard"></i> <span>Dashboard</span> ', ['controller'=>'admins', 'action'=>'dashboard'], ['escape'=>false]);?></li>
           <li><?php echo $this->Html->link('<i class="fa fa-bars"></i> Conventions ', ['controller'=>'conventions', 'action'=>'index'], ['escape'=>false]);?></li>
 		  <li><?php echo $this->Html->link('<i class="fa fa-bullhorn"></i> Seasons ', ['controller'=>'conventions', 'action'=>'seasons',$conventionSD->Conventions['slug']], ['escape'=>false]);?></li>
-          <li class="active">Manage Room Events - <?php echo $conventionSD->Conventions['name']; ?></li>
+		  <li class="active">Manage Room Events</li>
       </ol>
+			<div style="clear: both;"></div>
     </section>
 
     <section class="content">
@@ -20,7 +21,7 @@
                     <div class="form-group align_box dtpickr_inputs">
                        <span class="hints" style="display:none;">Search by Season Name or Year</span>
                        <span class="hint">
-                           <?php //echo $this->Form->input('Seasons.keyword', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control', 'placeholder'=>'Search by Season Name or Year']); ?>
+                           <?php //echo $this->Form->control('Seasons.keyword', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control', 'placeholder'=>'Search by Season Name or Year']); ?>
                        </span>
                       
                        <div class="admin_asearch">

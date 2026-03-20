@@ -27,31 +27,31 @@ $(document).ready(function () {
 									justify-content-between">
 									<span class="mb-0 me-1 col-4">School/HSSP Name</span>
 									<!--<input type="text" placeholder="Accelerate School for Convention" class=" w-75">-->
-									<?php echo $this->Form->input('Users.first_name', ['label'=>false, 'type'=>'text', 'autocomplete'=>'off', 'div'=>false, 'class'=>'form-control required w-75', 'placeholder'=>'Enter School Name']); ?>
+									<?php echo $this->Form->control('Users.first_name', ['label'=>false, 'type'=>'text', 'autocomplete'=>'off', 'div'=>false, 'class'=>'form-control required w-75', 'placeholder'=>'Enter School Name']); ?>
 								</div>
 								<div class="lables d-flex align-items-center mb-3
 									justify-content-between">
 									<span class="mb-0 me-1 col-4 ">Main Contact Person</span>
 									<!--<input type="text" placeholder="John Smith" class="w-75">-->
-									<?php echo $this->Form->input('Users.middle_name', ['label'=>false, 'type'=>'text', 'autocomplete'=>'off', 'div'=>false, 'class'=>'form-control required w-75', 'placeholder'=>'Main Contact Person']); ?>
+									<?php echo $this->Form->control('Users.middle_name', ['label'=>false, 'type'=>'text', 'autocomplete'=>'off', 'div'=>false, 'class'=>'form-control required w-75', 'placeholder'=>'Main Contact Person']); ?>
 								</div>
 								<div class="lables d-flex align-items-center mb-3
 									justify-content-between">
 									<span class="mb-0 me-1 col-4">Email</span>
 									<!--<input type="email" placeholder="john.smith@acs.edu.au" class="w-75">-->
-									<?php echo $this->Form->input('Users.email_address_no_change', ['label'=>false, 'type'=>'email', 'autocomplete'=>'off', 'div'=>false, 'class'=>'form-control required email w-75', 'placeholder'=>'Email Address', 'value'=>$users->email_address, 'readonly', 'disabled']); ?>
+									<?php echo $this->Form->control('Users.email_address_no_change', ['label'=>false, 'type'=>'email', 'autocomplete'=>'off', 'div'=>false, 'class'=>'form-control required email w-75', 'placeholder'=>'Email Address', 'value'=>$users->email_address, 'readonly', 'disabled']); ?>
 								</div>
 								<div class="lables d-flex align-items-center mb-3
 									justify-content-between">
 									<span class="mb-0 me-1 col-4">Phone</span>
 									<!--<input type="number" placeholder="+61 73777 7787" class="w-75">-->
-									<?php echo $this->Form->input('Users.phone', ['label'=>false, 'type'=>'text', 'autocomplete'=>'off', 'div'=>false, 'class'=>'form-control required w-75', 'placeholder'=>'Phone']); ?>
+									<?php echo $this->Form->control('Users.phone', ['label'=>false, 'type'=>'text', 'autocomplete'=>'off', 'div'=>false, 'class'=>'form-control required w-75', 'placeholder'=>'Phone']); ?>
 								</div>
 								<div class="lables d-flex align-items-center mb-3
 									justify-content-between">
 									<span class="mb-0 me-1 col-4">Password</span>
 									<!--<input type="number" placeholder="+61 73777 7787" class="w-75">-->
-									<?php echo $this->Form->input('Users.password', ['label'=>false, 'type'=>'password', 'autocomplete'=>'off', 'div'=>false, 'class'=>'form-control required w-75', 'placeholder'=>'Password']); ?>
+									<?php echo $this->Form->control('Users.password', ['label'=>false, 'type'=>'password', 'autocomplete'=>'off', 'div'=>false, 'class'=>'form-control required w-75', 'placeholder'=>'Password']); ?>
 								</div>
 								<div class="btns col-8 float-end">
 									<button type="submit" class="btn btn-secondary px-3 ms-1">Continue to Registration</button>

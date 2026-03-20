@@ -29,27 +29,27 @@
 					<div class="form-group">
                       <label class="col-sm-2 control-label">First Name <span class="require">*</span></label>
                       <div class="col-sm-10">
-                          <?php echo $this->Form->input('Visitors.first_name', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required', 'placeholder'=>'First Name', 'autocomplete'=>'off']); ?>
+                          <?php echo $this->Form->control('Visitors.first_name', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required', 'placeholder'=>'First Name', 'autocomplete'=>'off']); ?>
                       </div>
                     </div>
 					
 					<div class="form-group">
                       <label class="col-sm-2 control-label">Last Name <span class="require">*</span></label>
                       <div class="col-sm-10">
-                          <?php echo $this->Form->input('Visitors.last_name', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required', 'placeholder'=>'Last Name', 'autocomplete'=>'off']); ?>
+                          <?php echo $this->Form->control('Visitors.last_name', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required', 'placeholder'=>'Last Name', 'autocomplete'=>'off']); ?>
                       </div>
                     </div>
 					
 					<div class="form-group">
                       <label class="col-sm-2 control-label">School/Company <span class="require">*</span></label>
                       <div class="col-sm-10">
-                          <?php echo $this->Form->input('Visitors.school_company', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required', 'placeholder'=>'School/Company', 'autocomplete'=>'off']); ?>
+                          <?php echo $this->Form->control('Visitors.school_company', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required', 'placeholder'=>'School/Company', 'autocomplete'=>'off']); ?>
                       </div>
                     </div>
                     
                     <div class="box-footer">
                         <label class="col-sm-2 control-label" for="inputPassword3">&nbsp;</label>
-                        <?php echo $this->Form->input('Visitors.id', ['label'=>false, 'type'=>'hidden']); ?>
+                        <?php echo $this->Form->control('Visitors.id', ['label'=>false, 'type'=>'hidden']); ?>
                         <?php echo $this->Form->button('Save', ['type'=>'submit', 'class' => 'btn btn-info', 'div'=>false]); ?>
                         <?php echo $this->Html->link('Cancel', ['controller'=>'nametags', 'action' => 'visitors'], ['class'=>'btn btn-default canlcel_le']); ?>
                     </div>

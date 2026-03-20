@@ -29,6 +29,48 @@
 
             <div class="m_content" id="listID">
                 <div class="panel-body">
+                    <?php if (!empty($scheduleHealth)) { ?>
+                        <div class="alert alert-info" style="margin-bottom:12px;">
+                            <strong>Schedule Health</strong>
+                            <br>Room conflicts: <?php echo (int)$scheduleHealth['room_conflicts']; ?>
+                            | Participant conflicts (same category): <?php echo (int)$scheduleHealth['same_category_participant_conflicts']; ?>
+                            | Participant conflicts (cross category): <?php echo (int)$scheduleHealth['cross_category_participant_conflicts']; ?>
+                            | Avg room utilization (Mon-Thu): <?php echo number_format((float)$scheduleHealth['average_room_utilization_pct'], 1); ?>%
+                        </div>
+                    <?php } ?>
+
+                    <?php if (!empty($overflowTrendRows)) { ?>
+                        <div class="table-responsive" style="margin-bottom:12px;">
+                            <table class="table table-bordered table-condensed" style="margin-bottom:0;">
+                                <thead>
+                                    <tr>
+                                        <th>Recent Auto-Assign Trend</th>
+                                        <th>Category</th>
+                                        <th>Before</th>
+                                        <th>Assigned</th>
+                                        <th>After</th>
+                                        <th>When</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php foreach ($overflowTrendRows as $trendRow) { ?>
+                                        <tr>
+                                            <td><?php echo h($trendRow['trigger_source']); ?></td>
+                                            <td><?php echo $trendRow['schedule_category'] === null ? 'All' : (int)$trendRow['schedule_category']; ?></td>
+                                            <td><?php echo (int)$trendRow['overflow_before']; ?></td>
+                                            <td><?php echo (int)$trendRow['assigned_count']; ?></td>
+                                            <td><?php echo (int)$trendRow['overflow_after']; ?></td>
+                                            <td><?php echo h($trendRow['created']); ?></td>
+                                        </tr>
+                                    <?php } ?>
+                                </tbody>
+                            </table>
+                        </div>
+                        <p style="margin-top:6px;">
+                            <?php echo $this->Html->link('Export Auto-Assign Runs (CSV)', ['controller'=>'schedulingtimings', 'action'=>'exportautoassignruns', $convention_season_slug], ['escape'=>false, 'class'=>'btn btn-xs btn-primary']); ?>
+                        </p>
+                    <?php } ?>
+
                     <div class="alert alert-info" style="margin-bottom:12px;">
                         <strong>Overflow Status</strong><br>
                         <span><strong>Currently on Fri-Sun:</strong> <?php echo (int)$weekendOverflowCount; ?></span>

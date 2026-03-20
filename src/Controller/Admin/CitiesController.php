@@ -9,7 +9,7 @@ use Cake\Core\Configure\Engine\PhpConfig;
 class CitiesController extends AppController {
 
     public $paginate = ['limit' => 50, 'order' => ['Cities.name' => 'asc']];
-    var $components = array('RequestHandler', 'PImage', 'PImageTest');
+    public $components = ['RequestHandler', 'PImage', 'PImageTest'];
 
     //public $helpers = array('Javascript', 'Ajax');
 
@@ -17,8 +17,8 @@ class CitiesController extends AppController {
         parent::initialize();
         $this->loadComponent('Paginator');
         $this->loadComponent('Flash');
-        $action = $this->request->params['action'];
-        $loggedAdminId = $this->request->session()->read('admin_id');
+        $action = $this->request->getParam('action');
+        $loggedAdminId = $this->request->getSession()->read('admin_id');
         if ($action != 'forgotPassword' && $action != 'logout') {
             if (!$loggedAdminId && $action != "login" && $action != 'captcha') {
                 $this->redirect(['controller' => 'admins', 'action' => 'login']);
@@ -29,7 +29,7 @@ class CitiesController extends AppController {
     public function index() {
 
         $this->set('title', ADMIN_TITLE . 'Manage City');
-        $this->viewBuilder()->layout('admin');
+        $this->viewBuilder()->setLayout('admin');
         $this->set('manageCities', '1');
         $this->set('locationList', '1');
 
@@ -38,9 +38,10 @@ class CitiesController extends AppController {
         //$condition = array('Cities.parent_id' => 0);
 
         if ($this->request->is('post')) {
-            if (isset($this->request->data['action'])) {
-                $idList = implode(',', $this->request->data['chkRecordId']);
-                $action = $this->request->data['action'];
+            $requestData = $this->request->getData();
+            if (isset($requestData['action'])) {
+                $idList = implode(',', $requestData['chkRecordId']);
+                $action = $requestData['action'];
                 if ($idList) {
                     if ($action == "Activate") {
                         $this->Cities->updateAll(['status' => '1'], ["id IN ($idList)"]);
@@ -55,12 +56,12 @@ class CitiesController extends AppController {
                 }
             }
 
-            if (isset($this->request->data['Cities']['keyword']) && $this->request->data['Cities']['keyword'] != '') {
-                $keyword = trim($this->request->data['Cities']['keyword']);
+            if (isset($requestData['Cities']['keyword']) && $requestData['Cities']['keyword'] != '') {
+                $keyword = trim($requestData['Cities']['keyword']);
             }
-        } elseif ($this->request->params) {
-            if (isset($this->request->params['pass'][0]) && $this->request->params['pass'][0] != '') {
-                $searchArr = $this->request->params['pass'];
+        } elseif ($this->request->getParam('pass')) {
+            if (isset($this->request->getParam('pass')[0]) && $this->request->getParam('pass')[0] != '') {
+                $searchArr = $this->request->getParam('pass');
                 foreach ($searchArr as $val) {
                     if (strpos($val, ":") !== false) {
                         $vars = explode(":", $val);
@@ -81,7 +82,7 @@ class CitiesController extends AppController {
         $this->paginate = ['conditions' => $condition, 'limit' => 20, 'order' => ['Cities.id' => 'DESC']];
         $this->set('cities', $this->paginate($this->Cities));
         if ($this->request->is("ajax")) {
-            $this->viewBuilder()->layout(($this->request->is("ajax")) ? "" : "default");
+            $this->viewBuilder()->setLayout(($this->request->is("ajax")) ? "" : "default");
             $this->viewBuilder()->templatePath('Element' . DS . 'Admin/Cities');
             $this->render('index');
         }
@@ -89,7 +90,7 @@ class CitiesController extends AppController {
 
     public function activateamenity($slug = null) {
         if ($slug != '') {
-            $this->viewBuilder()->layout("");
+            $this->viewBuilder()->setLayout("");
             $this->Cities->updateAll(['status' => '1'], ["slug" => $slug]);
             $this->set('action', '/admin/cities/deactivateamenity/' . $slug);
             $this->set('status', 1);
@@ -100,7 +101,7 @@ class CitiesController extends AppController {
 
     public function deactivateamenity($slug = null) {
         if ($slug != '') {
-            $this->viewBuilder()->layout("");
+            $this->viewBuilder()->setLayout("");
             $this->Cities->updateAll(['status' => '0'], ["slug" => $slug]);
             $this->set('action', '/admin/cities/activateamenity/' . $slug);
             $this->set('status', 0);
@@ -121,7 +122,7 @@ class CitiesController extends AppController {
 
     public function add() {
         $this->set('title', ADMIN_TITLE . 'Add City');
-        $this->viewBuilder()->layout('admin');
+        $this->viewBuilder()->setLayout('admin');
         $this->set('manageCities', '1');
         $this->set('locationAdd', '1');
 
@@ -129,13 +130,14 @@ class CitiesController extends AppController {
 
         if ($this->request->is('post')) {
 			
-			//$this->prx($this->request->data);
+			//$this->prx($this->request->getData());
+			$requestData = $this->request->getData();
 			
-            $data = $this->Cities->patchEntity($cities, $this->request->data, ['validate' => 'add']);
-            if (count($data->errors()) == 0) {
+            $data = $this->Cities->patchEntity($cities, $requestData, ['validate' => 'add']);
+            if (count($data->getErrors()) == 0) {
 
-				$slug = $this->getSlug($this->request->data['Cities']['name'] . ' ' . time(), 'Cities');
-                $data->name = trim($this->request->data['Cities']['name']);
+				$slug = $this->getSlug($requestData['Cities']['name'] . ' ' . time(), 'Cities');
+                $data->name = trim($requestData['Cities']['name']);
                 $data->slug = $slug;
                 $data->status = 1;
                 $data->created = date('Y-m-d');
@@ -153,7 +155,7 @@ class CitiesController extends AppController {
 
     public function edit($slug = null) {
         $this->set('title', ADMIN_TITLE . 'Edit City');
-        $this->viewBuilder()->layout('admin');
+        $this->viewBuilder()->setLayout('admin');
         
         $this->set('manageCities', '1');
         $this->set('locationList', '1');
@@ -165,10 +167,11 @@ class CitiesController extends AppController {
 		
         $cities = $this->Cities->get($uid);
         if ($this->request->is(['post', 'put'])) {
-            $data = $this->Cities->patchEntity($cities, $this->request->data, ['validate' => 'edit']);
+			$requestData = $this->request->getData();
+            $data = $this->Cities->patchEntity($cities, $requestData, ['validate' => 'edit']);
 			
-            if (count($data->errors()) == 0) {
-                $data->name = trim($this->request->data['Cities']['name']);
+            if (count($data->getErrors()) == 0) {
+                $data->name = trim($requestData['Cities']['name']);
 				$data->modified = date("Y-m-d");
                 if ($this->Cities->save($data)) {
                     $this->Flash->success('City details updated successfully.');

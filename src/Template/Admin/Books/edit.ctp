@@ -72,13 +72,13 @@ if(!empty($books->registration_end_date) && $books->registration_end_date != NUL
 					<div class="form-group">
                       <label class="col-sm-2 control-label">Book Year <span class="require"></span></label>
                       <div class="col-sm-10">
-                          <?php echo $this->Form->input('Books.book_year_no_change', ['label'=>false, 'type'=>'number',  'div'=>false, 'class'=>'form-control required', 'placeholder'=>'Book Year', 'autocomplete'=>'off', 'value'=>$books->book_year, 'readonly']); ?>
+                          <?php echo $this->Form->control('Books.book_year_no_change', ['label'=>false, 'type'=>'number',  'div'=>false, 'class'=>'form-control required', 'placeholder'=>'Book Year', 'autocomplete'=>'off', 'value'=>$books->book_year, 'readonly']); ?>
                       </div>
                     </div>
                     
                     <div class="box-footer">
                         <label class="col-sm-2 control-label" for="inputPassword3">&nbsp;</label>
-                        <?php echo $this->Form->input('Books.id', ['label'=>false, 'type'=>'hidden']); ?>
+                        <?php echo $this->Form->control('Books.id', ['label'=>false, 'type'=>'hidden']); ?>
                         <?php echo $this->Form->button('Save', ['type'=>'submit', 'class' => 'btn btn-info', 'div'=>false]); ?>
                         <?php echo $this->Html->link('Cancel', ['controller'=>'books', 'action' => 'index'], ['class'=>'btn btn-default canlcel_le']); ?>
                     </div>

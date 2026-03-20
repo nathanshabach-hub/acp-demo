@@ -1,7 +1,7 @@
 <?php
 use Cake\ORM\TableRegistry;
-$this->Schedulingtimings = TableRegistry::get('Schedulingtimings');
-$this->Users = TableRegistry::get('Users');
+$this->Schedulingtimings = TableRegistry::getTableLocator()->get('Schedulingtimings');
+$this->Users = TableRegistry::getTableLocator()->get('Users');
 ?>
 <div class="admin_loader" id="loaderID"><?php echo $this->Html->image('loader_large_blue.gif');?></div>
 <?php if ($schedulingTimingsList) { ?> 

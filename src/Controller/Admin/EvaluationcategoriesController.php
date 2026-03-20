@@ -9,7 +9,7 @@ use Cake\Core\Configure\Engine\PhpConfig;
 class EvaluationcategoriesController extends AppController {
 
     public $paginate = ['limit' => 50, 'order' => ['Evaluationcategories.name' => 'asc']];
-    var $components = array('RequestHandler', 'PImage', 'PImageTest');
+    public $components = ['RequestHandler', 'PImage', 'PImageTest'];
 
     //public $helpers = array('Javascript', 'Ajax');
 
@@ -17,8 +17,8 @@ class EvaluationcategoriesController extends AppController {
         parent::initialize();
         $this->loadComponent('Paginator');
         $this->loadComponent('Flash');
-        $action = $this->request->params['action'];
-        $loggedAdminId = $this->request->session()->read('admin_id');
+        $action = $this->request->getParam('action');
+        $loggedAdminId = $this->request->getSession()->read('admin_id');
         if ($action != 'forgotPassword' && $action != 'logout') {
             if (!$loggedAdminId && $action != "login" && $action != 'captcha') {
                 $this->redirect(['controller' => 'admins', 'action' => 'login']);
@@ -31,7 +31,7 @@ class EvaluationcategoriesController extends AppController {
     public function index() {
 
         $this->set('title', ADMIN_TITLE . 'Manage Categories');
-        $this->viewBuilder()->layout('admin');
+        $this->viewBuilder()->setLayout('admin');
         $this->set('manageEvaluations', '1');
         $this->set('evalcategoriesList', '1');
 
@@ -40,9 +40,10 @@ class EvaluationcategoriesController extends AppController {
         //$condition = array('Evaluationcategories.parent_id' => 0);
 
         if ($this->request->is('post')) {
-            if (isset($this->request->data['action'])) {
-                $idList = implode(',', $this->request->data['chkRecordId']);
-                $action = $this->request->data['action'];
+            $requestData = $this->request->getData();
+            if (isset($requestData['action'])) {
+                $idList = implode(',', $requestData['chkRecordId']);
+                $action = $requestData['action'];
                 if ($idList) {
                     if ($action == "Activate") {
                         $this->Evaluationcategories->updateAll(['status' => '1'], ["id IN ($idList)"]);
@@ -57,12 +58,12 @@ class EvaluationcategoriesController extends AppController {
                 }
             }
 
-            if (isset($this->request->data['Evaluationcategories']['keyword']) && $this->request->data['Evaluationcategories']['keyword'] != '') {
-                $keyword = trim($this->request->data['Evaluationcategories']['keyword']);
+            if (isset($requestData['Evaluationcategories']['keyword']) && $requestData['Evaluationcategories']['keyword'] != '') {
+                $keyword = trim($requestData['Evaluationcategories']['keyword']);
             }
-        } elseif ($this->request->params) {
-            if (isset($this->request->params['pass'][0]) && $this->request->params['pass'][0] != '') {
-                $searchArr = $this->request->params['pass'];
+        } elseif ($this->request->getParam('pass')) {
+            if (isset($this->request->getParam('pass')[0]) && $this->request->getParam('pass')[0] != '') {
+                $searchArr = $this->request->getParam('pass');
                 foreach ($searchArr as $val) {
                     if (strpos($val, ":") !== false) {
                         $vars = explode(":", $val);
@@ -83,7 +84,7 @@ class EvaluationcategoriesController extends AppController {
         $this->paginate = ['conditions' => $condition, 'limit' => 100, 'order' => ['Evaluationcategories.id' => 'DESC']];
         $this->set('evaluationcategories', $this->paginate($this->Evaluationcategories));
         if ($this->request->is("ajax")) {
-            $this->viewBuilder()->layout(($this->request->is("ajax")) ? "" : "default");
+            $this->viewBuilder()->setLayout(($this->request->is("ajax")) ? "" : "default");
             $this->viewBuilder()->templatePath('Element' . DS . 'Admin/Evaluationcategories');
             $this->render('index');
         }
@@ -91,7 +92,7 @@ class EvaluationcategoriesController extends AppController {
 
     public function add() {
         $this->set('title', ADMIN_TITLE . 'Add Category');
-        $this->viewBuilder()->layout('admin');
+        $this->viewBuilder()->setLayout('admin');
 		
         $this->set('manageEvaluations', '1');
         $this->set('evalcategoriesList', '1');
@@ -99,13 +100,14 @@ class EvaluationcategoriesController extends AppController {
         $evaluationcategories = $this->Evaluationcategories->newEntity();
         if ($this->request->is('post')) {
 			
-			//$this->prx($this->request->data);
+			//$this->prx($this->request->getData());
+			$requestData = $this->request->getData();
 			
-            $data = $this->Evaluationcategories->patchEntity($evaluationcategories, $this->request->data, ['validate' => 'add']);
-            if (count($data->errors()) == 0) {
+            $data = $this->Evaluationcategories->patchEntity($evaluationcategories, $requestData, ['validate' => 'add']);
+            if (count($data->getErrors()) == 0) {
 
-				$slug = $this->getSlug($this->request->data['Evaluationcategories']['name'] . ' ' . time(), 'Evaluationcategories');
-                $data->name 			= trim($this->request->data['Evaluationcategories']['name']);
+				$slug = $this->getSlug($requestData['Evaluationcategories']['name'] . ' ' . time(), 'Evaluationcategories');
+                $data->name 			= trim($requestData['Evaluationcategories']['name']);
                 $data->slug 			= $slug;
                 $data->status 			= 1;
                 $data->created 			= date('Y-m-d H:i:s');
@@ -123,7 +125,7 @@ class EvaluationcategoriesController extends AppController {
 
     public function edit($slug = null) {
         $this->set('title', ADMIN_TITLE . 'Edit Category');
-        $this->viewBuilder()->layout('admin');
+        $this->viewBuilder()->setLayout('admin');
         
 		$this->set('manageEvaluations', '1');
         $this->set('evalcategoriesList', '1');
@@ -135,10 +137,11 @@ class EvaluationcategoriesController extends AppController {
 		
         $evaluationcategories = $this->Evaluationcategories->get($uid);
         if ($this->request->is(['post', 'put'])) {
-            $data = $this->Evaluationcategories->patchEntity($evaluationcategories, $this->request->data, ['validate' => 'edit']);
+			$requestData = $this->request->getData();
+            $data = $this->Evaluationcategories->patchEntity($evaluationcategories, $requestData, ['validate' => 'edit']);
 			
-            if (count($data->errors()) == 0) {
-                $data->name = trim($this->request->data['Evaluationcategories']['name']);
+            if (count($data->getErrors()) == 0) {
+                $data->name = trim($requestData['Evaluationcategories']['name']);
 				$data->modified = date("Y-m-d H:i:s");
                 if ($this->Evaluationcategories->save($data)) {
                     $this->Flash->success('Tag details updated successfully.');
@@ -153,7 +156,7 @@ class EvaluationcategoriesController extends AppController {
 	
 	public function activatecategory($slug = null) {
         if ($slug != '') {
-            $this->viewBuilder()->layout("");
+            $this->viewBuilder()->setLayout("");
             $this->Evaluationcategories->updateAll(['status' => '1','modified' => date("Y-m-d H:i:s")], ["slug" => $slug]);
             $this->set('action', '/admin/evaluationcategories/deactivatecategory/' . $slug);
             $this->set('status', 1);
@@ -164,7 +167,7 @@ class EvaluationcategoriesController extends AppController {
 
     public function deactivatecategory($slug = null) {
         if ($slug != '') {
-            $this->viewBuilder()->layout("");
+            $this->viewBuilder()->setLayout("");
             $this->Evaluationcategories->updateAll(['status' => '0','modified' => date("Y-m-d H:i:s")], ["slug" => $slug]);
             $this->set('action', '/admin/evaluationcategories/activatecategory/' . $slug);
             $this->set('status', 0);

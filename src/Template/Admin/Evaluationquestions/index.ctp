@@ -18,7 +18,7 @@
                     <div class="form-group align_box dtpickr_inputs">
                        <span class="hints">Search by Question ID or Question Name <?php echo strval('a'); ?></span>
 						<span class="hint">
-                           <?php echo $this->Form->input('Evaluationquestions.keyword', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control', 'placeholder'=>'Search by keyword']); ?>
+                           <?php echo $this->Form->control('Evaluationquestions.keyword', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control', 'placeholder'=>'Search by keyword']); ?>
 						</span>
 						<span class="hint">
                            <?php echo $this->Form->select('Evaluationquestions.evaluationcategory_id', $categoryDD, ['id' => 'evaluationcategory_id', 'label' => false, 'div' => false, 'class' => 'form-control required', 'autocomplete' => 'off', 'empty' => 'Choose Category', 'style' => 'margin-bottom:2px;']); ?>

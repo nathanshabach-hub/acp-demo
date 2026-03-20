@@ -1,13 +1,13 @@
 <?php
 use Cake\ORM\TableRegistry;
-$this->Crstudentevents = TableRegistry::get('Crstudentevents');
-$this->Resultpositions = TableRegistry::get('Resultpositions');
+$this->Crstudentevents = TableRegistry::getTableLocator()->get('Crstudentevents');
+$this->Resultpositions = TableRegistry::getTableLocator()->get('Resultpositions');
 
-$this->Crstudentevents = TableRegistry::get('Crstudentevents');
-$this->Judgeevaluations = TableRegistry::get('Judgeevaluations');
-$this->Judgeevaluationmarks = TableRegistry::get('Judgeevaluationmarks');
-$this->Evaluationquestions = TableRegistry::get('Evaluationquestions');
-$this->Eventsubmissions = TableRegistry::get('Eventsubmissions');
+$this->Crstudentevents = TableRegistry::getTableLocator()->get('Crstudentevents');
+$this->Judgeevaluations = TableRegistry::getTableLocator()->get('Judgeevaluations');
+$this->Judgeevaluationmarks = TableRegistry::getTableLocator()->get('Judgeevaluationmarks');
+$this->Evaluationquestions = TableRegistry::getTableLocator()->get('Evaluationquestions');
+$this->Eventsubmissions = TableRegistry::getTableLocator()->get('Eventsubmissions');
 ?>
 <script type="text/javascript">
 <!--

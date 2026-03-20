@@ -1,6 +1,10 @@
 <?php echo $this->Html->script('ajax-pagging.js'); ?>
 
 <?php
+$currentSessionProfileType = isset($currentSessionProfileType) ? $currentSessionProfileType : null;
+$hasRemainingConventions = method_exists($remainingconventions, 'isEmpty') ? !$remainingconventions->isEmpty() : !empty($remainingconventions);
+$hasPastRegistrations = method_exists($pastRegistrations, 'isEmpty') ? !$pastRegistrations->isEmpty() : !empty($pastRegistrations);
+
 if($userDetails->user_type == 'School')
 {
 ?>
@@ -24,7 +28,7 @@ if($userDetails->user_type == 'School')
 			</div>
 			
 			
-			<?php if (!$remainingconventions->isEmpty()) { ?>
+			<?php if ($hasRemainingConventions) { ?>
 			
 			<hr>
 			
@@ -41,7 +45,7 @@ if($userDetails->user_type == 'School')
 			
 			
 			<!-- to show past registrations -->
-			<?php if (!$pastRegistrations->isEmpty()) { ?>
+			<?php if ($hasPastRegistrations) { ?>
 			
 			<hr>
 			
@@ -64,7 +68,7 @@ if($userDetails->user_type == 'School')
 
 
 <?php
-if($userDetails->user_type == 'Judge' || $this->request->session()->read("current_session_profile_type") == 'Judge')
+if($userDetails->user_type == 'Judge' || $currentSessionProfileType == 'Judge')
 {
 ?>
 <div class="container-fluid p-0">
@@ -87,7 +91,7 @@ if($userDetails->user_type == 'Judge' || $this->request->session()->read("curren
 			</div>
 			
 			
-			<?php if (!$remainingconventions->isEmpty()) { ?> 
+			<?php if ($hasRemainingConventions) { ?> 
 			
 			<hr>
 			

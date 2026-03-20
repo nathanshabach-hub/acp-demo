@@ -1,7 +1,7 @@
 <?php
 use Cake\ORM\TableRegistry;
-$this->Users = TableRegistry::get('Users');
-$this->Events = TableRegistry::get('Events');
+$this->Users = TableRegistry::getTableLocator()->get('Users');
+$this->Events = TableRegistry::getTableLocator()->get('Events');
 ?>
 <div class="admin_loader" id="loaderID"><?php echo $this->Html->image('loader_large_blue.gif');?></div>
 <?php if (count($finalSchoolsList)) { ?>

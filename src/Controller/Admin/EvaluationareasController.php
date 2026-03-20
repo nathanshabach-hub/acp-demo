@@ -9,7 +9,7 @@ use Cake\Core\Configure\Engine\PhpConfig;
 class EvaluationareasController extends AppController {
 
     public $paginate = ['limit' => 50, 'order' => ['Evaluationareas.name' => 'asc']];
-    var $components = array('RequestHandler', 'PImage', 'PImageTest');
+    public $components = ['RequestHandler', 'PImage', 'PImageTest'];
 
     //public $helpers = array('Javascript', 'Ajax');
 
@@ -17,8 +17,8 @@ class EvaluationareasController extends AppController {
         parent::initialize();
         $this->loadComponent('Paginator');
         $this->loadComponent('Flash');
-        $action = $this->request->params['action'];
-        $loggedAdminId = $this->request->session()->read('admin_id');
+        $action = $this->request->getParam('action');
+        $loggedAdminId = $this->request->getSession()->read('admin_id');
         if ($action != 'forgotPassword' && $action != 'logout') {
             if (!$loggedAdminId && $action != "login" && $action != 'captcha') {
                 $this->redirect(['controller' => 'admins', 'action' => 'login']);
@@ -33,7 +33,7 @@ class EvaluationareasController extends AppController {
     public function index($form_slug=null) {
 
         $this->set('title', ADMIN_TITLE . 'Manage Areas');
-        $this->viewBuilder()->layout('admin');
+        $this->viewBuilder()->setLayout('admin');
         $this->set('manageEvaluations', '1');
         $this->set('formsList', '1');
 		
@@ -62,9 +62,10 @@ class EvaluationareasController extends AppController {
         $condition = array('Evaluationareas.evaluationform_id' => $formD->id);
 
         if ($this->request->is('post')) {
-            if (isset($this->request->data['action'])) {
-                $idList = implode(',', $this->request->data['chkRecordId']);
-                $action = $this->request->data['action'];
+            $requestData = $this->request->getData();
+            if (isset($requestData['action'])) {
+                $idList = implode(',', $requestData['chkRecordId']);
+                $action = $requestData['action'];
                 if ($idList) {
                     if ($action == "Activate") {
                         $this->Evaluationareas->updateAll(['status' => '1'], ["id IN ($idList)"]);
@@ -79,15 +80,15 @@ class EvaluationareasController extends AppController {
                 }
             }
 
-            if (isset($this->request->data['Evaluationareas']['keyword']) && $this->request->data['Evaluationareas']['keyword'] != '') {
-                $keyword = trim($this->request->data['Evaluationareas']['keyword']);
+            if (isset($requestData['Evaluationareas']['keyword']) && $requestData['Evaluationareas']['keyword'] != '') {
+                $keyword = trim($requestData['Evaluationareas']['keyword']);
             }
-			if (isset($this->request->data['Evaluationareas']['evaluationcategory_id']) && $this->request->data['Evaluationareas']['evaluationcategory_id'] != '') {
-                $evaluationcategory_id = trim($this->request->data['Evaluationareas']['evaluationcategory_id']);
+			if (isset($requestData['Evaluationareas']['evaluationcategory_id']) && $requestData['Evaluationareas']['evaluationcategory_id'] != '') {
+				$evaluationcategory_id = trim($requestData['Evaluationareas']['evaluationcategory_id']);
             }
-        } elseif ($this->request->params) {
-            if (isset($this->request->params['pass'][0]) && $this->request->params['pass'][0] != '') {
-                $searchArr = $this->request->params['pass'];
+        } elseif ($this->request->getParam('pass')) {
+            if (isset($this->request->getParam('pass')[0]) && $this->request->getParam('pass')[0] != '') {
+                $searchArr = $this->request->getParam('pass');
                 foreach ($searchArr as $val) {
                     if (strpos($val, ":") !== false) {
                         $vars = explode(":", $val);
@@ -113,7 +114,7 @@ class EvaluationareasController extends AppController {
         $this->paginate = ['contain' => ['Evaluationcategories'], 'conditions' => $condition, 'limit' => 100, 'order' => ['Evaluationareas.id' => 'DESC']];
         $this->set('evaluationareas', $this->paginate($this->Evaluationareas));
         if ($this->request->is("ajax")) {
-            $this->viewBuilder()->layout(($this->request->is("ajax")) ? "" : "default");
+            $this->viewBuilder()->setLayout(($this->request->is("ajax")) ? "" : "default");
             $this->viewBuilder()->templatePath('Element' . DS . 'Admin/Evaluationareas');
             $this->render('index');
         }
@@ -121,7 +122,7 @@ class EvaluationareasController extends AppController {
 
     public function add($form_slug=null) {
         $this->set('title', ADMIN_TITLE . 'Add Area');
-        $this->viewBuilder()->layout('admin');
+        $this->viewBuilder()->setLayout('admin');
 		
         $this->set('manageEvaluations', '1');
         $this->set('formsList', '1');
@@ -152,12 +153,13 @@ class EvaluationareasController extends AppController {
         $evaluationareas = $this->Evaluationareas->newEntity();
         if ($this->request->is('post')) {
 			
-			//$this->prx($this->request->data);
+            //$this->prx($this->request->getData());
+            $requestData = $this->request->getData();
 			
-			$evaluationquestion_ids = $this->request->data['Evaluationareas']['evaluationquestion_ids'];
+            $evaluationquestion_ids = isset($requestData['Evaluationareas']['evaluationquestion_ids']) ? (array)$requestData['Evaluationareas']['evaluationquestion_ids'] : [];
 			$evaluationquestion_ids_implode = implode(",",$evaluationquestion_ids);
 			
-            $data = $this->Evaluationareas->patchEntity($evaluationareas, $this->request->data);
+            $data = $this->Evaluationareas->patchEntity($evaluationareas, $requestData);
 			
 			// to check that this category already added for this form
 			$checkFlag = 1;
@@ -171,7 +173,7 @@ class EvaluationareasController extends AppController {
 				$this->set('questionsDD', $questionsDD);
 			}
 			
-            if (count($data->errors()) == 0 && $checkFlag == 1) {
+            if (count($data->getErrors()) == 0 && $checkFlag == 1) {
 
 				$slug = $this->getSlug('form-area-' . time(), 'Evaluationareas');
                 $data->slug 			= $slug;
@@ -195,7 +197,7 @@ class EvaluationareasController extends AppController {
 
     public function edit($form_slug=null,$record_slug = null) {
         $this->set('title', ADMIN_TITLE . 'Edit Question');
-        $this->viewBuilder()->layout('admin');
+        $this->viewBuilder()->setLayout('admin');
         
 		$this->set('manageEvaluations', '1');
         $this->set('formsList', '1');
@@ -237,10 +239,11 @@ class EvaluationareasController extends AppController {
         $evaluationareas = $this->Evaluationareas->get($uid);
         if ($this->request->is(['post', 'put'])) {
             
-			$evaluationquestion_ids = $this->request->data['Evaluationareas']['evaluationquestion_ids'];
+            $requestData = $this->request->getData();
+            $evaluationquestion_ids = isset($requestData['Evaluationareas']['evaluationquestion_ids']) ? (array)$requestData['Evaluationareas']['evaluationquestion_ids'] : [];
 			$evaluationquestion_ids_implode = implode(",",$evaluationquestion_ids);
 			
-			$data = $this->Evaluationareas->patchEntity($evaluationareas, $this->request->data);
+            $data = $this->Evaluationareas->patchEntity($evaluationareas, $requestData);
 			
 			// to check that this category already added for this form
 			$checkFlag = 1;
@@ -257,7 +260,7 @@ class EvaluationareasController extends AppController {
 				}
 			}
 			
-            if (count($data->errors()) == 0 && $checkFlag == 1) {
+            if (count($data->getErrors()) == 0 && $checkFlag == 1) {
 				$data->modified = date("Y-m-d H:i:s");
 				
 				$data->evaluationquestion_ids 		= $evaluationquestion_ids_implode;
@@ -275,7 +278,7 @@ class EvaluationareasController extends AppController {
 	
 	public function activatequestion($slug = null) {
         if ($slug != '') {
-            $this->viewBuilder()->layout("");
+            $this->viewBuilder()->setLayout("");
             $this->Evaluationareas->updateAll(['status' => '1','modified' => date("Y-m-d H:i:s")], ["slug" => $slug]);
             $this->set('action', '/admin/evaluationareas/deactivatequestion/' . $slug);
             $this->set('status', 1);
@@ -286,7 +289,7 @@ class EvaluationareasController extends AppController {
 
     public function deactivatequestion($slug = null) {
         if ($slug != '') {
-            $this->viewBuilder()->layout("");
+            $this->viewBuilder()->setLayout("");
             $this->Evaluationareas->updateAll(['status' => '0','modified' => date("Y-m-d H:i:s")], ["slug" => $slug]);
             $this->set('action', '/admin/evaluationareas/activatequestion/' . $slug);
             $this->set('status', 0);

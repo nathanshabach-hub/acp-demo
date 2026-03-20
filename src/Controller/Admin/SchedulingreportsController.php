@@ -9,7 +9,7 @@ use Cake\Core\Configure\Engine\PhpConfig;
 class SchedulingreportsController extends AppController {
 
     public $paginate = ['limit' => 50, 'order' => ['Schedulings.name' => 'asc']];
-    var $components = array('RequestHandler', 'PImage', 'PImageTest');
+    public $components = ['RequestHandler', 'PImage', 'PImageTest'];
 
     //public $helpers = array('Javascript', 'Ajax');
 
@@ -17,8 +17,8 @@ class SchedulingreportsController extends AppController {
         parent::initialize();
         $this->loadComponent('Paginator');
         $this->loadComponent('Flash');
-        $action = $this->request->params['action'];
-        $loggedAdminId = $this->request->session()->read('admin_id');
+		$action = $this->request->getParam('action');
+		$loggedAdminId = $this->request->getSession()->read('admin_id');
         if ($action != 'forgotPassword' && $action != 'logout') {
             if (!$loggedAdminId && $action != "login" && $action != 'captcha') {
                 $this->redirect(['controller' => 'admins', 'action' => 'login']);
@@ -119,11 +119,145 @@ class SchedulingreportsController extends AppController {
 
 		return ['success' => true, 'logo_path' => '/img/smallprogram_logos/' . $fileName, 'error' => ''];
 	}
+
+	private function buildUserFullName($userData) {
+		if (empty($userData)) {
+			return '';
+		}
+
+		$nameParts = [];
+		if (!empty($userData['first_name'])) {
+			$nameParts[] = $userData['first_name'];
+		}
+		if (!empty($userData['middle_name'])) {
+			$nameParts[] = $userData['middle_name'];
+		}
+		if (!empty($userData['last_name'])) {
+			$nameParts[] = $userData['last_name'];
+		}
+
+		return trim(implode(' ', $nameParts));
+	}
+
+	private function getMatchNumberByTimingId($timingId) {
+		if (empty($timingId)) {
+			return '';
+		}
+
+		$timingRecord = $this->Schedulingtimings->find()
+			->select(['id', 'match_number'])
+			->where(['Schedulingtimings.id' => $timingId])
+			->first();
+
+		if (!$timingRecord || empty($timingRecord->match_number)) {
+			return '';
+		}
+
+		return $timingRecord->match_number;
+	}
+
+	private function buildMatchLabelText($timingRecord) {
+		$userName = $this->buildUserFullName(isset($timingRecord->Users) ? $timingRecord->Users : []);
+		$opponentName = $this->buildUserFullName(isset($timingRecord->Opponentuser) ? $timingRecord->Opponentuser : []);
+
+		if ((int)$timingRecord->schedule_category === 1) {
+			if (!empty($timingRecord->group_name)) {
+				return 'Group ' . $timingRecord->group_name . (!empty($userName) ? ' (' . $userName . ')' : '');
+			}
+			return $userName;
+		}
+
+		if ((int)$timingRecord->schedule_category === 2) {
+			$prefix = !empty($timingRecord->match_number) ? 'Match-' . $timingRecord->match_number . ': ' : '';
+			if ((int)$timingRecord->round_number > 1) {
+				$matchOne = $this->getMatchNumberByTimingId($timingRecord->schtimeautoid1);
+				$matchTwo = $this->getMatchNumberByTimingId($timingRecord->schtimeautoid2);
+				return $prefix . '(Winner of Match-' . $matchOne . ') VS (Winner of Match-' . $matchTwo . ')';
+			}
+
+			if (!empty($timingRecord->user_id) && (empty($timingRecord->user_id_opponent) || (int)$timingRecord->user_id_opponent === 0)) {
+				return trim($userName . ' (BYE)');
+			}
+
+			if (!empty($userName) && !empty($opponentName)) {
+				return $prefix . $userName . ' VS ' . $opponentName;
+			}
+
+			return trim($prefix . $userName);
+		}
+
+		if ((int)$timingRecord->schedule_category === 3) {
+			$prefix = !empty($timingRecord->match_number) ? 'Match-' . $timingRecord->match_number . ': ' : '';
+			if ((int)$timingRecord->round_number > 1) {
+				$matchOne = $this->getMatchNumberByTimingId($timingRecord->schtimeautoid1);
+				$matchTwo = $this->getMatchNumberByTimingId($timingRecord->schtimeautoid2);
+				return $prefix . '(Winner of Match-' . $matchOne . ') VS (Winner of Match-' . $matchTwo . ')';
+			}
+
+			$userLabel = !empty($userName) ? $userName : '';
+			$oppLabel = !empty($opponentName) ? $opponentName : '';
+			if (!empty($timingRecord->group_name)) {
+				$userLabel .= ' (Group-' . $timingRecord->group_name . ')';
+			}
+			if (!empty($timingRecord->group_name_opponent)) {
+				$oppLabel .= ' (Group-' . $timingRecord->group_name_opponent . ')';
+			}
+
+			if (!empty($timingRecord->user_id) && (empty($timingRecord->user_id_opponent) || (int)$timingRecord->user_id_opponent === 0)) {
+				return trim($prefix . $userLabel . ' (BYE)');
+			}
+
+			if (!empty($userLabel) && !empty($oppLabel)) {
+				return $prefix . $userLabel . ' VS ' . $oppLabel;
+			}
+
+			return trim($prefix . $userLabel);
+		}
+
+		if ((int)$timingRecord->schedule_category === 4) {
+			return $userName;
+		}
+
+		if (!empty($userName) && !empty($opponentName)) {
+			return $userName . ' VS ' . $opponentName;
+		}
+
+		return $userName;
+	}
+
+	private function getByMatchReportRows($conventionSD) {
+		$condSch = array();
+		$condSch[] = "(Schedulingtimings.conventionseasons_id = '" . $conventionSD->id . "' AND
+		Schedulingtimings.convention_id = '" . $conventionSD->convention_id . "' AND
+		Schedulingtimings.season_id = '" . $conventionSD->season_id . "' AND
+		Schedulingtimings.season_year = '" . $conventionSD->season_year . "')";
+
+		$schedulingTimingsList = $this->Schedulingtimings->find()
+			->where($condSch)
+			->contain(["Events", "Conventionrooms", "Users", "Opponentuser"])
+			->order(["Schedulingtimings.sch_date_time" => "ASC", "Schedulingtimings.room_id" => "ASC"])
+			->all();
+
+		$rows = [];
+		foreach ($schedulingTimingsList as $timingRecord) {
+			$rows[] = [
+				'day' => $timingRecord->day,
+				'start' => $timingRecord->start_time != NULL ? date("h:i A", strtotime($timingRecord->start_time)) : '',
+				'finish' => $timingRecord->finish_time != NULL ? date("h:i A", strtotime($timingRecord->finish_time)) : '',
+				'location' => !empty($timingRecord->Conventionrooms['room_name']) ? $timingRecord->Conventionrooms['room_name'] : '',
+				'event' => !empty($timingRecord->Events['event_name']) ? $timingRecord->Events['event_name'] : '',
+				'event_id_number' => !empty($timingRecord->Events['event_id_number']) ? $timingRecord->Events['event_id_number'] : '',
+				'match' => $this->buildMatchLabelText($timingRecord)
+			];
+		}
+
+		return $rows;
+	}
 	
 	/* By Students */
 	public function bystudents($convention_season_slug=null) {
         $this->set('title', ADMIN_TITLE . 'Scheduling Reports By Schools/Students');
-        $this->viewBuilder()->layout('admin');
+        $this->viewBuilder()->setLayout('admin');
 		
         $this->set('manageConventions', '1');
         $this->set('conventionList', '1');
@@ -174,10 +308,11 @@ class SchedulingreportsController extends AppController {
 		
 		if ($this->request->is('post')) {
 			
-			//$this->prx($this->request->data);
+			//$this->prx($this->request->getData());
+			$requestData = $this->request->getData();
 			
-			$school_id 	= $this->request->data['Schedulingreports']['school_id'];
-			$student_id = $this->request->data['Schedulingreports']['student_id'];
+			$school_id 	= $requestData['Schedulingreports']['school_id'];
+			$student_id = $requestData['Schedulingreports']['student_id'];
 			
 			$this->redirect(['controller' => 'schedulingreports', 'action' => 'bystudentsshow',$convention_season_slug,$school_id,$student_id]);
 		}
@@ -185,7 +320,7 @@ class SchedulingreportsController extends AppController {
 	
 	public function bystudentsshow($convention_season_slug=null,$school_id=null,$student_id=null) {
         $this->set('title', ADMIN_TITLE . 'Scheduling Reports By Students');
-        $this->viewBuilder()->layout('admin');
+        $this->viewBuilder()->setLayout('admin');
 		
         $this->set('manageConventions', '1');
         $this->set('conventionList', '1');
@@ -258,7 +393,7 @@ class SchedulingreportsController extends AppController {
 	
 	public function bystudentsshowprint($convention_season_slug=null,$school_id=null,$student_id=null) {
 		
-        $this->viewBuilder()->layout('print_reports');
+        $this->viewBuilder()->setLayout('print_reports');
 		
 		$this->set('convention_season_slug', $convention_season_slug);
         $this->set('school_id', $school_id);
@@ -328,7 +463,7 @@ class SchedulingreportsController extends AppController {
 	/* By Schools */
 	public function byschools($convention_season_slug=null) {
         $this->set('title', ADMIN_TITLE . 'Scheduling Reports By Schools');
-        $this->viewBuilder()->layout('admin');
+        $this->viewBuilder()->setLayout('admin');
 		
         $this->set('manageConventions', '1');
         $this->set('conventionList', '1');
@@ -379,9 +514,10 @@ class SchedulingreportsController extends AppController {
 		
 		if ($this->request->is('post')) {
 			
-			//$this->prx($this->request->data);
+			//$this->prx($this->request->getData());
+			$requestData = $this->request->getData();
 			
-			$school_id 	= $this->request->data['Schedulingreports']['school_id'];
+			$school_id 	= $requestData['Schedulingreports']['school_id'];
 			
 			$this->redirect(['controller' => 'schedulingreports', 'action' => 'byschoolsshow',$convention_season_slug,$school_id]);
 		}
@@ -389,7 +525,7 @@ class SchedulingreportsController extends AppController {
 	
 	public function byschoolsshow($convention_season_slug=null,$school_id=null) {
         $this->set('title', ADMIN_TITLE . 'Scheduling Reports By Schools');
-        $this->viewBuilder()->layout('admin');
+        $this->viewBuilder()->setLayout('admin');
 		
         $this->set('manageConventions', '1');
         $this->set('conventionList', '1');
@@ -448,7 +584,7 @@ class SchedulingreportsController extends AppController {
 	
 	public function byschoolsshowprint($convention_season_slug=null,$school_id=null) {
 		
-        $this->viewBuilder()->layout('print_reports');
+        $this->viewBuilder()->setLayout('print_reports');
 		
         $this->set('convention_season_slug', $convention_season_slug);
         $this->set('school_id', $school_id);
@@ -505,7 +641,7 @@ class SchedulingreportsController extends AppController {
 	/* By Events */
 	public function byevents($convention_season_slug=null) {
         $this->set('title', ADMIN_TITLE . 'Scheduling Reports By Events/Sport');
-        $this->viewBuilder()->layout('admin');
+        $this->viewBuilder()->setLayout('admin');
 		
         $this->set('manageConventions', '1');
         $this->set('conventionList', '1');
@@ -534,9 +670,10 @@ class SchedulingreportsController extends AppController {
 		
 		if ($this->request->is('post')) {
 			
-			//$this->prx($this->request->data);
+			//$this->prx($this->request->getData());
+			$requestData = $this->request->getData();
 			
-			$event_id 	= $this->request->data['Schedulingreports']['event_id'];
+			$event_id 	= $requestData['Schedulingreports']['event_id'];
 			
 			$this->redirect(['controller' => 'schedulingreports', 'action' => 'byeventsshow',$convention_season_slug,$event_id]);
 		}
@@ -544,7 +681,7 @@ class SchedulingreportsController extends AppController {
 	
 	public function byeventsshow($convention_season_slug=null,$event_id=null) {
         $this->set('title', ADMIN_TITLE . 'Scheduling Reports By Events/Sport');
-        $this->viewBuilder()->layout('admin');
+        $this->viewBuilder()->setLayout('admin');
 		
         $this->set('manageConventions', '1');
         $this->set('conventionList', '1');
@@ -582,7 +719,7 @@ class SchedulingreportsController extends AppController {
 	
 	public function byeventsshowprint($convention_season_slug=null,$event_id=null) {
         
-        $this->viewBuilder()->layout('print_reports');
+        $this->viewBuilder()->setLayout('print_reports');
 		
         $this->set('convention_season_slug', $convention_season_slug);
 		$this->set('event_id', $event_id);
@@ -621,7 +758,7 @@ class SchedulingreportsController extends AppController {
 	/* By Rooms/Location */
 	public function byrooms($convention_season_slug=null) {
         $this->set('title', ADMIN_TITLE . 'Scheduling Reports By Rooms/Location');
-        $this->viewBuilder()->layout('admin');
+        $this->viewBuilder()->setLayout('admin');
 		
         $this->set('manageConventions', '1');
         $this->set('conventionList', '1');
@@ -657,9 +794,10 @@ class SchedulingreportsController extends AppController {
 		
 		if ($this->request->is('post')) {
 			
-			//$this->prx($this->request->data);
+			//$this->prx($this->request->getData());
+			$requestData = $this->request->getData();
 			
-			$room_id 	= $this->request->data['Schedulingreports']['room_id'];
+			$room_id 	= $requestData['Schedulingreports']['room_id'];
 			
 			$this->redirect(['controller' => 'schedulingreports', 'action' => 'byroomsshow',$convention_season_slug,$room_id]);
 		}
@@ -667,7 +805,7 @@ class SchedulingreportsController extends AppController {
 	
 	public function byroomsshow($convention_season_slug=null,$room_id=null) {
         $this->set('title', ADMIN_TITLE . 'Scheduling Reports By Rooms/Location');
-        $this->viewBuilder()->layout('admin');
+        $this->viewBuilder()->setLayout('admin');
 		
         $this->set('manageConventions', '1');
         $this->set('conventionList', '1');
@@ -705,7 +843,7 @@ class SchedulingreportsController extends AppController {
 	
 	public function byroomsshowprint($convention_season_slug=null,$room_id=null) {
         
-        $this->viewBuilder()->layout('print_reports');
+        $this->viewBuilder()->setLayout('print_reports');
         $this->set('conventionList', '1');
 		
         $this->set('convention_season_slug', $convention_season_slug);
@@ -739,10 +877,43 @@ class SchedulingreportsController extends AppController {
 		$this->set('schedulingTimingsList', $schedulingTimingsList);
 	}
 
+	/* By Match */
+	public function bymatchshow($convention_season_slug=null) {
+		$this->set('title', ADMIN_TITLE . 'Scheduling Reports By Match');
+		$this->viewBuilder()->setLayout('admin');
+
+		$this->set('manageConventions', '1');
+		$this->set('conventionList', '1');
+		$this->set('convention_season_slug', $convention_season_slug);
+
+		$conventionSD = $this->Conventionseasons->find()->where(['Conventionseasons.slug' => $convention_season_slug])->contain(["Conventions"])->first();
+		$this->set('conventionSD', $conventionSD);
+		$this->set('convention_slug', $conventionSD->Conventions['slug']);
+
+		$schedulingD = $this->Schedulings->find()->where(['Schedulings.conventionseasons_id' => $conventionSD->id])->first();
+		$this->set('schedulingD', $schedulingD);
+
+		$this->set('matchRows', $this->getByMatchReportRows($conventionSD));
+	}
+
+	public function bymatchshowprint($convention_season_slug=null) {
+		$this->viewBuilder()->setLayout('print_reports');
+		$this->set('convention_season_slug', $convention_season_slug);
+
+		$conventionSD = $this->Conventionseasons->find()->where(['Conventionseasons.slug' => $convention_season_slug])->contain(["Conventions"])->first();
+		$this->set('conventionSD', $conventionSD);
+		$this->set('convention_slug', $conventionSD->Conventions['slug']);
+
+		$schedulingD = $this->Schedulings->find()->where(['Schedulings.conventionseasons_id' => $conventionSD->id])->first();
+		$this->set('schedulingD', $schedulingD);
+
+		$this->set('matchRows', $this->getByMatchReportRows($conventionSD));
+	}
+
 /* By Sponsors */
 public function bysponsors($convention_season_slug=null) {
         $this->set('title', ADMIN_TITLE . 'Scheduling Reports By Sponsor');
-        $this->viewBuilder()->layout('admin');
+        $this->viewBuilder()->setLayout('admin');
         $this->set('manageConventions', '1');
         $this->set('conventionList', '1');
         $this->set('convention_season_slug', $convention_season_slug);
@@ -789,14 +960,15 @@ $sponsorsDD[$su->id] = $su->first_name . ' ' . $su->last_name . ' (' . $schoolNa
 $this->set('sponsorsDD', $sponsorsDD);
 
 if ($this->request->is('post')) {
-$sponsor_id = $this->request->data['Schedulingreports']['sponsor_id'];
+$requestData = $this->request->getData();
+$sponsor_id = $requestData['Schedulingreports']['sponsor_id'];
 $this->redirect(['controller' => 'schedulingreports', 'action' => 'bysponsorsshow', $convention_season_slug, $sponsor_id]);
 }
 }
 
 public function bysponsorsshow($convention_season_slug=null, $sponsor_id=null) {
         $this->set('title', ADMIN_TITLE . 'Scheduling Reports By Sponsor');
-        $this->viewBuilder()->layout('admin');
+        $this->viewBuilder()->setLayout('admin');
         $this->set('manageConventions', '1');
         $this->set('conventionList', '1');
         $this->set('convention_season_slug', $convention_season_slug);
@@ -845,7 +1017,7 @@ $this->set('arrStudentNames', $arrStudentNames);
 }
 
 public function bysponsorsshowprint($convention_season_slug=null, $sponsor_id=null) {
-        $this->viewBuilder()->layout('print_reports');
+        $this->viewBuilder()->setLayout('print_reports');
         $this->set('convention_season_slug', $convention_season_slug);
         if ($sponsor_id === null) {
             $sponsor_id = $this->request->getQuery('sponsor_id');
@@ -885,7 +1057,7 @@ $this->set('arrStudentNames', $arrStudentNames);
 /* Location Time Allocation */
 public function locationtimeallocation($convention_season_slug=null) {
         $this->set('title', ADMIN_TITLE . 'Location Time Allocation');
-        $this->viewBuilder()->layout('admin');
+        $this->viewBuilder()->setLayout('admin');
         $this->set('manageConventions', '1');
         $this->set('conventionList', '1');
         $this->set('convention_season_slug', $convention_season_slug);
@@ -937,7 +1109,7 @@ $this->set('dailyMinutes', $dailyMinutes);
 /* Small Program v2 - PDF-style multi-column layout (rooms as columns, split by session) */
 public function smallprogramv2($convention_season_slug=null) {
         $this->set('title', ADMIN_TITLE . 'Small Program (PDF Style)');
-        $this->viewBuilder()->layout('admin');
+        $this->viewBuilder()->setLayout('admin');
         $this->set('manageConventions', '1');
         $this->set('conventionList', '1');
         $this->set('convention_season_slug', $convention_season_slug);
@@ -1023,7 +1195,7 @@ $this->set('lunchEnd',   date('g:i a', strtotime($lunchEnd)));
 }
 
 public function smallprogramv2print($convention_season_slug=null) {
-        $this->viewBuilder()->layout('print_reports');
+        $this->viewBuilder()->setLayout('print_reports');
         $this->set('convention_season_slug', $convention_season_slug);
 
 $conventionSD = $this->Conventionseasons->find()->where(['Conventionseasons.slug' => $convention_season_slug])->contain(["Conventions"])->first();
@@ -1092,7 +1264,7 @@ $this->set('lunchEnd',   date('g:i a', strtotime($lunchEnd)));
 
 public function smallprogramv2customize($convention_season_slug=null) {
 		$this->set('title', ADMIN_TITLE . 'Customize Small Program');
-		$this->viewBuilder()->layout('admin');
+		$this->viewBuilder()->setLayout('admin');
 
 		$this->set('manageConventions', '1');
 		$this->set('conventionList', '1');
@@ -1112,7 +1284,7 @@ public function smallprogramv2customize($convention_season_slug=null) {
 		}
 
 		if ($this->request->is(['post', 'put'])) {
-			$requestData = $this->request->data;
+			$requestData = $this->request->getData();
 			$logoFile = !empty($requestData['logo_file']) ? $requestData['logo_file'] : [];
 			$removeLogo = !empty($requestData['remove_logo']);
 			unset($requestData['logo_file']);
@@ -1155,7 +1327,7 @@ public function smallprogramv2customize($convention_season_slug=null) {
 /* Small Program */
 public function smallprogram($convention_season_slug=null) {
         $this->set('title', ADMIN_TITLE . 'Small Program');
-        $this->viewBuilder()->layout('admin');
+        $this->viewBuilder()->setLayout('admin');
         $this->set('manageConventions', '1');
         $this->set('conventionList', '1');
         $this->set('convention_season_slug', $convention_season_slug);
@@ -1187,7 +1359,7 @@ $this->set('dayDates', $dayDates);
 }
 
 public function smallprogramprint($convention_season_slug=null) {
-        $this->viewBuilder()->layout('print_reports');
+        $this->viewBuilder()->setLayout('print_reports');
         $this->set('convention_season_slug', $convention_season_slug);
 $conventionSD = $this->Conventionseasons->find()->where(['Conventionseasons.slug' => $convention_season_slug])->contain(["Conventions"])->first();
 $this->set('conventionSD', $conventionSD);
@@ -1236,6 +1408,14 @@ $condSch=["(Schedulingtimings.conventionseasons_id='".$conventionSD->id."')"];
 $timings=$this->Schedulingtimings->find()->where($condSch)->contain(["Events","Conventionrooms"])->order(["Schedulingtimings.sch_date_time"=>"ASC"])->all();
 $seenSlots=[];
 foreach($timings as $t){$slotKey=$t->day.'|'.$t->Conventionrooms['room_name'].'|'.$t->Events['event_name'].'|'.$t->start_time;if(in_array($slotKey,$seenSlots))continue;$seenSlots[]=$slotKey;fputcsv($out,[$t->day,$t->start_time?date("h:i A",strtotime($t->start_time)):'',$t->finish_time?date("h:i A",strtotime($t->finish_time)):'',$t->Events['event_name'],$t->Conventionrooms['room_name']]);}
+} elseif ($report_type == 'bymatch') {
+fputcsv($out,['Day','Start','Finish','Location','Event','Match']);
+$rows = $this->getByMatchReportRows($conventionSD);
+foreach($rows as $row){
+$eventLabel = $row['event'];
+if(!empty($row['event_id_number'])){$eventLabel .= ' ('.$row['event_id_number'].')';}
+fputcsv($out,[$row['day'],$row['start'],$row['finish'],$row['location'],$eventLabel,$row['match']]);
+}
 } elseif ($report_type == 'locationtimeallocation') {
 fputcsv($out,['Room','Available (mins)','Required (mins)','Events Scheduled','Status']);
 $lunchMinutes=(strtotime($schedulingD->lunch_time_end)-strtotime($schedulingD->lunch_time_start))/60;

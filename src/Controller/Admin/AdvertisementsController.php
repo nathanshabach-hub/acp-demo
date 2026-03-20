@@ -9,7 +9,7 @@ use Cake\Core\Configure\Engine\PhpConfig;
 class AdvertisementsController extends AppController {
 
     public $paginate = ['limit' => 50, 'order' => ['Advertisements.name' => 'asc']];
-    var $components = array('RequestHandler', 'PImage', 'PImageTest');
+    public $components = ['RequestHandler', 'PImage', 'PImageTest'];
 
     //public $helpers = array('Javascript', 'Ajax');
 
@@ -17,8 +17,8 @@ class AdvertisementsController extends AppController {
         parent::initialize();
         $this->loadComponent('Paginator');
         $this->loadComponent('Flash');
-        $action = $this->request->params['action'];
-        $loggedAdminId = $this->request->session()->read('admin_id');
+        $action = $this->request->getParam('action');
+        $loggedAdminId = $this->request->getSession()->read('admin_id');
         if ($action != 'forgotPassword' && $action != 'logout') {
             if (!$loggedAdminId && $action != "login" && $action != 'captcha') {
                 $this->redirect(['controller' => 'admins', 'action' => 'login']);
@@ -32,7 +32,7 @@ class AdvertisementsController extends AppController {
     public function index() {
 
         $this->set('title', ADMIN_TITLE . 'Manage Ads');
-        $this->viewBuilder()->layout('admin');
+        $this->viewBuilder()->setLayout('admin');
         $this->set('manageAds', '1');
         $this->set('adsList', '1');
 
@@ -41,9 +41,10 @@ class AdvertisementsController extends AppController {
         //$condition = array('Advertisements.parent_id' => 0);
 
         if ($this->request->is('post')) {
-            if (isset($this->request->data['action'])) {
-                $idList = implode(',', $this->request->data['chkRecordId']);
-                $action = $this->request->data['action'];
+            $requestData = $this->request->getData();
+            if (isset($requestData['action'])) {
+                $idList = implode(',', $requestData['chkRecordId']);
+                $action = $requestData['action'];
                 if ($idList) {
                     if ($action == "Activate") {
                         $this->Advertisements->updateAll(['status' => '1'], ["id IN ($idList)"]);
@@ -58,12 +59,12 @@ class AdvertisementsController extends AppController {
                 }
             }
 
-            if (isset($this->request->data['Advertisements']['keyword']) && $this->request->data['Advertisements']['keyword'] != '') {
-                $keyword = trim($this->request->data['Advertisements']['keyword']);
+            if (isset($requestData['Advertisements']['keyword']) && $requestData['Advertisements']['keyword'] != '') {
+                $keyword = trim($requestData['Advertisements']['keyword']);
             }
-        } elseif ($this->request->params) {
-            if (isset($this->request->params['pass'][0]) && $this->request->params['pass'][0] != '') {
-                $searchArr = $this->request->params['pass'];
+        } elseif ($this->request->getParam('pass')) {
+            if (isset($this->request->getParam('pass')[0]) && $this->request->getParam('pass')[0] != '') {
+                $searchArr = $this->request->getParam('pass');
                 foreach ($searchArr as $val) {
                     if (strpos($val, ":") !== false) {
                         $vars = explode(":", $val);
@@ -84,7 +85,7 @@ class AdvertisementsController extends AppController {
         $this->paginate = ['conditions' => $condition, 'limit' => 20, 'order' => ['Advertisements.name' => 'ASC']];
         $this->set('advertisements', $this->paginate($this->Advertisements));
         if ($this->request->is("ajax")) {
-            $this->viewBuilder()->layout(($this->request->is("ajax")) ? "" : "default");
+            $this->viewBuilder()->setLayout(($this->request->is("ajax")) ? "" : "default");
             $this->viewBuilder()->templatePath('Element' . DS . 'Admin/Advertisements');
             $this->render('index');
         }
@@ -92,7 +93,7 @@ class AdvertisementsController extends AppController {
 
     public function activatead($slug = null) {
         if ($slug != '') {
-            $this->viewBuilder()->layout("");
+            $this->viewBuilder()->setLayout("");
             $this->Advertisements->updateAll(['status' => '1'], ["slug" => $slug]);
             $this->set('action', '/admin/advertisements/deactivatead/' . $slug);
             $this->set('status', 1);
@@ -103,7 +104,7 @@ class AdvertisementsController extends AppController {
 
     public function deactivatead($slug = null) {
         if ($slug != '') {
-            $this->viewBuilder()->layout("");
+            $this->viewBuilder()->setLayout("");
             $this->Advertisements->updateAll(['status' => '0'], ["slug" => $slug]);
             $this->set('action', '/admin/advertisements/activatead/' . $slug);
             $this->set('status', 0);
@@ -124,7 +125,7 @@ class AdvertisementsController extends AppController {
 
     public function edit($slug = null) {
         $this->set('title', ADMIN_TITLE . 'Edit Ad');
-        $this->viewBuilder()->layout('admin');
+        $this->viewBuilder()->setLayout('admin');
         
 		$this->set('manageAds', '1');
         $this->set('adsList', '1');
@@ -160,14 +161,16 @@ class AdvertisementsController extends AppController {
 		
         $advertisements = $this->Advertisements->get($uid);
         if ($this->request->is(['post', 'put'])) {
-            $data = $this->Advertisements->patchEntity($advertisements, $this->request->data);
+			$requestData = $this->request->getData();
+            $data = $this->Advertisements->patchEntity($advertisements, $requestData);
 			
-            if (count($data->errors()) == 0) {
-                //$data->name = trim($this->request->data['Advertisements']['name']);
+			$msgLL = '';
+            if (count($data->getErrors()) == 0) {
+                //$data->name = trim($this->request->getData()['Advertisements']['name']);
 				
 				$data->date_available = date("Y-m-d",strtotime($data->date_available));
 				
-				$renting_amenities = $this->request->data['Advertisements']['renting_amenities'];
+				$renting_amenities = $requestData['Advertisements']['renting_amenities'];
 				if(count($renting_amenities))
 					$rentingAmenities = implode(",",$renting_amenities);
 				else
@@ -194,9 +197,9 @@ class AdvertisementsController extends AppController {
 				}
 				
 				// to get lat long of each ad
-                if (!empty($this->request->data['latitude']) && !empty($this->request->data['longitude'])) {
-                    $data->latitude 	= $this->request->data['latitude'];
-					$data->longitude 	= $this->request->data['longitude'];
+                if (!empty($requestData['latitude']) && !empty($requestData['longitude'])) {
+                    $data->latitude 	= $requestData['latitude'];
+					$data->longitude 	= $requestData['longitude'];
                 } else {
                     $addressArr = array();
 				    if(!empty($data->location))

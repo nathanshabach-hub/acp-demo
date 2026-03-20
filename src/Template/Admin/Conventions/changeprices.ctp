@@ -72,21 +72,21 @@ if($conventionseasons->registration_end_date != '0000-00-00')
 					<div class="form-group">
                       <label class="col-sm-2 control-label">Registration Start Date <span class="require">*</span></label>
                       <div class="col-sm-10">
-                          <?php echo $this->Form->input('Conventionseasons.registration_start_date', ['id'=>'registration_start_date', 'label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required', 'placeholder'=>'Registration Start Date', 'autocomplete'=>'off']); ?>
+                          <?php echo $this->Form->control('Conventionseasons.registration_start_date', ['id'=>'registration_start_date', 'label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required', 'placeholder'=>'Registration Start Date', 'autocomplete'=>'off']); ?>
                       </div>
                     </div>
 					
 					<div class="form-group">
                       <label class="col-sm-2 control-label">Registration End Date <span class="require">*</span></label>
                       <div class="col-sm-10">
-                          <?php echo $this->Form->input('Conventionseasons.registration_end_date', ['id'=>'registration_end_date', 'label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required', 'placeholder'=>'Registration End Date', 'autocomplete'=>'off']); ?>
+                          <?php echo $this->Form->control('Conventionseasons.registration_end_date', ['id'=>'registration_end_date', 'label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required', 'placeholder'=>'Registration End Date', 'autocomplete'=>'off']); ?>
                       </div>
                     </div>
 					
 					<div class="form-group">
                       <label class="col-sm-2 control-label">Student Registration (<?php echo CURR; ?>) <span class="require">*</span></label>
                       <div class="col-sm-10">
-                          <?php echo $this->Form->input('Conventionseasons.student_registration_fees', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required']); ?>
+                          <?php echo $this->Form->control('Conventionseasons.student_registration_fees', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required']); ?>
 						  <!--<em class="bugdm">* Contact us form data will receive on this email address.</em>-->
                       </div>
                     </div>
@@ -94,7 +94,7 @@ if($conventionseasons->registration_end_date != '0000-00-00')
 					<div class="form-group">
                       <label class="col-sm-2 control-label">Non-competitor registration (<?php echo CURR; ?>) <span class="require">*</span></label>
                       <div class="col-sm-10">
-                          <?php echo $this->Form->input('Conventionseasons.non_competitor_registration_fees', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required']); ?>
+                          <?php echo $this->Form->control('Conventionseasons.non_competitor_registration_fees', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required']); ?>
 						  <!--<em class="bugdm">* Contact us form data will receive on this email address.</em>-->
                       </div>
                     </div>
@@ -102,7 +102,7 @@ if($conventionseasons->registration_end_date != '0000-00-00')
 					<div class="form-group">
                       <label class="col-sm-2 control-label">Non-affiliate registration (<?php echo CURR; ?>) <span class="require">*</span></label>
                       <div class="col-sm-10">
-                          <?php echo $this->Form->input('Conventionseasons.non_affiliate_registration_fees', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required']); ?>
+                          <?php echo $this->Form->control('Conventionseasons.non_affiliate_registration_fees', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required']); ?>
 						  <!--<em class="bugdm">* Contact us form data will receive on this email address.</em>-->
                       </div>
                     </div>
@@ -110,7 +110,7 @@ if($conventionseasons->registration_end_date != '0000-00-00')
 					<div class="form-group">
                       <label class="col-sm-2 control-label">Supervisor registration (<?php echo CURR; ?>) <span class="require">*</span></label>
                       <div class="col-sm-10">
-                          <?php echo $this->Form->input('Conventionseasons.supervisor_registration_fees', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required']); ?>
+                          <?php echo $this->Form->control('Conventionseasons.supervisor_registration_fees', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required']); ?>
 						  <!--<em class="bugdm">* Contact us form data will receive on this email address.</em>-->
                       </div>
                     </div>
@@ -118,21 +118,21 @@ if($conventionseasons->registration_end_date != '0000-00-00')
 					<div class="form-group">
                       <label class="col-sm-2 control-label">Min. Event Students <span class="require">*</span></label>
                       <div class="col-sm-10">
-                          <?php echo $this->Form->input('Conventionseasons.min_events_student', ['label'=>false, 'min'=>1, 'max'=>100, 'type'=>'number', 'div'=>false, 'class'=>'form-control required']); ?>
+                          <?php echo $this->Form->control('Conventionseasons.min_events_student', ['label'=>false, 'min'=>1, 'max'=>100, 'type'=>'number', 'div'=>false, 'class'=>'form-control required']); ?>
                       </div>
                     </div>
 					
 					<div class="form-group">
                       <label class="col-sm-2 control-label">Max. Event Students <span class="require">*</span></label>
                       <div class="col-sm-10">
-                          <?php echo $this->Form->input('Conventionseasons.max_events_student', ['label'=>false, 'min'=>1, 'max'=>100, 'type'=>'number', 'div'=>false, 'class'=>'form-control required']); ?>
+                          <?php echo $this->Form->control('Conventionseasons.max_events_student', ['label'=>false, 'min'=>1, 'max'=>100, 'type'=>'number', 'div'=>false, 'class'=>'form-control required']); ?>
                       </div>
                     </div>
 					
                     
                     <div class="box-footer">
                         <label class="col-sm-2 control-label" for="inputPassword3">&nbsp;</label>
-                        <?php echo $this->Form->input('Conventions.id', ['label'=>false, 'type'=>'hidden']); ?>
+                        <?php echo $this->Form->control('Conventions.id', ['label'=>false, 'type'=>'hidden']); ?>
                         <?php echo $this->Form->button('Save', ['type'=>'submit', 'class' => 'btn btn-info', 'div'=>false]); ?>
                         <?php echo $this->Html->link('Cancel', ['controller'=>'conventions', 'action' => 'seasons', $slug], ['class'=>'btn btn-default canlcel_le']); ?>
                     </div>

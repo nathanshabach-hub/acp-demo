@@ -18,7 +18,7 @@
                     <div class="form-group align_box dtpickr_inputs">
                        <span class="hints">Search by Book Name</span>
                        <span class="hint">
-                           <?php echo $this->Form->input('Books.keyword', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control', 'placeholder'=>'Search by Book Name']); ?>
+                           <?php echo $this->Form->control('Books.keyword', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control', 'placeholder'=>'Search by Book Name']); ?>
                        </span>
                       
                        <div class="admin_asearch">

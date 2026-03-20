@@ -5,7 +5,7 @@
 </script>
 <?php
 use Cake\ORM\TableRegistry;
-$this->_crstudenteventsTable = TableRegistry::get('Crstudentevents');
+$this->_crstudenteventsTable = TableRegistry::getTableLocator()->get('Crstudentevents');
 ?>
 
 <div class="content-wrapper">
@@ -50,8 +50,9 @@ $this->_crstudenteventsTable = TableRegistry::get('Crstudentevents');
 								<td>
 								<?php
 								$regCount = $this->_crstudenteventsTable->find()->where(['Crstudentevents.conventionseason_id' => $conventionSD->id, 'Crstudentevents.event_id' => $datarecevent->id])->count();
+								$spbDisplay = (isset($existingSpb[$datarecevent->id]) && (int)$existingSpb[$datarecevent->id] > 0) ? (int)$existingSpb[$datarecevent->id] : null;
 								?>
-								<?php echo $datarecevent->event_name; ?> (<?php echo $datarecevent->event_id_number; ?>) <span class="label label-default"><?php echo $regCount; ?> students</span>
+								<?php echo $datarecevent->event_name; ?> (<?php echo $datarecevent->event_id_number; ?>) <span class="label label-default"><?php echo $regCount; ?> students</span><?php if ($spbDisplay): ?> <span class="label label-info" title="Students per block"><?php echo $spbDisplay; ?>/block</span><?php endif; ?>
 								</td>
 								<td>
 								<?php

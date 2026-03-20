@@ -7,15 +7,15 @@ use Cake\Core\Configure\Engine\PhpConfig;
 class PagesController extends AppController{
 
     public $paginate = ['limit' => 50,'order' => ['Pages.name' => 'asc']];
-    var $components = array('RequestHandler', 'PImage', 'PImageTest');
+    public $components = ['RequestHandler', 'PImage', 'PImageTest'];
     //public $helpers = array('Javascript', 'Ajax');
    
     public function initialize(){
         parent::initialize();
         $this->loadComponent('Paginator');
         $this->loadComponent('Flash');
-        $action = $this->request->params['action'];
-        $loggedAdminId = $this->request->session()->read('admin_id');
+        $action = $this->request->getParam('action');
+        $loggedAdminId = $this->request->getSession()->read('admin_id');
         if ($action != 'forgotPassword' && $action != 'logout') {
             if (!$loggedAdminId && $action != "login" && $action != 'captcha') {
                  $this->redirect(['controller'=>'admins', 'action' => 'login']);
@@ -25,7 +25,7 @@ class PagesController extends AppController{
     
     public function index() {
         $this->set('title', ADMIN_TITLE. 'Manage Content');
-        $this->viewBuilder()->layout('admin');
+        $this->viewBuilder()->setLayout('admin');
         $this->set('staticPages', '1');
         $this->set('pageList', '1');
         
@@ -37,7 +37,7 @@ class PagesController extends AppController{
         $this->paginate = ['conditions' => $condition, 'limit' => 20, 'order' => ['Pages.static_page_title' => 'ASC']];
         $this->set('pages', $this->paginate($this->Pages));
         if($this->request->is("ajax")){
-            $this->viewBuilder()->layout(($this->request->is("ajax")) ? "" : "default");
+            $this->viewBuilder()->setLayout(($this->request->is("ajax")) ? "" : "default");
             $this->viewBuilder()->templatePath('Element' . DS . 'Admin/Pages');
             $this->render('index');
         }
@@ -45,7 +45,7 @@ class PagesController extends AppController{
   
    public function edit($slug=null){  
 		$this->set('title', ADMIN_TITLE. 'Edit Page');
-		$this->viewBuilder()->layout('admin');
+		$this->viewBuilder()->setLayout('admin');
        
 		$this->set('staticPages', '1');
         $this->set('pageList', '1');
@@ -56,8 +56,8 @@ class PagesController extends AppController{
 		}
 		$pages = $this->Pages->get($uid);
 		if ($this->request->is(['post', 'put'])) {
-            $data = $this->Pages->patchEntity($pages, $this->request->data, ['validate' => 'edit']);
-            if(count($data->errors()) == 0){
+            $data = $this->Pages->patchEntity($pages, $this->request->getData(), ['validate' => 'edit']);
+            if(count($data->getErrors()) == 0){
                 if ($this->Pages->save($data)) {
                     $this->Flash->success('Page details updated successfully.');
                     $this->redirect(['controller'=>'pages', 'action' => 'index']);

@@ -41,20 +41,20 @@
 					<div class="form-group">
                       <label class="col-sm-2 control-label">Question <span class="require">*</span></label>
                       <div class="col-sm-10">
-                          <?php echo $this->Form->input('Evaluationquestions.question', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required', 'placeholder'=>'Question', 'autocomplete'=>'off']); ?>
+                          <?php echo $this->Form->control('Evaluationquestions.question', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required', 'placeholder'=>'Question', 'autocomplete'=>'off']); ?>
                       </div>
                     </div>
 					
 					<div class="form-group">
                       <label class="col-sm-2 control-label">Max Points <span class="require">*</span></label>
                       <div class="col-sm-10">
-                          <?php echo $this->Form->input('Evaluationquestions.max_points', ['label'=>false, 'type'=>'number',  'div'=>false, 'class'=>'form-control required', 'placeholder'=>'Max Points', 'autocomplete'=>'off']); ?>
+                          <?php echo $this->Form->control('Evaluationquestions.max_points', ['label'=>false, 'type'=>'number',  'div'=>false, 'class'=>'form-control required', 'placeholder'=>'Max Points', 'autocomplete'=>'off']); ?>
                       </div>
                     </div>
                     
                     <div class="box-footer">
                         <label class="col-sm-2 control-label" for="inputPassword3">&nbsp;</label>
-                        <?php echo $this->Form->input('Evaluationquestions.id', ['label'=>false, 'type'=>'hidden']); ?>
+                        <?php echo $this->Form->control('Evaluationquestions.id', ['label'=>false, 'type'=>'hidden']); ?>
                         <?php echo $this->Form->button('Save', ['type'=>'submit', 'class' => 'btn btn-info', 'div'=>false]); ?>
                         <?php echo $this->Html->link('Cancel', ['controller'=>'evaluationquestions', 'action' => 'index'], ['class'=>'btn btn-default canlcel_le']); ?>
                     </div>

@@ -29,7 +29,7 @@
 					<div class="form-group">
                       <label class="col-sm-2 control-label">Form Name <span class="require">*</span></label>
                       <div class="col-sm-10">
-                          <?php echo $this->Form->input('Evaluationforms.name', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required', 'placeholder'=>'Form Name', 'autocomplete'=>'off']); ?>
+                          <?php echo $this->Form->control('Evaluationforms.name', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required', 'placeholder'=>'Form Name', 'autocomplete'=>'off']); ?>
                       </div>
                     </div>
 					
@@ -60,14 +60,14 @@
 					<div class="form-group">
                       <label class="col-sm-2 control-label">Reference PDF File <span class="require">*</span></label>
                       <div class="col-sm-10">
-                          <?php echo $this->Form->input('Evaluationforms.reference_pdf_file_name', ['id'=>'reference_pdf_file_name', 'label'=>false, 'type'=>'file',  'div'=>false, 'class'=>'form-control required', 'onchange'=>'imageValidation()', 'id'=>'reference_pdf_file_name']); ?>
+                          <?php echo $this->Form->control('Evaluationforms.reference_pdf_file_name', ['id'=>'reference_pdf_file_name', 'label'=>false, 'type'=>'file',  'div'=>false, 'class'=>'form-control required', 'onchange'=>'imageValidation()', 'id'=>'reference_pdf_file_name']); ?>
                       </div>
                     </div>
 					
 					<div class="form-group">
                       <label class="col-sm-2 control-label">Notes <span class="require"></span></label>
                       <div class="col-sm-10">
-                          <?php echo $this->Form->input('Evaluationforms.notes', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control', 'placeholder'=>'Notes', 'autocomplete'=>'off']); ?>
+                          <?php echo $this->Form->control('Evaluationforms.notes', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control', 'placeholder'=>'Notes', 'autocomplete'=>'off']); ?>
                       </div>
                     </div>
 					

@@ -11,9 +11,9 @@
 </script>
 <?php
 use Cake\ORM\TableRegistry;
-$this->Events = TableRegistry::get('Events');
-$this->Heartevents = TableRegistry::get('Heartevents');
-$this->Eventsubmissions = TableRegistry::get('Eventsubmissions');
+$this->Events = TableRegistry::getTableLocator()->get('Events');
+$this->Heartevents = TableRegistry::getTableLocator()->get('Heartevents');
+$this->Eventsubmissions = TableRegistry::getTableLocator()->get('Eventsubmissions');
 ?>
 <div class="admin_loader" id="loaderID"><?php echo $this->Html->image('loader_large_blue.gif');?></div>
 <?php if (!$combinerequests->isEmpty()) { ?> 
@@ -111,12 +111,12 @@ $this->Eventsubmissions = TableRegistry::get('Eventsubmissions');
                 //'Delete' => "Delete",
             );
             ?>
-            <div class="list_sel"><?php echo $this->Form->input('action', ['options' => $arr, 'type'=>'select', 'label'=>false, 'class'=>"small form-control",'id'=>'action']);?></div>
+            <div class="list_sel"><?php echo $this->Form->control('action', ['options' => $arr, 'type'=>'select', 'label'=>false, 'class'=>"small form-control",'id'=>'action']);?></div>
             <button type="submit" class="small btn btn-success btn-cons btn-info" onclick="return ajaxActionFunction();" id="submit_action">OK</button>
         </div>
         <?php 
         if (isset($keyword) && $keyword != '') {
-            echo $this->Form->input('Conventionregistrations.keyword', ['label'=>false, 'type'=>'hidden', 'value'=>$keyword]);
+            echo $this->Form->control('Conventionregistrations.keyword', ['label'=>false, 'type'=>'hidden', 'value'=>$keyword]);
         }?>
         <?php echo $this->Form->end(); ?>
     

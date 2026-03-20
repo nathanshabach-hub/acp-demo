@@ -9,7 +9,7 @@ use Cake\Core\Configure\Engine\PhpConfig;
 class EvaluationtagsController extends AppController {
 
     public $paginate = ['limit' => 50, 'order' => ['Evaluationtags.name' => 'asc']];
-    var $components = array('RequestHandler', 'PImage', 'PImageTest');
+    public $components = ['RequestHandler', 'PImage', 'PImageTest'];
 
     //public $helpers = array('Javascript', 'Ajax');
 
@@ -17,8 +17,8 @@ class EvaluationtagsController extends AppController {
         parent::initialize();
         $this->loadComponent('Paginator');
         $this->loadComponent('Flash');
-        $action = $this->request->params['action'];
-        $loggedAdminId = $this->request->session()->read('admin_id');
+        $action = $this->request->getParam('action');
+        $loggedAdminId = $this->request->getSession()->read('admin_id');
         if ($action != 'forgotPassword' && $action != 'logout') {
             if (!$loggedAdminId && $action != "login" && $action != 'captcha') {
                 $this->redirect(['controller' => 'admins', 'action' => 'login']);
@@ -31,7 +31,7 @@ class EvaluationtagsController extends AppController {
     public function index() {
 
         $this->set('title', ADMIN_TITLE . 'Manage Tags');
-        $this->viewBuilder()->layout('admin');
+        $this->viewBuilder()->setLayout('admin');
         $this->set('manageEvaluations', '1');
         $this->set('tagsList', '1');
 
@@ -40,9 +40,10 @@ class EvaluationtagsController extends AppController {
         //$condition = array('Evaluationtags.parent_id' => 0);
 
         if ($this->request->is('post')) {
-            if (isset($this->request->data['action'])) {
-                $idList = implode(',', $this->request->data['chkRecordId']);
-                $action = $this->request->data['action'];
+            $requestData = $this->request->getData();
+            if (isset($requestData['action'])) {
+                $idList = implode(',', $requestData['chkRecordId']);
+                $action = $requestData['action'];
                 if ($idList) {
                     if ($action == "Activate") {
                         $this->Evaluationtags->updateAll(['status' => '1'], ["id IN ($idList)"]);
@@ -57,12 +58,12 @@ class EvaluationtagsController extends AppController {
                 }
             }
 
-            if (isset($this->request->data['Evaluationtags']['keyword']) && $this->request->data['Evaluationtags']['keyword'] != '') {
-                $keyword = trim($this->request->data['Evaluationtags']['keyword']);
+            if (isset($requestData['Evaluationtags']['keyword']) && $requestData['Evaluationtags']['keyword'] != '') {
+                $keyword = trim($requestData['Evaluationtags']['keyword']);
             }
-        } elseif ($this->request->params) {
-            if (isset($this->request->params['pass'][0]) && $this->request->params['pass'][0] != '') {
-                $searchArr = $this->request->params['pass'];
+        } elseif ($this->request->getParam('pass')) {
+            if (isset($this->request->getParam('pass')[0]) && $this->request->getParam('pass')[0] != '') {
+                $searchArr = $this->request->getParam('pass');
                 foreach ($searchArr as $val) {
                     if (strpos($val, ":") !== false) {
                         $vars = explode(":", $val);
@@ -83,7 +84,7 @@ class EvaluationtagsController extends AppController {
         $this->paginate = ['conditions' => $condition, 'limit' => 100, 'order' => ['Evaluationtags.id' => 'DESC']];
         $this->set('evaluationtags', $this->paginate($this->Evaluationtags));
         if ($this->request->is("ajax")) {
-            $this->viewBuilder()->layout(($this->request->is("ajax")) ? "" : "default");
+            $this->viewBuilder()->setLayout(($this->request->is("ajax")) ? "" : "default");
             $this->viewBuilder()->templatePath('Element' . DS . 'Admin/Evaluationtags');
             $this->render('index');
         }
@@ -91,7 +92,7 @@ class EvaluationtagsController extends AppController {
 
     public function add() {
         $this->set('title', ADMIN_TITLE . 'Add Tag');
-        $this->viewBuilder()->layout('admin');
+        $this->viewBuilder()->setLayout('admin');
 		
         $this->set('manageEvaluations', '1');
         $this->set('tagsList', '1');
@@ -99,13 +100,14 @@ class EvaluationtagsController extends AppController {
         $evaluationtags = $this->Evaluationtags->newEntity();
         if ($this->request->is('post')) {
 			
-			//$this->prx($this->request->data);
+			//$this->prx($this->request->getData());
+			$requestData = $this->request->getData();
 			
-            $data = $this->Evaluationtags->patchEntity($evaluationtags, $this->request->data, ['validate' => 'add']);
-            if (count($data->errors()) == 0) {
+            $data = $this->Evaluationtags->patchEntity($evaluationtags, $requestData, ['validate' => 'add']);
+            if (count($data->getErrors()) == 0) {
 
-				$slug = $this->getSlug($this->request->data['Evaluationtags']['name'] . ' ' . time(), 'Evaluationtags');
-                $data->name 			= trim($this->request->data['Evaluationtags']['name']);
+				$slug = $this->getSlug($requestData['Evaluationtags']['name'] . ' ' . time(), 'Evaluationtags');
+                $data->name 			= trim($requestData['Evaluationtags']['name']);
                 $data->slug 			= $slug;
                 $data->status 			= 1;
                 $data->created 			= date('Y-m-d H:i:s');
@@ -123,7 +125,7 @@ class EvaluationtagsController extends AppController {
 
     public function edit($slug = null) {
         $this->set('title', ADMIN_TITLE . 'Edit Tag');
-        $this->viewBuilder()->layout('admin');
+        $this->viewBuilder()->setLayout('admin');
         
 		$this->set('manageEvaluations', '1');
         $this->set('tagsList', '1');
@@ -135,10 +137,11 @@ class EvaluationtagsController extends AppController {
 		
         $evaluationtags = $this->Evaluationtags->get($uid);
         if ($this->request->is(['post', 'put'])) {
-            $data = $this->Evaluationtags->patchEntity($evaluationtags, $this->request->data, ['validate' => 'edit']);
+			$requestData = $this->request->getData();
+            $data = $this->Evaluationtags->patchEntity($evaluationtags, $requestData, ['validate' => 'edit']);
 			
-            if (count($data->errors()) == 0) {
-                $data->name = trim($this->request->data['Evaluationtags']['name']);
+            if (count($data->getErrors()) == 0) {
+                $data->name = trim($requestData['Evaluationtags']['name']);
 				$data->modified = date("Y-m-d H:i:s");
                 if ($this->Evaluationtags->save($data)) {
                     $this->Flash->success('Tag details updated successfully.');
@@ -153,7 +156,7 @@ class EvaluationtagsController extends AppController {
 	
 	public function activatetag($slug = null) {
         if ($slug != '') {
-            $this->viewBuilder()->layout("");
+            $this->viewBuilder()->setLayout("");
             $this->Evaluationtags->updateAll(['status' => '1','modified' => date("Y-m-d H:i:s")], ["slug" => $slug]);
             $this->set('action', '/admin/evaluationtags/deactivatetag/' . $slug);
             $this->set('status', 1);
@@ -164,7 +167,7 @@ class EvaluationtagsController extends AppController {
 
     public function deactivatetag($slug = null) {
         if ($slug != '') {
-            $this->viewBuilder()->layout("");
+            $this->viewBuilder()->setLayout("");
             $this->Evaluationtags->updateAll(['status' => '0','modified' => date("Y-m-d H:i:s")], ["slug" => $slug]);
             $this->set('action', '/admin/evaluationtags/activatetag/' . $slug);
             $this->set('status', 0);

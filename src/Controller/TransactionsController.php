@@ -6,7 +6,6 @@ use Cake\Datasource\ConnectionManager;
 use App\Controller\AppController;
 use Cake\Core\Configure;
 use Cake\Core\Configure\Engine\PhpConfig;
-use Cake\Mailer\Email;
 use Cake\I18n\I18n;
 
 class TransactionsController extends AppController {
@@ -40,11 +39,11 @@ class TransactionsController extends AppController {
         $this->schoolAdminLoginCheck();
 		
         $this->set("title_for_layout", "Payment Summary" . TITLE_FOR_PAGES);
-        $this->viewbuilder()->layout('home');
+        $this->viewBuilder()->setLayout('home');
         
 		$this->set('active_cr_students','active');
 
-		$user_id = $this->request->session()->read("user_id");
+		$user_id = $this->request->getSession()->read("user_id");
 		$userDetails = $this->Users->find()->where(['Users.id' => $user_id])->first();
         $this->set('userDetails', $userDetails);
 		
@@ -70,9 +69,9 @@ class TransactionsController extends AppController {
 		$transactionStatus = 0;
 		
 		
-		if($this->request->session()->read("sess_selected_convention_registration_id")>0)
+		if($this->request->getSession()->read("sess_selected_convention_registration_id")>0)
 		{
-			$sess_selected_convention_registration_id = $this->request->session()->read("sess_selected_convention_registration_id");
+			$sess_selected_convention_registration_id = $this->request->getSession()->read("sess_selected_convention_registration_id");
 			$CRDetails = $this->Conventionregistrations->find()->where(['Conventionregistrations.id' => $sess_selected_convention_registration_id])->first();
 			
 			// to get price of supervisor registration
@@ -209,9 +208,9 @@ class TransactionsController extends AppController {
 		
 		if ($this->request->is('post'))
 		{
-			//$this->prx($this->request->data);
+			//$this->prx($this->request->getData());
 			
-			$payType = $this->request->data['hidd_pay_type'];
+			$payType = $this->request->getData()['hidd_pay_type'];
 			
 			if($payType == "online")
 			{
@@ -293,7 +292,7 @@ class TransactionsController extends AppController {
 					
 					// add new record to transactionstudents table
 					$transactionstudents = $this->Transactionstudents->newEntity();
-					$dataTS = $this->Transactionstudents->patchEntity($transactionstudents, $this->request->data);
+					$dataTS = $this->Transactionstudents->patchEntity($transactionstudents, $this->request->getData());
 					
 					$dataTS->transaction_id							= $transaction_id;
 					$dataTS->conventionregistration_id				= $sess_selected_convention_registration_id;
@@ -334,7 +333,7 @@ class TransactionsController extends AppController {
 				{
 					// add new record to Transactionteachers table
 					$transactionteachers = $this->Transactionteachers->newEntity();
-					$dataTT = $this->Transactionteachers->patchEntity($transactionteachers, $this->request->data);
+					$dataTT = $this->Transactionteachers->patchEntity($transactionteachers, $this->request->getData());
 					
 					$dataTT->transaction_id							= $transaction_id;
 					$dataTT->conventionregistration_id				= $sess_selected_convention_registration_id;
@@ -387,16 +386,16 @@ class TransactionsController extends AppController {
 		$this->userLoginCheck();
         $this->schoolAdminLoginCheck();
 		
-		$user_id = $this->request->session()->read("user_id");
+		$user_id = $this->request->getSession()->read("user_id");
 		$userDetails = $this->Users->find()->where(['Users.id' => $user_id])->first();
         $this->set('userDetails', $userDetails);
 		
 		// to get admin details
 		$settingsInfo = $this->getSettingsInfo();
 		
-		if($this->request->session()->read("sess_selected_convention_registration_id")>0)
+		if($this->request->getSession()->read("sess_selected_convention_registration_id")>0)
 		{
-			$sess_selected_convention_registration_id = $this->request->session()->read("sess_selected_convention_registration_id");
+			$sess_selected_convention_registration_id = $this->request->getSession()->read("sess_selected_convention_registration_id");
 		}
 		else
 		{
@@ -436,15 +435,7 @@ class TransactionsController extends AppController {
 			
 			//echo $messageToSend; exit;
 			
-			$email = new Email();
-			$email->template('default', 'admintemplate')
-				->emailFormat('html')
-				->to($emailId)
-				->cc(ACCOUNTS_TEAM_ANOTHER_EMAIL)
-				->from([HEADERS_FROM_EMAIL => HEADERS_FROM_NAME])
-				->subject($subjectToSend)
-				->viewVars(['content_for_layout' => $messageToSend])
-				->send();
+			$this->sendLegacyHtmlEmail($emailId, $subjectToSend, $messageToSend, [HEADERS_FROM_EMAIL => HEADERS_FROM_NAME], ACCOUNTS_TEAM_ANOTHER_EMAIL);
 			
 			
 			
@@ -531,15 +522,7 @@ class TransactionsController extends AppController {
 		$subjectToSend = 'Function - paymentsuccess - To test live payment '.time();
 		$messageToSend = 'Request data = '.json_encode($_REQUEST);
 		
-		$email = new Email();
-		$email->template('default', 'admintemplate')
-			->emailFormat('html')
-			->to($emailId)
-			->cc(HEADERS_CC)
-			->from([HEADERS_FROM_EMAIL => HEADERS_FROM_NAME])
-			->subject($subjectToSend)
-			->viewVars(['content_for_layout' => $messageToSend])
-			->send();
+		$this->sendLegacyHtmlEmail($emailId, $subjectToSend, $messageToSend, [HEADERS_FROM_EMAIL => HEADERS_FROM_NAME], HEADERS_CC);
 		/* For Testing - ends */
 
 		$this->redirect(['controller'=>'users', 'action' => 'dashboard']);
@@ -576,15 +559,7 @@ class TransactionsController extends AppController {
 		$messageToSend .= '<br><br>Post array = '.json_encode($_POST);
 		$messageToSend .= '<br><br>Request array = '.json_encode($_REQUEST);
 		
-		$email = new Email();
-		$email->template('default', 'admintemplate')
-			->emailFormat('html')
-			->to($emailId)
-			->cc(HEADERS_CC)
-			->from([HEADERS_FROM_EMAIL => HEADERS_FROM_NAME])
-			->subject($subjectToSend)
-			->viewVars(['content_for_layout' => $messageToSend])
-			->send();
+		$this->sendLegacyHtmlEmail($emailId, $subjectToSend, $messageToSend, [HEADERS_FROM_EMAIL => HEADERS_FROM_NAME], HEADERS_CC);
 		/* For Testing - ends */
 
         
@@ -661,15 +636,7 @@ class TransactionsController extends AppController {
 		$messageToSend .= '<br><br>ch = '.json_encode($ch);
 		$messageToSend .= '<br><br>tokens = '.json_encode($tokens);
 		
-		$email = new Email();
-		$email->template('default', 'admintemplate')
-			->emailFormat('html')
-			->to($emailId)
-			->cc(HEADERS_CC)
-			->from([HEADERS_FROM_EMAIL => HEADERS_FROM_NAME])
-			->subject($subjectToSend)
-			->viewVars(['content_for_layout' => $messageToSend])
-			->send();
+		$this->sendLegacyHtmlEmail($emailId, $subjectToSend, $messageToSend, [HEADERS_FROM_EMAIL => HEADERS_FROM_NAME], HEADERS_CC);
 		/* For Testing - ends */
 		
 		
@@ -687,15 +654,7 @@ class TransactionsController extends AppController {
 				$messageToSend = 'payment_status = '.json_encode($payment_status);
 				$messageToSend = 'res = '.json_encode($res);
 				
-				$email = new Email();
-				$email->template('default', 'admintemplate')
-					->emailFormat('html')
-					->to($emailId)
-					->cc(HEADERS_CC)
-					->from([HEADERS_FROM_EMAIL => HEADERS_FROM_NAME])
-					->subject($subjectToSend)
-					->viewVars(['content_for_layout' => $messageToSend])
-					->send();
+				$this->sendLegacyHtmlEmail($emailId, $subjectToSend, $messageToSend, [HEADERS_FROM_EMAIL => HEADERS_FROM_NAME], HEADERS_CC);
 				/* For Testing - ends */
 				
 				
@@ -722,15 +681,7 @@ class TransactionsController extends AppController {
 				
 				//echo $messageToSend; exit;
 				
-				$email = new Email();
-				$email->template('default', 'admintemplate')
-					->emailFormat('html')
-					->to($emailId)
-					->cc(HEADERS_CC)
-					->from([HEADERS_FROM_EMAIL => HEADERS_FROM_NAME])
-					->subject($subjectToSend)
-					->viewVars(['content_for_layout' => $messageToSend])
-					->send();
+				$this->sendLegacyHtmlEmail($emailId, $subjectToSend, $messageToSend, [HEADERS_FROM_EMAIL => HEADERS_FROM_NAME], HEADERS_CC);
 					
 				
 				/* 2. Send payment confirmation email to accounts team */
@@ -748,15 +699,7 @@ class TransactionsController extends AppController {
 				
 				//echo $messageToSend; exit;
 				
-				$email = new Email();
-				$email->template('default', 'admintemplate')
-					->emailFormat('html')
-					->to($emailId)
-					->cc(ACCOUNTS_TEAM_ANOTHER_EMAIL)
-					->from([HEADERS_FROM_EMAIL => HEADERS_FROM_NAME])
-					->subject($subjectToSend)
-					->viewVars(['content_for_layout' => $messageToSend])
-					->send();
+				$this->sendLegacyHtmlEmail($emailId, $subjectToSend, $messageToSend, [HEADERS_FROM_EMAIL => HEADERS_FROM_NAME], ACCOUNTS_TEAM_ANOTHER_EMAIL);
 				
 				/* EMAIL CODE ends */
 			
@@ -822,15 +765,7 @@ class TransactionsController extends AppController {
 				
 				//echo $messageToSend; exit;
 				
-				$email = new Email();
-				$email->template('default', 'admintemplate')
-					->emailFormat('html')
-					->to($emailId)
-					->cc(HEADERS_CC)
-					->from([HEADERS_FROM_EMAIL => HEADERS_FROM_NAME])
-					->subject($subjectToSend)
-					->viewVars(['content_for_layout' => $messageToSend])
-					->send();
+				$this->sendLegacyHtmlEmail($emailId, $subjectToSend, $messageToSend, [HEADERS_FROM_EMAIL => HEADERS_FROM_NAME], HEADERS_CC);
 					
 				
 				/* 2. Send invoice request received email to accounts team */
@@ -848,15 +783,7 @@ class TransactionsController extends AppController {
 				
 				//echo $messageToSend; exit;
 				
-				$email = new Email();
-				$email->template('default', 'admintemplate')
-					->emailFormat('html')
-					->to($emailId)
-					->cc(ACCOUNTS_TEAM_ANOTHER_EMAIL)
-					->from([HEADERS_FROM_EMAIL => HEADERS_FROM_NAME])
-					->subject($subjectToSend)
-					->viewVars(['content_for_layout' => $messageToSend])
-					->send();
+				$this->sendLegacyHtmlEmail($emailId, $subjectToSend, $messageToSend, [HEADERS_FROM_EMAIL => HEADERS_FROM_NAME], ACCOUNTS_TEAM_ANOTHER_EMAIL);
 				
 				/* EMAIL CODE ends */
 				
@@ -881,7 +808,7 @@ class TransactionsController extends AppController {
         $this->schoolAdminLoginCheck();
 		
         $this->set("title_for_layout", "Transactions List" . TITLE_FOR_PAGES);
-        $this->viewbuilder()->layout('home');
+        $this->viewBuilder()->setLayout('home');
         
 		$this->set('active_transactions','active');
 		
@@ -893,7 +820,7 @@ class TransactionsController extends AppController {
 		
         $msgString = '';
 
-		$user_id = $this->request->session()->read("user_id");
+		$user_id = $this->request->getSession()->read("user_id");
 		$userDetails = $this->Users->find()->where(['Users.id' => $user_id])->first();
         $this->set('userDetails', $userDetails);
 
@@ -903,9 +830,9 @@ class TransactionsController extends AppController {
 		$condition[] = "(Transactions.user_id = '".$user_id."')";
 
         if ($this->request->is('post')) {
-            if (isset($this->request->data['action'])) {
-                $idList = implode(',', $this->request->data['chkRecordId']);
-                $action = $this->request->data['action'];
+            if (isset($this->request->getData()['action'])) {
+                $idList = implode(',', $this->request->getData()['chkRecordId']);
+                $action = $this->request->getData()['action'];
                 if ($idList) {
                     if ($action == "Activate") {
                         $this->Transactions->updateAll(['status' => '1'], ["id IN ($idList)"]);
@@ -920,12 +847,12 @@ class TransactionsController extends AppController {
                 }
             }
 
-            if (isset($this->request->data['Transactions']['keyword']) && $this->request->data['Transactions']['keyword'] != '') {
-                $keyword = trim($this->request->data['Transactions']['keyword']);
+            if (isset($this->request->getData()['Transactions']['keyword']) && $this->request->getData()['Transactions']['keyword'] != '') {
+                $keyword = trim($this->request->getData()['Transactions']['keyword']);
             }
-        } elseif ($this->request->params) {
-            if (isset($this->request->params['pass'][0]) && $this->request->params['pass'][0] != '') {
-                $searchArr = $this->request->params['pass'];
+        } elseif ($this->request->getParam('pass')) {
+            if (isset($this->request->getParam('pass')[0]) && $this->request->getParam('pass')[0] != '') {
+                $searchArr = $this->request->getParam('pass');
                 foreach ($searchArr as $val) {
                     if (strpos($val, ":") !== false) {
                         $vars = explode(":", $val);
@@ -946,7 +873,7 @@ class TransactionsController extends AppController {
         $this->paginate = ['contain' => ['Conventions','Users'], 'conditions' => $condition, 'limit' => 50, 'order' => ['Transactions.id' => 'DESC']];
         $this->set('transactions', $this->paginate($this->Transactions));
         if ($this->request->is("ajax")) {
-            $this->viewBuilder()->layout(($this->request->is("ajax")) ? "" : "default");
+            $this->viewBuilder()->setLayout(($this->request->is("ajax")) ? "" : "default");
             $this->viewBuilder()->templatePath('Element' . DS . 'Transactions');
             $this->render('mytransactions');
         }
@@ -958,7 +885,7 @@ class TransactionsController extends AppController {
 		$this->schoolAdminLoginCheck();
 		
 		//echo ' fsdf sdf sdf d';exit;
-		$this->viewbuilder()->layout("home");
+		$this->viewBuilder()->setLayout("home");
         $this->set("title_for_layout", "Transaction Details " . TITLE_FOR_PAGES);
 		
 		$this->set('active_transactions','active');
@@ -971,7 +898,7 @@ class TransactionsController extends AppController {
 		
         $msgString = '';
 
-		$user_id = $this->request->session()->read("user_id");
+		$user_id = $this->request->getSession()->read("user_id");
 		$userDetails = $this->Users->find()->where(['Users.id' => $user_id])->first();
         $this->set('userDetails', $userDetails);
 		

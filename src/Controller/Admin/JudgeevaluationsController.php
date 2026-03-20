@@ -10,7 +10,7 @@ use Cake\Datasource\ConnectionManager;
 class JudgeevaluationsController extends AppController {
 
     public $paginate = ['limit' => 50, 'order' => ['Conventions.name' => 'asc']];
-    var $components = array('RequestHandler', 'PImage', 'PImageTest');
+    public $components = ['RequestHandler', 'PImage', 'PImageTest'];
 
     //public $helpers = array('Javascript', 'Ajax');
 
@@ -18,8 +18,8 @@ class JudgeevaluationsController extends AppController {
         parent::initialize();
         $this->loadComponent('Paginator');
         $this->loadComponent('Flash');
-        $action = $this->request->params['action'];
-        $loggedAdminId = $this->request->session()->read('admin_id');
+        $action = $this->request->getParam('action');
+        $loggedAdminId = $this->request->getSession()->read('admin_id');
         if ($action != 'forgotPassword' && $action != 'logout') {
             if (!$loggedAdminId && $action != "login" && $action != 'captcha') {
                 $this->redirect(['controller' => 'admins', 'action' => 'login']);
@@ -39,7 +39,7 @@ class JudgeevaluationsController extends AppController {
 	public function index() {
 
         $this->set('title', ADMIN_TITLE . 'Judge Evaluations');
-        $this->viewBuilder()->layout('admin');
+        $this->viewBuilder()->setLayout('admin');
         $this->set('judgeEvaluations', '1');
         $this->set('judgeEvaluationsList', '1');
 		
@@ -61,16 +61,17 @@ class JudgeevaluationsController extends AppController {
         $condition = array();
 		
 		// to check if conv season selected from header then filter list
-		$sess_admin_header_season_id = $this->request->session()->read("sess_admin_header_season_id");
+		$sess_admin_header_season_id = $this->request->getSession()->read("sess_admin_header_season_id");
 		if($sess_admin_header_season_id>0)
 		{
 			$condition[] = "(Judgeevaluations.conventionseason_id = '".$sess_admin_header_season_id."')";
 		}
 		
 		if ($this->request->is('post')) {
-            if (isset($this->request->data['action'])) {
-                $idList = implode(',', $this->request->data['chkRecordId']);
-                $action = $this->request->data['action'];
+            $requestData = $this->request->getData();
+            if (isset($requestData['action'])) {
+                $idList = implode(',', $requestData['chkRecordId']);
+                $action = $requestData['action'];
                 if ($idList) {
                     if ($action == "Activate") {
                         $this->Judgeevaluations->updateAll(['status' => '1'], ["id IN ($idList)"]);
@@ -85,18 +86,18 @@ class JudgeevaluationsController extends AppController {
                 }
             }
 
-            if (isset($this->request->data['Judgeevaluations']['convention_id']) && $this->request->data['Judgeevaluations']['convention_id'] != '') {
-                $convention_id = trim($this->request->data['Judgeevaluations']['convention_id']);
+            if (isset($requestData['Judgeevaluations']['convention_id']) && $requestData['Judgeevaluations']['convention_id'] != '') {
+                $convention_id = trim($requestData['Judgeevaluations']['convention_id']);
             }
-			if (isset($this->request->data['Judgeevaluations']['season_year']) && $this->request->data['Judgeevaluations']['season_year'] != '') {
-                $season_year = trim($this->request->data['Judgeevaluations']['season_year']);
+			if (isset($requestData['Judgeevaluations']['season_year']) && $requestData['Judgeevaluations']['season_year'] != '') {
+				$season_year = trim($requestData['Judgeevaluations']['season_year']);
             }
-			if (isset($this->request->data['Judgeevaluations']['event_id']) && $this->request->data['Judgeevaluations']['event_id'] != '') {
-                $event_id = trim($this->request->data['Judgeevaluations']['event_id']);
+			if (isset($requestData['Judgeevaluations']['event_id']) && $requestData['Judgeevaluations']['event_id'] != '') {
+				$event_id = trim($requestData['Judgeevaluations']['event_id']);
             }
-        } elseif ($this->request->params) {
-            if (isset($this->request->params['pass'][0]) && $this->request->params['pass'][0] != '') {
-                $searchArr = $this->request->params['pass'];
+        } elseif ($this->request->getParam('pass')) {
+            if (isset($this->request->getParam('pass')[0]) && $this->request->getParam('pass')[0] != '') {
+                $searchArr = $this->request->getParam('pass');
                 foreach ($searchArr as $val) {
                     if (strpos($val, ":") !== false) {
                         $vars = explode(":", $val);
@@ -129,7 +130,7 @@ class JudgeevaluationsController extends AppController {
         $this->paginate = ['contain' => ['Eventsubmissions','Conventionregistrations','Conventions','Events','Students','Schools','Judge','Judgeevaluationmarks'], 'conditions' => $condition, 'limit' => 1000000000, 'order' => ['Judgeevaluations.id' => 'DESC']];
         $this->set('judgeevaluations', $this->paginate($this->Judgeevaluations));
         if ($this->request->is("ajax")) {
-            $this->viewBuilder()->layout(($this->request->is("ajax")) ? "" : "default");
+            $this->viewBuilder()->setLayout(($this->request->is("ajax")) ? "" : "default");
             $this->viewBuilder()->templatePath('Element' . DS . 'Admin/Judgeevaluations');
             $this->render('index');
         } */
@@ -161,7 +162,7 @@ class JudgeevaluationsController extends AppController {
 	public function timesscoreedit($evaluation_slug = null) {
 		
 		$this->set('title', ADMIN_TITLE . 'Edit Times Score');
-        $this->viewBuilder()->layout('admin');
+        $this->viewBuilder()->setLayout('admin');
         $this->set('judgeEvaluations', '1');
         $this->set('judgeEvaluationsList', '1');
 		
@@ -174,13 +175,14 @@ class JudgeevaluationsController extends AppController {
         $judgeevaluations = $this->Judgeevaluations->get($uid);
         if ($this->request->is(['post', 'put']))
 		{
-			//$this->prx($this->request->data);
+            //$this->prx($this->request->getData());
+            $requestData = $this->request->getData();
 			
 			$this->Judgeevaluations->updateAll(
 			[
-				'time_score' 		=> $this->request->data['Judgeevaluations']['time_score'],
-				'place' 			=> $this->request->data['Judgeevaluations']['place'],
-				'withdraw_yes_no' 	=> $this->request->data['Judgeevaluations']['withdraw_yes_no'],
+                'time_score' 		=> $requestData['Judgeevaluations']['time_score'],
+                'place' 			=> $requestData['Judgeevaluations']['place'],
+                'withdraw_yes_no' 	=> $requestData['Judgeevaluations']['withdraw_yes_no'],
 				'modified'			=> date("Y-m-d H:i:s")
 			], 
 			['slug' => $evaluation_slug]

@@ -56,7 +56,7 @@ if(empty($users->user_timezone))
 					<div class="form-group">
                       <label class="col-sm-2 control-label">CSV File <span class="require">*</span></label>
                       <div class="col-sm-10">
-                          <?php echo $this->Form->input('Users.csv_file', ['id'=>'csv_file', 'label'=>false, 'type'=>'file',  'div'=>false, 'class'=>'form-control required', 'placeholder'=>'CSV File', 'onchange'=>'imageValidation()']); ?>
+                          <?php echo $this->Form->control('Users.csv_file', ['id'=>'csv_file', 'label'=>false, 'type'=>'file',  'div'=>false, 'class'=>'form-control required', 'placeholder'=>'CSV File', 'onchange'=>'imageValidation()']); ?>
                       </div>
                     </div>
 					

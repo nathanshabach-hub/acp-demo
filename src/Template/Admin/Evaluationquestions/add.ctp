@@ -41,14 +41,14 @@
 					<div class="form-group">
                       <label class="col-sm-2 control-label">Question <span class="require">*</span></label>
                       <div class="col-sm-10">
-                          <?php echo $this->Form->input('Evaluationquestions.question', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required', 'placeholder'=>'Question', 'autocomplete'=>'off']); ?>
+                          <?php echo $this->Form->control('Evaluationquestions.question', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required', 'placeholder'=>'Question', 'autocomplete'=>'off']); ?>
                       </div>
                     </div>
 					
 					<div class="form-group">
                       <label class="col-sm-2 control-label">Max Points <span class="require">*</span></label>
                       <div class="col-sm-10">
-                          <?php echo $this->Form->input('Evaluationquestions.max_points', ['label'=>false, 'type'=>'number',  'div'=>false, 'class'=>'form-control required', 'placeholder'=>'Max Points', 'autocomplete'=>'off']); ?>
+                          <?php echo $this->Form->control('Evaluationquestions.max_points', ['label'=>false, 'type'=>'number',  'div'=>false, 'class'=>'form-control required', 'placeholder'=>'Max Points', 'autocomplete'=>'off']); ?>
                       </div>
                     </div>
 					

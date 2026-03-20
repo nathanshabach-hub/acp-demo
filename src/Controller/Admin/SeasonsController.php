@@ -9,7 +9,7 @@ use Cake\Core\Configure\Engine\PhpConfig;
 class SeasonsController extends AppController {
 
     public $paginate = ['limit' => 50, 'order' => ['Seasons.name' => 'asc']];
-    var $components = array('RequestHandler', 'PImage', 'PImageTest');
+    public $components = ['RequestHandler', 'PImage', 'PImageTest'];
 
     //public $helpers = array('Javascript', 'Ajax');
 
@@ -17,8 +17,8 @@ class SeasonsController extends AppController {
         parent::initialize();
         $this->loadComponent('Paginator');
         $this->loadComponent('Flash');
-        $action = $this->request->params['action'];
-        $loggedAdminId = $this->request->session()->read('admin_id');
+        $action = $this->request->getParam('action');
+        $loggedAdminId = $this->request->getSession()->read('admin_id');
         if ($action != 'forgotPassword' && $action != 'logout') {
             if (!$loggedAdminId && $action != "login" && $action != 'captcha') {
                 $this->redirect(['controller' => 'admins', 'action' => 'login']);
@@ -32,7 +32,7 @@ class SeasonsController extends AppController {
     public function index() {
 
         $this->set('title', ADMIN_TITLE . 'Manage Seasons');
-        $this->viewBuilder()->layout('admin');
+        $this->viewBuilder()->setLayout('admin');
         $this->set('manageSeasons', '1');
         $this->set('seasonList', '1');
 
@@ -41,9 +41,9 @@ class SeasonsController extends AppController {
         //$condition = array('Seasons.parent_id' => 0);
 
         if ($this->request->is('post')) {
-            if (isset($this->request->data['action'])) {
-                $idList = implode(',', $this->request->data['chkRecordId']);
-                $action = $this->request->data['action'];
+            if (isset($this->request->getData()['action'])) {
+                $idList = implode(',', $this->request->getData()['chkRecordId']);
+                $action = $this->request->getData()['action'];
                 if ($idList) {
                     if ($action == "Activate") {
                         $this->Seasons->updateAll(['status' => '1'], ["id IN ($idList)"]);
@@ -58,12 +58,12 @@ class SeasonsController extends AppController {
                 }
             }
 
-            if (isset($this->request->data['Seasons']['keyword']) && $this->request->data['Seasons']['keyword'] != '') {
-                $keyword = trim($this->request->data['Seasons']['keyword']);
+            if (isset($this->request->getData()['Seasons']['keyword']) && $this->request->getData()['Seasons']['keyword'] != '') {
+                $keyword = trim($this->request->getData()['Seasons']['keyword']);
             }
-        } elseif ($this->request->params) {
-            if (isset($this->request->params['pass'][0]) && $this->request->params['pass'][0] != '') {
-                $searchArr = $this->request->params['pass'];
+        } elseif ($this->request->getParam('pass')) {
+            if (isset($this->request->getParam('pass')[0]) && $this->request->getParam('pass')[0] != '') {
+                $searchArr = $this->request->getParam('pass');
                 foreach ($searchArr as $val) {
                     if (strpos($val, ":") !== false) {
                         $vars = explode(":", $val);
@@ -84,7 +84,7 @@ class SeasonsController extends AppController {
         $this->paginate = ['conditions' => $condition, 'limit' => 20, 'order' => ['Seasons.season_year' => 'DESC']];
         $this->set('seasons', $this->paginate($this->Seasons));
         if ($this->request->is("ajax")) {
-            $this->viewBuilder()->layout(($this->request->is("ajax")) ? "" : "default");
+            $this->viewBuilder()->setLayout(($this->request->is("ajax")) ? "" : "default");
             $this->viewBuilder()->templatePath('Element' . DS . 'Admin/Seasons');
             $this->render('index');
         }
@@ -133,7 +133,7 @@ class SeasonsController extends AppController {
 
     public function add() {
         $this->set('title', ADMIN_TITLE . 'Add Season');
-        $this->viewBuilder()->layout('admin');
+        $this->viewBuilder()->setLayout('admin');
 		
         $this->set('manageSeasons', '1');
         $this->set('seasonAdd', '1');
@@ -141,11 +141,11 @@ class SeasonsController extends AppController {
         $seasons = $this->Seasons->newEntity();
         if ($this->request->is('post')) {
 			
-			//$this->prx($this->request->data);
+			//$this->prx($this->request->getData());
 			
 			$flagC = 1;
 			
-			$seasonYear = $this->request->data['Seasons']['season_year'];
+			$seasonYear = $this->request->getData()['Seasons']['season_year'];
 			
 			if($seasonYear<2023 || $seasonYear>2030)
 			{
@@ -153,10 +153,10 @@ class SeasonsController extends AppController {
 				$this->Flash->error('Season year must be in between 2023 and 2030.');
 			}
 			
-            $data = $this->Seasons->patchEntity($seasons, $this->request->data, ['validate' => 'add']);
-            if (count($data->errors()) == 0 && $flagC == 1) {
+            $data = $this->Seasons->patchEntity($seasons, $this->request->getData(), ['validate' => 'add']);
+            if (count($data->getErrors()) == 0 && $flagC == 1) {
 
-				$slug = 'season-'.$this->request->data['Seasons']['season_year'];
+				$slug = 'season-'.$this->request->getData()['Seasons']['season_year'];
 				
                 $data->slug = $slug;
                 $data->status = 1;
@@ -177,7 +177,7 @@ class SeasonsController extends AppController {
         $this->redirect(['controller' => 'seasons', 'action' => 'index']);
 		
 		$this->set('title', ADMIN_TITLE . 'Edit Season');
-        $this->viewBuilder()->layout('admin');
+        $this->viewBuilder()->setLayout('admin');
         
 		$this->set('manageSeasons', '1');
         $this->set('seasonList', '1');
@@ -192,11 +192,11 @@ class SeasonsController extends AppController {
 		
         $seasons = $this->Seasons->get($uid);
         if ($this->request->is(['post', 'put'])) {
-            $data = $this->Seasons->patchEntity($seasons, $this->request->data);
+            $data = $this->Seasons->patchEntity($seasons, $this->request->getData());
 			
 			$flagC = 1;
 			
-			$seasonYear = $this->request->data['Seasons']['season_year'];
+			$seasonYear = $this->request->getData()['Seasons']['season_year'];
 			
 			if($seasonYear<2023 || $seasonYear>2030)
 			{
@@ -204,8 +204,8 @@ class SeasonsController extends AppController {
 				$this->Flash->error('Season year must be in between 2023 and 2030.');
 			}
 			
-            if (count($data->errors()) == 0 && $flagC == 1) {
-                $data->season_name = trim($this->request->data['Seasons']['season_name']);
+            if (count($data->getErrors()) == 0 && $flagC == 1) {
+                $data->season_name = trim($this->request->getData()['Seasons']['season_name']);
 				$data->modified = date("Y-m-d");
                 if ($this->Seasons->save($data)) {
                     $this->Flash->success('Season details updated successfully.');
@@ -220,7 +220,7 @@ class SeasonsController extends AppController {
 	
 	public function activateseason($slug = null) {
         if ($slug != '') {
-            $this->viewBuilder()->layout("");
+            $this->viewBuilder()->setLayout("");
             $this->Seasons->updateAll(['status' => '1'], ["slug" => $slug]);
             $this->set('action', '/admin/seasons/deactivateseason/' . $slug);
             $this->set('status', 1);
@@ -231,7 +231,7 @@ class SeasonsController extends AppController {
 
     public function deactivateseason($slug = null) {
         if ($slug != '') {
-            $this->viewBuilder()->layout("");
+            $this->viewBuilder()->setLayout("");
             $this->Seasons->updateAll(['status' => '0'], ["slug" => $slug]);
             $this->set('action', '/admin/seasons/activateseason/' . $slug);
             $this->set('status', 0);

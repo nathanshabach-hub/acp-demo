@@ -25,7 +25,7 @@ $(document).ready(function () {
 							<div>
 								<div class="lables">
 									<span class="mb-0 me-1 col-4">Email Address</span>
-									<?php echo $this->Form->input('Users.email_address', ['label'=>false, 'type'=>'text', 'autocomplete'=>'off', 'div'=>false, 'class'=>'form-control required email', 'placeholder'=>'Email Address']); ?>
+									<?php echo $this->Form->control('Users.email_address', ['label'=>false, 'type'=>'text', 'autocomplete'=>'off', 'div'=>false, 'class'=>'form-control required email', 'placeholder'=>'Email Address']); ?>
 								</div>
 								
 								<div class="lables">

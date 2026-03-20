@@ -1,7 +1,7 @@
 <?php
 use Cake\ORM\TableRegistry;
-$this->Eventsubmissions = TableRegistry::get('Eventsubmissions');
-$this->Judgeevaluations = TableRegistry::get('Judgeevaluations');
+$this->Eventsubmissions = TableRegistry::getTableLocator()->get('Eventsubmissions');
+$this->Judgeevaluations = TableRegistry::getTableLocator()->get('Judgeevaluations');
 ?>
 <div class="admin_loader" id="loaderID"><?php echo $this->Html->image('loader_large_blue.gif');?></div>
 <?php if (!$events->isEmpty()) { ?> 
@@ -61,7 +61,7 @@ $this->Judgeevaluations = TableRegistry::get('Judgeevaluations');
 							// to check if this entry has been marked or not
 							$condCheckMark = array();
 							$condCheckMark[] = "(Judgeevaluations.eventsubmission_id = '".$eventsub->id."')";
-							$condCheckMark[] = "(Judgeevaluations.uploaded_by_user_id = '".$this->request->session()->read("user_id")."')";
+							$condCheckMark[] = "(Judgeevaluations.uploaded_by_user_id = '".$this->request->getSession()->read("user_id")."')";
 							$checkEntryMark = $this->Judgeevaluations->find()->where($condCheckMark)->first();
 							if($checkEntryMark)
 							{

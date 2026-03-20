@@ -6,7 +6,6 @@
 namespace App\View\Helper;
 
 use Cake\View\Helper;
-use Cake\Controller\Component;
 class AuthHelper extends Helper
 {
     /**
@@ -24,7 +23,7 @@ class AuthHelper extends Helper
      */
     public function beforeRender()
     {
-        $this->_user = $this->request->Session()->read('Auth');
+        $this->_user = $this->getView()->getRequest()->getSession()->read('Auth');
     }
     /**
      * Get the current user.

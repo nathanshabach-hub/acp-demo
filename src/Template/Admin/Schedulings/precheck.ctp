@@ -1,6 +1,6 @@
 <?php
 use Cake\ORM\TableRegistry;
-$this->Events = TableRegistry::get('Events');
+$this->Events = TableRegistry::getTableLocator()->get('Events');
 ?>
 <script type="text/javascript">
     $(document).ready(function() {

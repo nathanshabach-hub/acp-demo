@@ -5,12 +5,11 @@ namespace App\Controller\Admin;
 use App\Controller\AppController;
 use Cake\Core\Configure;
 use Cake\Core\Configure\Engine\PhpConfig;
-use Cake\Mailer\Email;
 
 class NametagsController extends AppController {
 
     public $paginate = ['limit' => 50, 'order' => ['Conventionregistrations.name' => 'asc']];
-    var $components = array('RequestHandler', 'PImage', 'PImageTest');
+    public $components = ['RequestHandler', 'PImage', 'PImageTest'];
 
     //public $helpers = array('Javascript', 'Ajax');
 
@@ -18,8 +17,8 @@ class NametagsController extends AppController {
         parent::initialize();
         $this->loadComponent('Paginator');
         $this->loadComponent('Flash');
-        $action = $this->request->params['action'];
-        $loggedAdminId = $this->request->session()->read('admin_id');
+		$action = $this->request->getParam('action');
+        $loggedAdminId = $this->request->getSession()->read('admin_id');
         if ($action != 'forgotPassword' && $action != 'logout') {
             if (!$loggedAdminId && $action != "login" && $action != 'captcha') {
                 $this->redirect(['controller' => 'admins', 'action' => 'login']);
@@ -40,7 +39,7 @@ class NametagsController extends AppController {
     public function students() {
 
         $this->set('title', ADMIN_TITLE . 'Name Tags - Students');
-        $this->viewBuilder()->layout('admin');
+        $this->viewBuilder()->setLayout('admin');
         $this->set('nameTags', '1');
         $this->set('nameTagsStudents', '1');
 
@@ -49,7 +48,7 @@ class NametagsController extends AppController {
         //$condition = array('Conventionregistrations.parent_id' => 0);
 		
 		// to check if conv season selected from header then filter list
-		$sess_admin_header_season_id = $this->request->session()->read("sess_admin_header_season_id");
+		$sess_admin_header_season_id = $this->request->getSession()->read("sess_admin_header_season_id");
 		if($sess_admin_header_season_id>0)
 		{
 			// to get details of convention Season
@@ -75,11 +74,11 @@ class NametagsController extends AppController {
 	
 	public function printnametagsstudents() {
 
-        $this->viewBuilder()->layout('');
+        $this->viewBuilder()->setLayout('');
 		
 		$condition = array();
 		
-		$sess_admin_header_season_id = $this->request->session()->read("sess_admin_header_season_id");
+		$sess_admin_header_season_id = $this->request->getSession()->read("sess_admin_header_season_id");
 		if($sess_admin_header_season_id>0)
 		{
 			// to get details of convention Season
@@ -104,7 +103,7 @@ class NametagsController extends AppController {
 	public function sponsors() {
 
         $this->set('title', ADMIN_TITLE . 'Name Tags - Sponsors');
-        $this->viewBuilder()->layout('admin');
+        $this->viewBuilder()->setLayout('admin');
         $this->set('nameTags', '1');
         $this->set('nameTagsSponsors', '1');
 
@@ -113,7 +112,7 @@ class NametagsController extends AppController {
         //$condition = array('Conventionregistrations.parent_id' => 0);
 		
 		// to check if conv season selected from header then filter list
-		$sess_admin_header_season_id = $this->request->session()->read("sess_admin_header_season_id");
+		$sess_admin_header_season_id = $this->request->getSession()->read("sess_admin_header_season_id");
 		if($sess_admin_header_season_id>0)
 		{
 			// to get details of convention Season
@@ -139,12 +138,12 @@ class NametagsController extends AppController {
 	
 	public function printnametagssponsors() {
 		
-        $this->viewBuilder()->layout('');
+        $this->viewBuilder()->setLayout('');
 		
 		$condition = array();
 		
 		// to check if conv season selected from header then filter list
-		$sess_admin_header_season_id = $this->request->session()->read("sess_admin_header_season_id");
+		$sess_admin_header_season_id = $this->request->getSession()->read("sess_admin_header_season_id");
 		if($sess_admin_header_season_id>0)
 		{
 			// to get details of convention Season
@@ -173,7 +172,7 @@ class NametagsController extends AppController {
 	public function visitors() {
 
         $this->set('title', ADMIN_TITLE . 'Name Tags - Visitors');
-        $this->viewBuilder()->layout('admin');
+        $this->viewBuilder()->setLayout('admin');
         $this->set('nameTags', '1');
         $this->set('nameTagsVisitors', '1');
 
@@ -182,7 +181,7 @@ class NametagsController extends AppController {
         //$condition = array('Conventionregistrations.parent_id' => 0);
 		
 		// to check if conv season selected from header then filter list
-		$sess_admin_header_season_id = $this->request->session()->read("sess_admin_header_season_id");
+		$sess_admin_header_season_id = $this->request->getSession()->read("sess_admin_header_season_id");
 		if($sess_admin_header_season_id>0)
 		{
 			// to get details of convention Season
@@ -206,13 +205,13 @@ class NametagsController extends AppController {
 	
 	public function addvisitor() {
         $this->set('title', ADMIN_TITLE . 'Add New Visitor');
-        $this->viewBuilder()->layout('admin');
+        $this->viewBuilder()->setLayout('admin');
 		
         $this->set('nameTags', '1');
         $this->set('nameTagsVisitors', '1');
 		
 		// to check if conv season selected from header then filter list
-		$sess_admin_header_season_id = $this->request->session()->read("sess_admin_header_season_id");
+		$sess_admin_header_season_id = $this->request->getSession()->read("sess_admin_header_season_id");
 		if($sess_admin_header_season_id>0)
 		{
 			// to get details of convention Season
@@ -226,10 +225,10 @@ class NametagsController extends AppController {
         $visitors = $this->Visitors->newEntity();
         if ($this->request->is('post')) {
 			
-			//$this->prx($this->request->data);
+			//$this->prx($this->request->getData());
 			
-            $data = $this->Visitors->patchEntity($visitors, $this->request->data);
-            if (count($data->errors()) == 0) {
+            $data = $this->Visitors->patchEntity($visitors, $this->request->getData());
+            if (count($data->getErrors()) == 0) {
 
                 $data->conventionseason_id 			= $sess_admin_header_season_id;
                 $data->convention_id 				= $convSeasD->convention_id;
@@ -251,7 +250,7 @@ class NametagsController extends AppController {
 
     public function editvisitor($id = null) {
         $this->set('title', ADMIN_TITLE . 'Edit Visitor');
-        $this->viewBuilder()->layout('admin');
+        $this->viewBuilder()->setLayout('admin');
         
 		$this->set('nameTags', '1');
         $this->set('nameTagsVisitors', '1');
@@ -263,9 +262,9 @@ class NametagsController extends AppController {
 		
         $visitors = $this->Visitors->get($uid);
         if ($this->request->is(['post', 'put'])) {
-            $data = $this->Visitors->patchEntity($visitors, $this->request->data);
+            $data = $this->Visitors->patchEntity($visitors, $this->request->getData());
 			
-            if (count($data->errors()) == 0) {
+            if (count($data->getErrors()) == 0) {
                
 				$data->modified = date("Y-m-d H:i:s");
 				//$this->prx($data);
@@ -308,12 +307,12 @@ class NametagsController extends AppController {
 	
 	public function printnametagsvisitors() {
 
-        $this->viewBuilder()->layout('');
+        $this->viewBuilder()->setLayout('');
 		
 		$condition = array();
 		
 		// to check if conv season selected from header then filter list
-		$sess_admin_header_season_id = $this->request->session()->read("sess_admin_header_season_id");
+		$sess_admin_header_season_id = $this->request->getSession()->read("sess_admin_header_season_id");
 		if($sess_admin_header_season_id>0)
 		{
 			// to get details of convention Season

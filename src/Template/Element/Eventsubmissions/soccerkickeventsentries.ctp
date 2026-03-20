@@ -1,8 +1,8 @@
 <?php
 use Cake\ORM\TableRegistry;
-$this->Users 				= TableRegistry::get('Users');
-$this->Judgeevaluations 	= TableRegistry::get('Judgeevaluations');
-$this->Crstudentevents 		= TableRegistry::get('Crstudentevents');
+$this->Users 				= TableRegistry::getTableLocator()->get('Users');
+$this->Judgeevaluations 	= TableRegistry::getTableLocator()->get('Judgeevaluations');
+$this->Crstudentevents 		= TableRegistry::getTableLocator()->get('Crstudentevents');
 ?>
 
 <script type="text/javascript">
@@ -142,7 +142,7 @@ $this->Crstudentevents 		= TableRegistry::get('Crstudentevents');
 						<td data-title="Submission Date"><?php echo date('M d, Y', strtotime($datarecord->created)); ?></td>
 						
 						<?php
-						$judge_id 	= $this->request->session()->read("user_id");
+						$judge_id 	= $this->request->getSession()->read("user_id");
 						
 						$condCheckJudging = array();
 						$condCheckJudging[] = "(Judgeevaluations.eventsubmission_id = '".$datarecord->id."')";

@@ -3,20 +3,19 @@ namespace App\Controller\Admin;
 use App\Controller\AppController;
 use Cake\Core\Configure;
 use Cake\Core\Configure\Engine\PhpConfig;
-use Cake\Mailer\Email;
 use Cake\Datasource\ConnectionManager;
 
 class UsersController extends AppController{
 
     public $paginate = ['limit' => 50];
-    var $components = array('RequestHandler', 'PImage', 'PImageTest');
+    public $components = ['RequestHandler', 'PImage', 'PImageTest'];
    
     public function initialize(){
         parent::initialize();
         $this->loadComponent('Paginator');
         $this->loadComponent('Flash');
-        $action = $this->request->params['action'];
-        $loggedAdminId = $this->request->session()->read('admin_id');
+        $action = $this->request->getParam('action');
+        $loggedAdminId = $this->request->getSession()->read('admin_id');
         if ($action != 'forgotPassword' && $action != 'logout') {
             if (!$loggedAdminId && $action != "login" && $action != 'captcha') {
                  $this->redirect(['controller'=>'admins', 'action' => 'login']);
@@ -32,7 +31,7 @@ class UsersController extends AppController{
 	
     public function index() {
         $this->set('title', ADMIN_TITLE. 'Manage Schools/Homeschools');
-        $this->viewBuilder()->layout('admin');
+        $this->viewBuilder()->setLayout('admin');
         $this->set('manageSchools', '1');
         $this->set('schoolList', '1');
         
@@ -42,9 +41,10 @@ class UsersController extends AppController{
 		$condition[] = "(Users.user_type = 'School')";
         
         if($this->request->is('post')){
-            if (isset($this->request->data['action'])) {
-                $idList = implode(',', $this->request->data['chkRecordId']);
-                $action = $this->request->data['action'];
+            $requestData = $this->request->getData();
+            if (isset($requestData['action'])) {
+                $idList = implode(',', $requestData['chkRecordId']);
+                $action = $requestData['action'];
                 if ($idList) {
                     if ($action == "Activate") {
                         $this->Users->updateAll(['status' => '1'], ["id IN ($idList)"]);
@@ -59,12 +59,12 @@ class UsersController extends AppController{
                 }
             }
             
-            if(isset($this->request->data['Users']['keyword']) && $this->request->data['Users']['keyword']!=''){
-              $keyword = trim($this->request->data['Users']['keyword']); 
+                        if(isset($requestData['Users']['keyword']) && $requestData['Users']['keyword']!=''){
+                            $keyword = trim($requestData['Users']['keyword']); 
             }
-        }elseif($this->request->params){
-            if(isset($this->request->params['pass'][0]) && $this->request->params['pass'][0]!=''){
-                $searchArr = $this->request->params['pass'];
+        }elseif($this->request->getParam('pass')){
+            if(isset($this->request->getParam('pass')[0]) && $this->request->getParam('pass')[0]!=''){
+                $searchArr = $this->request->getParam('pass');
 //                echo '<pre>';
 //                print_r($searchArr);exit;
                 foreach($searchArr as $val){
@@ -88,7 +88,7 @@ class UsersController extends AppController{
         $this->paginate = ['conditions' => $condition, 'limit' => 50, 'order' => ['Users.id' => 'DESC']];
         $this->set('users', $this->paginate($this->Users));
         if($this->request->is("ajax")){
-            $this->viewBuilder()->layout("");
+            $this->viewBuilder()->setLayout("");
             $this->viewBuilder()->templatePath('Element' . DS . 'Admin/Users');
             $this->render('index');
         }
@@ -96,7 +96,7 @@ class UsersController extends AppController{
     
     public function activateuser($slug=null){
         if ($slug != '') {
-            $this->viewBuilder()->layout("");
+            $this->viewBuilder()->setLayout("");
             $this->Users->updateAll(['status' => '1'], ["slug"=>$slug]);
             $this->set('action', '/admin/users/deactivateuser/' . $slug);
             $this->set('status', 1);
@@ -107,7 +107,7 @@ class UsersController extends AppController{
     
     public function deactivateuser($slug=null){
         if ($slug != '') {
-            $this->viewBuilder()->layout("");
+            $this->viewBuilder()->setLayout("");
             $this->Users->updateAll(['status' => '0'], ["slug"=>$slug]);
             $this->set('action', '/admin/users/activateuser/' . $slug);
             $this->set('status', 0);
@@ -130,17 +130,18 @@ class UsersController extends AppController{
 	
 	public function add() {
         $this->set('title', ADMIN_TITLE . 'Add School/Homeschool');
-        $this->viewBuilder()->layout('admin');
+        $this->viewBuilder()->setLayout('admin');
         $this->set('manageSchools', '1');
         $this->set('schoolAdd', '1');
 		
         $users = $this->Users->newEntity();
         if ($this->request->is('post')) {
 			
-			//$this->prx($this->request->data);
+			//$this->prx($this->request->getData());
 			
-            $data = $this->Users->patchEntity($users, $this->request->data, ['validate' => 'add']);
-            if (count($data->errors()) == 0) {
+            $requestData = $this->request->getData();
+            $data = $this->Users->patchEntity($users, $requestData, ['validate' => 'add']);
+            if (count($data->getErrors()) == 0) {
 
 				// to check that this customer code already exixts
 				$flagCheck = 1;
@@ -154,7 +155,7 @@ class UsersController extends AppController{
 				
 				if($flagCheck == 1)
 				{
-					$slug = $this->getSlug($this->request->data['Users']['first_name'] . ' ' . time(), 'Users');
+                    $slug = $this->getSlug($requestData['Users']['first_name'] . ' ' . time(), 'Users');
 					$data->slug = $slug;
 					
 					$data->user_type = 'School';
@@ -177,17 +178,18 @@ class UsersController extends AppController{
 	
 	public function add_custom_query() {
         $this->set('title', ADMIN_TITLE . 'Add School/Homeschool');
-        $this->viewBuilder()->layout('admin');
+        $this->viewBuilder()->setLayout('admin');
         $this->set('manageSchools', '1');
         $this->set('schoolAdd', '1');
 		
         $users = $this->Users->newEntity();
         if ($this->request->is('post')) {
 			
-			//$this->prx($this->request->data);
+			//$this->prx($this->request->getData());
 			
-            $data = $this->Users->patchEntity($users, $this->request->data, ['validate' => 'add']);
-            if (count($data->errors()) == 0) {
+            $requestData = $this->request->getData();
+            $data = $this->Users->patchEntity($users, $requestData, ['validate' => 'add']);
+            if (count($data->getErrors()) == 0) {
 
 				// to check that this customer code already exixts
 				$flagCheck = 1;
@@ -204,7 +206,7 @@ class UsersController extends AppController{
 					
 					$conn = ConnectionManager::get('default');
 					
-					$slug = $this->getSlug($this->request->data['Users']['first_name'] . ' ' . time(), 'Users');
+                    $slug = $this->getSlug($requestData['Users']['first_name'] . ' ' . time(), 'Users');
 					
 					$queryAdd = "INSERT INTO users 
 					(
@@ -245,23 +247,23 @@ class UsersController extends AppController{
     
 	public function edit($slug=null){
 		$this->set('title', ADMIN_TITLE. 'Edit School');
-		$this->viewBuilder()->layout('admin');
+		$this->viewBuilder()->setLayout('admin');
 		
 		$this->set('manageSchools', '1');
         $this->set('schoolList', '1');
 	   
-		if($slug){
+        if($slug){
             $userD = $this->Users->find()->where(['Users.slug' => $slug])->first();
             $uid = $userD->id;
 			$this->set('userD', $userD);
-           // $this->request->data['Users']['password'] = ''; 
 		}
 		$users = $this->Users->get($uid);
 		if ($this->request->is(['post', 'put'])) {
-            if(empty($this->request->data['Users']['password'])){
-                unset($this->request->data['Users']['password']);
+            $requestData = $this->request->getData();
+            if(empty($requestData['Users']['password'])){
+                unset($requestData['Users']['password']);
             }
-            $data = $this->Users->patchEntity($users, $this->request->data);
+            $data = $this->Users->patchEntity($users, $requestData);
 			
 			$flagCheck = 1;
 			//$this->prx($data);
@@ -284,11 +286,11 @@ class UsersController extends AppController{
 				}
 			}
 			
-            if(count($data->errors()) == 0 && $flagCheck == 1){
+			if(count($data->getErrors()) == 0 && $flagCheck == 1){
                
-                if(isset($this->request->data['Users']['password']) && $this->request->data['Users']['password'] !=''){
-                    $new_password = $this->request->data['Users']['password'];
-                    unset($this->request->data['Users']['password']);
+                if(isset($requestData['Users']['password']) && $requestData['Users']['password'] !=''){
+                    $new_password = $requestData['Users']['password'];
+                    unset($requestData['Users']['password']);
                     $salt = uniqid(mt_rand(), true);
                     $password = crypt($new_password, '$2a$07$' . $salt . '$');
                     $data->password = $password;
@@ -301,12 +303,10 @@ class UsersController extends AppController{
                 
             }else{
                // $this->Flash->error('Please below listed errors.');
-                if(empty($this->request->data['Users']['password'])){
-                    $this->request->data['Users']['password'] = ''; 
-                }
+                $users->password = '';
             }
         }else{
-             $this->request->data['Users']['password'] = '';
+             $users->password = '';
         }
         $this->set('users', $users);
     }
@@ -317,7 +317,7 @@ class UsersController extends AppController{
 	
     public function teachers() {
         $this->set('title', ADMIN_TITLE. 'Manage Supervisors');
-        $this->viewBuilder()->layout('admin');
+        $this->viewBuilder()->setLayout('admin');
         $this->set('manageTeachers', '1');
         $this->set('teacherList', '1');
         
@@ -327,9 +327,10 @@ class UsersController extends AppController{
 		$condition[] = "(Users.user_type = 'Teacher_Parent')";
         
         if($this->request->is('post')){
-            if (isset($this->request->data['action'])) {
-                $idList = implode(',', $this->request->data['chkRecordId']);
-                $action = $this->request->data['action'];
+            $requestData = $this->request->getData();
+            if (isset($requestData['action'])) {
+                $idList = implode(',', $requestData['chkRecordId']);
+                $action = $requestData['action'];
                 if ($idList) {
                     if ($action == "Activate") {
                         $this->Users->updateAll(['status' => '1'], ["id IN ($idList)"]);
@@ -344,12 +345,12 @@ class UsersController extends AppController{
                 }
             }
             
-            if(isset($this->request->data['Users']['keyword']) && $this->request->data['Users']['keyword']!=''){
-              $keyword = trim($this->request->data['Users']['keyword']); 
+                        if(isset($requestData['Users']['keyword']) && $requestData['Users']['keyword']!=''){
+                            $keyword = trim($requestData['Users']['keyword']); 
             }
-        }elseif($this->request->params){
-            if(isset($this->request->params['pass'][0]) && $this->request->params['pass'][0]!=''){
-                $searchArr = $this->request->params['pass'];
+        }elseif($this->request->getParam('pass')){
+            if(isset($this->request->getParam('pass')[0]) && $this->request->getParam('pass')[0]!=''){
+                $searchArr = $this->request->getParam('pass');
 //                echo '<pre>';
 //                print_r($searchArr);exit;
                 foreach($searchArr as $val){
@@ -373,7 +374,7 @@ class UsersController extends AppController{
         $this->paginate = ['contain'=>['Schools'],'conditions' => $condition, 'limit' => 20, 'order' => ['Users.id' => 'DESC']];
         $this->set('users', $this->paginate($this->Users));
         if($this->request->is("ajax")){
-            $this->viewBuilder()->layout("");
+            $this->viewBuilder()->setLayout("");
             $this->viewBuilder()->templatePath('Element' . DS . 'Admin/Users');
             $this->render('teachers');
         }
@@ -381,7 +382,7 @@ class UsersController extends AppController{
     
     public function activateteacher($slug=null){
         if ($slug != '') {
-            $this->viewBuilder()->layout("");
+            $this->viewBuilder()->setLayout("");
             $this->Users->updateAll(['status' => '1'], ["slug"=>$slug]);
             $this->set('action', '/admin/users/deactivateteacher/' . $slug);
             $this->set('status', 1);
@@ -392,7 +393,7 @@ class UsersController extends AppController{
     
     public function deactivateteacher($slug=null){
         if ($slug != '') {
-            $this->viewBuilder()->layout("");
+            $this->viewBuilder()->setLayout("");
             $this->Users->updateAll(['status' => '0'], ["slug"=>$slug]);
             $this->set('action', '/admin/users/activateteacher/' . $slug);
             $this->set('status', 0);
@@ -415,7 +416,7 @@ class UsersController extends AppController{
 	
 	public function addteacher_noneed() {
         $this->set('title', ADMIN_TITLE . 'Add Supervisors');
-        $this->viewBuilder()->layout('admin');
+        $this->viewBuilder()->setLayout('admin');
         $this->set('manageTeachers', '1');
         $this->set('teacherAdd', '1');
 		
@@ -432,9 +433,10 @@ class UsersController extends AppController{
         $users = $this->Users->newEntity();
         if ($this->request->is('post')) {
 			
-			//$this->prx($this->request->data);
+			//$this->prx($this->request->getData());
 			
-            $data = $this->Users->patchEntity($users, $this->request->data);
+            $requestData = $this->request->getData();
+            $data = $this->Users->patchEntity($users, $requestData);
 			
 			$flagC = 1;
 			
@@ -449,9 +451,9 @@ class UsersController extends AppController{
 				$this->Flash->error('Email already exists.');
 			}
 			
-            if (count($data->errors()) == 0 && $flagC == 1) {
+            if (count($data->getErrors()) == 0 && $flagC == 1) {
 
-				$slug = $this->getSlug($this->request->data['Users']['first_name'] . ' ' . time(), 'Users');
+                $slug = $this->getSlug($requestData['Users']['first_name'] . ' ' . time(), 'Users');
 				$data->slug = $slug;
 				
 				$data->user_type = 'Teacher_Parent';
@@ -473,7 +475,7 @@ class UsersController extends AppController{
     
 	public function editteacher($slug=null){
 		$this->set('title', ADMIN_TITLE. 'Edit Supervisors');
-		$this->viewBuilder()->layout('admin');
+		$this->viewBuilder()->setLayout('admin');
 		
 		$this->set('manageTeachers', '1');
         $this->set('teacherList', '1');
@@ -491,20 +493,20 @@ class UsersController extends AppController{
 		if($slug){
             $users1 = $this->Users->find()->where(['Users.slug' => $slug])->first();
             $uid = $users1->id;
-           // $this->request->data['Users']['password'] = ''; 
 		}
 		$users = $this->Users->get($uid);
 		if ($this->request->is(['post', 'put'])) {
-            if(empty($this->request->data['Users']['password'])){
-                unset($this->request->data['Users']['password']);
+            $requestData = $this->request->getData();
+            if(empty($requestData['Users']['password'])){
+                unset($requestData['Users']['password']);
             }
-            $data = $this->Users->patchEntity($users, $this->request->data);
+            $data = $this->Users->patchEntity($users, $requestData);
 			
-            if(count($data->errors()) == 0){
+            if(count($data->getErrors()) == 0){
                
-                if(isset($this->request->data['Users']['password']) && $this->request->data['Users']['password'] !=''){
-                    $new_password = $this->request->data['Users']['password'];
-                    unset($this->request->data['Users']['password']);
+                if(isset($requestData['Users']['password']) && $requestData['Users']['password'] !=''){
+                    $new_password = $requestData['Users']['password'];
+                    unset($requestData['Users']['password']);
                     $salt = uniqid(mt_rand(), true);
                     $password = crypt($new_password, '$2a$07$' . $salt . '$');
                     $data->password = $password;
@@ -517,12 +519,10 @@ class UsersController extends AppController{
                 
             }else{
                // $this->Flash->error('Please below listed errors.');
-                if(empty($this->request->data['Users']['password'])){
-                    $this->request->data['Users']['password'] = ''; 
-                }
+                $users->password = '';
             }
         }else{
-             $this->request->data['Users']['password'] = '';
+             $users->password = '';
         }
         $this->set('users', $users);
     }
@@ -532,7 +532,7 @@ class UsersController extends AppController{
 	
 	public function students() {
         $this->set('title', ADMIN_TITLE. 'Manage Students');
-        $this->viewBuilder()->layout('admin');
+        $this->viewBuilder()->setLayout('admin');
         $this->set('manageStudents', '1');
         $this->set('studentList', '1');
         
@@ -542,9 +542,10 @@ class UsersController extends AppController{
 		$condition[] = "(Users.user_type = 'Student')";
         
         if($this->request->is('post')){
-            if (isset($this->request->data['action'])) {
-                $idList = implode(',', $this->request->data['chkRecordId']);
-                $action = $this->request->data['action'];
+            $requestData = $this->request->getData();
+            if (isset($requestData['action'])) {
+                $idList = implode(',', $requestData['chkRecordId']);
+                $action = $requestData['action'];
                 if ($idList) {
                     if ($action == "Activate") {
                         $this->Users->updateAll(['status' => '1'], ["id IN ($idList)"]);
@@ -559,12 +560,12 @@ class UsersController extends AppController{
                 }
             }
             
-            if(isset($this->request->data['Users']['keyword']) && $this->request->data['Users']['keyword']!=''){
-              $keyword = trim($this->request->data['Users']['keyword']); 
+                        if(isset($requestData['Users']['keyword']) && $requestData['Users']['keyword']!=''){
+                            $keyword = trim($requestData['Users']['keyword']); 
             }
-        }elseif($this->request->params){
-            if(isset($this->request->params['pass'][0]) && $this->request->params['pass'][0]!=''){
-                $searchArr = $this->request->params['pass'];
+        }elseif($this->request->getParam('pass')){
+            if(isset($this->request->getParam('pass')[0]) && $this->request->getParam('pass')[0]!=''){
+                $searchArr = $this->request->getParam('pass');
 //                echo '<pre>';
 //                print_r($searchArr);exit;
                 foreach($searchArr as $val){
@@ -588,7 +589,7 @@ class UsersController extends AppController{
         $this->paginate = ['contain'=>['Schools'],'conditions' => $condition, 'limit' => 20, 'order' => ['Users.id' => 'DESC']];
         $this->set('users', $this->paginate($this->Users));
         if($this->request->is("ajax")){
-            $this->viewBuilder()->layout("");
+            $this->viewBuilder()->setLayout("");
             $this->viewBuilder()->templatePath('Element' . DS . 'Admin/Users');
             $this->render('students');
         }
@@ -596,7 +597,7 @@ class UsersController extends AppController{
     
     public function activatestudent($slug=null){
         if ($slug != '') {
-            $this->viewBuilder()->layout("");
+            $this->viewBuilder()->setLayout("");
             $this->Users->updateAll(['status' => '1'], ["slug"=>$slug]);
             $this->set('action', '/admin/users/deactivateparent/' . $slug);
             $this->set('status', 1);
@@ -607,7 +608,7 @@ class UsersController extends AppController{
     
     public function deactivatestudent($slug=null){
         if ($slug != '') {
-            $this->viewBuilder()->layout("");
+            $this->viewBuilder()->setLayout("");
             $this->Users->updateAll(['status' => '0'], ["slug"=>$slug]);
             $this->set('action', '/admin/users/activateparent/' . $slug);
             $this->set('status', 0);
@@ -630,7 +631,7 @@ class UsersController extends AppController{
     
 	public function editstudent($slug=null){
 		$this->set('title', ADMIN_TITLE. 'Edit Student');
-		$this->viewBuilder()->layout('admin');
+		$this->viewBuilder()->setLayout('admin');
 		
 		$this->set('manageStudents', '1');
         $this->set('studentList', '1');
@@ -648,20 +649,20 @@ class UsersController extends AppController{
 		if($slug){
             $users1 = $this->Users->find()->where(['Users.slug' => $slug])->first();
             $uid = $users1->id;
-           // $this->request->data['Users']['password'] = ''; 
 		}
 		$users = $this->Users->get($uid);
 		if ($this->request->is(['post', 'put'])) {
-            if(empty($this->request->data['Users']['password'])){
-                unset($this->request->data['Users']['password']);
+            $requestData = $this->request->getData();
+            if(empty($requestData['Users']['password'])){
+                unset($requestData['Users']['password']);
             }
-            $data = $this->Users->patchEntity($users, $this->request->data, ['validate' => 'edit']);
+            $data = $this->Users->patchEntity($users, $requestData, ['validate' => 'edit']);
 			
-            if(count($data->errors()) == 0){
+            if(count($data->getErrors()) == 0){
                
-                if(isset($this->request->data['Users']['password']) && $this->request->data['Users']['password'] !=''){
-                    $new_password = $this->request->data['Users']['password'];
-                    unset($this->request->data['Users']['password']);
+                if(isset($requestData['Users']['password']) && $requestData['Users']['password'] !=''){
+                    $new_password = $requestData['Users']['password'];
+                    unset($requestData['Users']['password']);
                     $salt = uniqid(mt_rand(), true);
                     $password = crypt($new_password, '$2a$07$' . $salt . '$');
                     $data->password = $password;
@@ -674,12 +675,10 @@ class UsersController extends AppController{
                 
             }else{
                // $this->Flash->error('Please below listed errors.');
-                if(empty($this->request->data['Users']['password'])){
-                    $this->request->data['Users']['password'] = ''; 
-                }
+                $users->password = '';
             }
         }else{
-             $this->request->data['Users']['password'] = '';
+             $users->password = '';
         }
         $this->set('users', $users);
     }
@@ -727,27 +726,28 @@ class UsersController extends AppController{
 	
 	public function csvimport() {
         $this->set('title', ADMIN_TITLE . 'Import CSV');
-        $this->viewBuilder()->layout('admin');
+        $this->viewBuilder()->setLayout('admin');
         $this->set('manageSchools', '1');
         $this->set('schoolImport', '1');
 		
         $users = $this->Users->newEntity();
         if ($this->request->is('post')) {
 			
-			//$this->prx($this->request->data);
+			//$this->prx($this->request->getData());
 			
-            $data = $this->Users->patchEntity($users, $this->request->data);
-            if (count($data->errors()) == 0) {
+            $requestData = $this->request->getData();
+            $data = $this->Users->patchEntity($users, $requestData);
+            if (count($data->getErrors()) == 0) {
 
-				if(!empty($this->request->data['Users']['csv_file']['name'])){
+				if(!empty($requestData['Users']['csv_file']['name'])){
                     $specialCharacters = array('#', '$', '%', '@', '+', '=', '\\', '/', '"', ' ', "'", ':', '~', '`', '!', '^', '*', '(', ')', '|', "'", "&");
                     $toReplace = "-";
-                    $this->request->data['Users']['csv_file']['name'] = str_replace($specialCharacters, $toReplace, $this->request->data['Users']['csv_file']['name']);
-                    $imageArray = $this->request->data['Users']['csv_file'];
+                    $requestData['Users']['csv_file']['name'] = str_replace($specialCharacters, $toReplace, $requestData['Users']['csv_file']['name']);
+                    $imageArray = $requestData['Users']['csv_file'];
                     $returnedUploadImageArray = $this->PImage->upload($imageArray, UPLOAD_SCHOOLS_CSV_PATH);                     
                      
                     $csv_file_system_name 	=  $returnedUploadImageArray[0];
-					$csv_original_name 		= 	$this->request->data['Users']['csv_file']['name'];
+					$csv_original_name 		= 	$requestData['Users']['csv_file']['name'];
 					
 					$filename = UPLOAD_SCHOOLS_CSV_PATH.$csv_file_system_name;
 					
@@ -856,7 +856,7 @@ class UsersController extends AppController{
 	
 	public function judges() {
         $this->set('title', ADMIN_TITLE. ' Judges');
-        $this->viewBuilder()->layout('admin');
+        $this->viewBuilder()->setLayout('admin');
         $this->set('manageJudges', '1');
         $this->set('activeJudges', '1');
         
@@ -867,9 +867,10 @@ class UsersController extends AppController{
 		$condition[] = "(Users.user_type = 'Judge' OR (Users.user_type = 'Teacher_Parent' AND Users.is_judge = '1'))";
         
         if($this->request->is('post')){
-            if (isset($this->request->data['action'])) {
-                $idList = implode(',', $this->request->data['chkRecordId']);
-                $action = $this->request->data['action'];
+            $requestData = $this->request->getData();
+            if (isset($requestData['action'])) {
+                $idList = implode(',', $requestData['chkRecordId']);
+                $action = $requestData['action'];
                 if ($idList) {
                     if ($action == "Activate") {
                         $this->Users->updateAll(['status' => '1'], ["id IN ($idList)"]);
@@ -884,12 +885,12 @@ class UsersController extends AppController{
                 }
             }
             
-            if(isset($this->request->data['Users']['keyword']) && $this->request->data['Users']['keyword']!=''){
-              $keyword = trim($this->request->data['Users']['keyword']); 
+                        if(isset($requestData['Users']['keyword']) && $requestData['Users']['keyword']!=''){
+                            $keyword = trim($requestData['Users']['keyword']); 
             }
-        }elseif($this->request->params){
-            if(isset($this->request->params['pass'][0]) && $this->request->params['pass'][0]!=''){
-                $searchArr = $this->request->params['pass'];
+        }elseif($this->request->getParam('pass')){
+            if(isset($this->request->getParam('pass')[0]) && $this->request->getParam('pass')[0]!=''){
+                $searchArr = $this->request->getParam('pass');
                 foreach($searchArr as $val){
                 if (strpos($val, ":") !== false) {
                    $vars  = explode(":",$val);
@@ -910,7 +911,7 @@ class UsersController extends AppController{
         $this->paginate = ['contain'=>['Schools'],'conditions' => $condition, 'limit' => 50, 'order' => ['Users.id' => 'DESC']];
         $this->set('users', $this->paginate($this->Users));
         if($this->request->is("ajax")){
-            $this->viewBuilder()->layout("");
+            $this->viewBuilder()->setLayout("");
             $this->viewBuilder()->templatePath('Element' . DS . 'Admin/Users');
             $this->render('judges');
         }
@@ -918,7 +919,7 @@ class UsersController extends AppController{
 	
 	public function pendingjudges() {
         $this->set('title', ADMIN_TITLE. ' Pending Judges');
-        $this->viewBuilder()->layout('admin');
+        $this->viewBuilder()->setLayout('admin');
         $this->set('manageJudges', '1');
         $this->set('pendingJudges', '1');
         
@@ -932,9 +933,10 @@ class UsersController extends AppController{
 			)";
         
         if($this->request->is('post')){
-            if (isset($this->request->data['action'])) {
-                $idList = implode(',', $this->request->data['chkRecordId']);
-                $action = $this->request->data['action'];
+            $requestData = $this->request->getData();
+            if (isset($requestData['action'])) {
+                $idList = implode(',', $requestData['chkRecordId']);
+                $action = $requestData['action'];
                 if ($idList) {
                     if ($action == "Activate") {
                         $this->Users->updateAll(['status' => '1'], ["id IN ($idList)"]);
@@ -949,12 +951,12 @@ class UsersController extends AppController{
                 }
             }
             
-            if(isset($this->request->data['Users']['keyword']) && $this->request->data['Users']['keyword']!=''){
-              $keyword = trim($this->request->data['Users']['keyword']); 
+                        if(isset($requestData['Users']['keyword']) && $requestData['Users']['keyword']!=''){
+                            $keyword = trim($requestData['Users']['keyword']); 
             }
-        }elseif($this->request->params){
-            if(isset($this->request->params['pass'][0]) && $this->request->params['pass'][0]!=''){
-                $searchArr = $this->request->params['pass'];
+        }elseif($this->request->getParam('pass')){
+            if(isset($this->request->getParam('pass')[0]) && $this->request->getParam('pass')[0]!=''){
+                $searchArr = $this->request->getParam('pass');
                 foreach($searchArr as $val){
                 if (strpos($val, ":") !== false) {
                    $vars  = explode(":",$val);
@@ -975,7 +977,7 @@ class UsersController extends AppController{
         $this->paginate = ['contain'=>['Schools'],'conditions' => $condition, 'limit' => 50, 'order' => ['Users.id' => 'DESC']];
         $this->set('users', $this->paginate($this->Users));
         if($this->request->is("ajax")){
-            $this->viewBuilder()->layout("");
+            $this->viewBuilder()->setLayout("");
             $this->viewBuilder()->templatePath('Element' . DS . 'Admin/Users');
             $this->render('pendingjudges');
         }
@@ -1003,15 +1005,7 @@ class UsersController extends AppController{
 			
 			//echo $messageToSend; exit;
 			
-			$email = new Email();
-			$email->template('default', 'admintemplate')
-				->emailFormat('html')
-				->to($emailId)
-				->cc(ACCOUNTS_TEAM_ANOTHER_EMAIL)
-				->from([HEADERS_FROM_EMAIL => HEADERS_FROM_NAME])
-				->subject($subjectToSend)
-				->viewVars(['content_for_layout' => $messageToSend])
-				->send();
+            $this->sendLegacyHtmlEmail($emailId, $subjectToSend, $messageToSend, [HEADERS_FROM_EMAIL => HEADERS_FROM_NAME], ACCOUNTS_TEAM_ANOTHER_EMAIL);
 			
 			$this->Flash->success('Judge details approved successfully.');
 		
@@ -1043,15 +1037,7 @@ class UsersController extends AppController{
 			
 			echo $messageToSend; exit;
 			
-			$email = new Email();
-			$email->template('default', 'admintemplate')
-				->emailFormat('html')
-				->to($emailId)
-				->cc(ACCOUNTS_TEAM_ANOTHER_EMAIL)
-				->from([HEADERS_FROM_EMAIL => HEADERS_FROM_NAME])
-				->subject($subjectToSend)
-				->viewVars(['content_for_layout' => $messageToSend])
-				->send();
+            $this->sendLegacyHtmlEmail($emailId, $subjectToSend, $messageToSend, [HEADERS_FROM_EMAIL => HEADERS_FROM_NAME], ACCOUNTS_TEAM_ANOTHER_EMAIL);
 			
 			$this->Flash->success('Judge details approved successfully.');
 		
@@ -1097,15 +1083,7 @@ class UsersController extends AppController{
 			
 			//echo $messageToSend; exit;
 			
-			$email = new Email();
-			$email->template('default', 'admintemplate')
-				->emailFormat('html')
-				->to($emailId)
-				->cc(ACCOUNTS_TEAM_ANOTHER_EMAIL)
-				->from([HEADERS_FROM_EMAIL => HEADERS_FROM_NAME])
-				->subject($subjectToSend)
-				->viewVars(['content_for_layout' => $messageToSend])
-				->send();
+            $this->sendLegacyHtmlEmail($emailId, $subjectToSend, $messageToSend, [HEADERS_FROM_EMAIL => HEADERS_FROM_NAME], ACCOUNTS_TEAM_ANOTHER_EMAIL);
 			
 			$this->Flash->success('Supervisor account successfully approvedas judge.');
 		
@@ -1137,15 +1115,7 @@ class UsersController extends AppController{
 			
 			echo $messageToSend; exit;
 			
-			$email = new Email();
-			$email->template('default', 'admintemplate')
-				->emailFormat('html')
-				->to($emailId)
-				->cc(ACCOUNTS_TEAM_ANOTHER_EMAIL)
-				->from([HEADERS_FROM_EMAIL => HEADERS_FROM_NAME])
-				->subject($subjectToSend)
-				->viewVars(['content_for_layout' => $messageToSend])
-				->send();
+            $this->sendLegacyHtmlEmail($emailId, $subjectToSend, $messageToSend, [HEADERS_FROM_EMAIL => HEADERS_FROM_NAME], ACCOUNTS_TEAM_ANOTHER_EMAIL);
 			
 			$this->Flash->success('Judge details approved successfully.');
 		

@@ -64,7 +64,7 @@ else
                    
                     <div class="box-footer">
                         <label class="col-sm-2 control-label" for="inputPassword3">&nbsp;</label>
-                        <?php echo $this->Form->input('Users.id', ['label'=>false, 'type'=>'hidden']); ?>
+                        <?php echo $this->Form->control('Users.id', ['label'=>false, 'type'=>'hidden']); ?>
                         <?php echo $this->Form->button('Save', ['type'=>'submit', 'class' => 'btn btn-info', 'div'=>false]); ?>
                         <?php echo $this->Html->link('Cancel', ['controller'=>'conventionregistrations', 'action' => 'index'], ['class'=>'btn btn-default canlcel_le']); ?>
                     </div>

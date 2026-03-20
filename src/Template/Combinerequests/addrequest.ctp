@@ -46,7 +46,7 @@
 				<div class="form-group">
 					<label for="name">Student Name/s</label>
 					<div class="input">
-						<?php echo $this->Form->input('Combinerequests.student_name', ['id' => 'student_name', 'label' => false, 'type' => 'text', 'div' => false, 'class' => 'form-control required']); ?>
+						<?php echo $this->Form->control('Combinerequests.student_name', ['id' => 'student_name', 'label' => false, 'type' => 'text', 'div' => false, 'class' => 'form-control required']); ?>
 					</div>
 				</div>
 

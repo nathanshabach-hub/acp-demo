@@ -1,7 +1,7 @@
 <?php
 use Cake\ORM\TableRegistry;
-$this->Divisions = TableRegistry::get('Divisions');
-$this->Users = TableRegistry::get('Users');
+$this->Divisions = TableRegistry::getTableLocator()->get('Divisions');
+$this->Users = TableRegistry::getTableLocator()->get('Users');
 ?>
 <div class="admin_loader" id="loaderID"><?php echo $this->Html->image('loader_large_blue.gif');?></div>
 <?php //if (!$conventionseasonevents->isEmpty()) { ?> 

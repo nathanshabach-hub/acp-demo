@@ -26,6 +26,41 @@
             <?php //echo $this->Form->create($schedulings, ['id'=>'schedulingWizardForm', 'type' => 'file']); ?>
                 <div class="form-horizontal">
                     <div class="box-body">
+          <?php if (!empty($phase4ReportParityRows)) { ?>
+          <div class="panel panel-default" style="margin-bottom:15px;">
+            <div class="panel-heading"><strong>Phase 4 Report Parity Checklist</strong></div>
+            <div class="panel-body" style="padding-bottom:0;">
+              <p style="margin-top:0;">
+                Legacy Program 17 report targets are mapped below.
+                <?php echo !empty($phase4ReportParityReady) ? 'Scheduling data found.' : 'No scheduling rows found yet; reports still accessible.'; ?>
+              </p>
+              <div class="table-responsive">
+                <table class="table table-bordered table-condensed">
+                  <thead>
+                    <tr>
+                      <th>Legacy Target</th>
+                      <th>ACP Report</th>
+                      <th>Print</th>
+                      <th>CSV</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                  <?php foreach ($phase4ReportParityRows as $parityRow) { ?>
+                    <tr>
+                      <td><?php echo h($parityRow['legacy_key']); ?></td>
+                      <td><?php echo $this->Html->link(h($parityRow['acp_label']), $parityRow['route']); ?></td>
+                      <td><?php echo !empty($parityRow['printable']) ? 'Yes' : 'No'; ?></td>
+                      <td><?php echo !empty($parityRow['csv']) ? 'Yes' : 'No'; ?></td>
+                      <td><?php echo h($parityRow['status']); ?></td>
+                    </tr>
+                  <?php } ?>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+          <?php } ?>
 					
 					
 					<!-- Convention Days Starts -->
@@ -34,7 +69,7 @@
                       <label class="col-sm-2 control-label">&nbsp;</label>
                       <div class="col-sm-10">
 						  <?php
-						  echo $this->Html->link('Report By Students', ['controller'=>'schedulingreports', 'action' => 'bystudents',$convention_season_slug], ['class'=>'btn btn-info canlcel_le','title'=>'Report By Schools/Students', 'style' =>'width:220px;text-align:center;']);
+              echo $this->Html->link('Schedule by Student', ['controller'=>'schedulingreports', 'action' => 'bystudents',$convention_season_slug], ['class'=>'btn btn-info canlcel_le','title'=>'Schedule by Student', 'style' =>'width:220px;text-align:center;']);
 						  ?>
                       </div>
                     </div>
@@ -43,7 +78,7 @@
                       <label class="col-sm-2 control-label">&nbsp;</label>
                       <div class="col-sm-10">
 						  <?php
-						  echo $this->Html->link('Report By School', ['controller'=>'schedulingreports', 'action' => 'byschools',$convention_season_slug], ['class'=>'btn btn-info canlcel_le','title'=>'Report By School','style' =>'width:220px;text-align:center;']);
+              echo $this->Html->link('Schedule by School', ['controller'=>'schedulingreports', 'action' => 'byschools',$convention_season_slug], ['class'=>'btn btn-info canlcel_le','title'=>'Schedule by School','style' =>'width:220px;text-align:center;']);
 						  ?>
                       </div>
                     </div>
@@ -52,7 +87,7 @@
                       <label class="col-sm-2 control-label">&nbsp;</label>
                       <div class="col-sm-10">
 						  <?php
-						  echo $this->Html->link('Report By Sponsor', ['controller'=>'schedulingreports', 'action' => 'bysponsors',$convention_season_slug], ['class'=>'btn btn-info canlcel_le','title'=>'Report By Sponsor/Supervisor','style' =>'width:220px;text-align:center;']);
+              echo $this->Html->link('Schedule by Sponsor', ['controller'=>'schedulingreports', 'action' => 'bysponsors',$convention_season_slug], ['class'=>'btn btn-info canlcel_le','title'=>'Schedule by Sponsor/Supervisor','style' =>'width:220px;text-align:center;']);
 						  ?>
                       </div>
                     </div>
@@ -61,7 +96,7 @@
                       <label class="col-sm-2 control-label">&nbsp;</label>
                       <div class="col-sm-10">
 						  <?php
-						  echo $this->Html->link('Report By Events/Sport', ['controller'=>'schedulingreports', 'action' => 'byevents',$convention_season_slug], ['class'=>'btn btn-info canlcel_le','title'=>'Report By Events/Sport','style' =>'width:220px;text-align:center;']);
+              echo $this->Html->link('Schedule by Event', ['controller'=>'schedulingreports', 'action' => 'byevents',$convention_season_slug], ['class'=>'btn btn-info canlcel_le','title'=>'Schedule by Event','style' =>'width:220px;text-align:center;']);
 						  ?>
                       </div>
                     </div>
@@ -70,7 +105,16 @@
                       <label class="col-sm-2 control-label">&nbsp;</label>
                       <div class="col-sm-10">
 						  <?php
-						  echo $this->Html->link('Report By Rooms/Location', ['controller'=>'schedulingreports', 'action' => 'byrooms',$convention_season_slug], ['class'=>'btn btn-info canlcel_le','title'=>'Report By Rooms','style' =>'width:220px;text-align:center;']);
+              echo $this->Html->link('Schedule by Location', ['controller'=>'schedulingreports', 'action' => 'byrooms',$convention_season_slug], ['class'=>'btn btn-info canlcel_le','title'=>'Schedule by Location','style' =>'width:220px;text-align:center;']);
+						  ?>
+                      </div>
+                    </div>
+
+					<div class="form-group">
+                      <label class="col-sm-2 control-label">&nbsp;</label>
+                      <div class="col-sm-10">
+						  <?php
+              echo $this->Html->link('Schedule by Match', ['controller'=>'schedulingreports', 'action' => 'bymatchshow',$convention_season_slug], ['class'=>'btn btn-info canlcel_le','title'=>'Master match/performance schedule','style' =>'width:220px;text-align:center;']);
 						  ?>
                       </div>
                     </div>

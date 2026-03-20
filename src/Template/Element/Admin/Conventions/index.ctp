@@ -57,10 +57,7 @@
 									
 									echo $this->Html->link('<i class="fa fa-bullhorn"></i>', ['controller' => 'conventions', 'action' => 'seasons',$datarecord->slug], [ 'escape' => false, 'title' => 'Manage Seasons', 'class'=>'btn btn-info btn-xs']);
 									
-									echo $this->Html->link('<i class="fa fa-registered"></i>', ['controller' => 'conventions', 'action' => 'rooms',$datarecord->slug], [ 'escape' => false, 'title' => 'Manage Rooms', 'class'=>'btn btn-info btn-xs']);
-									
-									echo $this->Html->link('<i class="fa fa-trash-o"></i>', ['controller' => 'conventions', 'action' => 'deleteconvention',$datarecord->slug], [ 'escape' => false, 'title' => 'Delete', 'class'=>'btn btn-danger btn-xs action-list delete-list', 'confirm' => 'Are you sure you want to Delete ?']);
-									
+
 									?>
                                 </td>
                             </tr>
@@ -81,12 +78,12 @@
                 //'Delete' => "Delete",
             );
             ?>
-            <div class="list_sel"><?php echo $this->Form->input('action', ['options' => $arr, 'type'=>'select', 'label'=>false, 'class'=>"small form-control",'id'=>'action']);?></div>
+            <div class="list_sel"><?php echo $this->Form->control('action', ['options' => $arr, 'type'=>'select', 'label'=>false, 'class'=>"small form-control",'id'=>'action']);?></div>
             <button type="submit" class="small btn btn-success btn-cons btn-info" onclick="return ajaxActionFunction();" id="submit_action">OK</button>
         </div>
         <?php 
         if (isset($keyword) && $keyword != '') {
-            echo $this->Form->input('Conventions.keyword', ['label'=>false, 'type'=>'hidden', 'value'=>$keyword]);
+            echo $this->Form->control('Conventions.keyword', ['label'=>false, 'type'=>'hidden', 'value'=>$keyword]);
         }?>
         <?php echo $this->Form->end(); ?>
     

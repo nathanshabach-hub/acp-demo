@@ -5,13 +5,12 @@ namespace App\Controller\Admin;
 use App\Controller\AppController;
 use Cake\Core\Configure;
 use Cake\Core\Configure\Engine\PhpConfig;
-use Cake\Mailer\Email;
 use Cake\Datasource\ConnectionManager;
 
 class CombinerequestsController extends AppController {
 
     public $paginate = ['limit' => 50, 'order' => ['Combinerequests.name' => 'asc']];
-    var $components = array('RequestHandler', 'PImage', 'PImageTest');
+    public $components = ['RequestHandler', 'PImage', 'PImageTest'];
 
     //public $helpers = array('Javascript', 'Ajax');
 
@@ -19,8 +18,8 @@ class CombinerequestsController extends AppController {
         parent::initialize();
         $this->loadComponent('Paginator');
         $this->loadComponent('Flash');
-        $action = $this->request->params['action'];
-        $loggedAdminId = $this->request->session()->read('admin_id');
+        $action = $this->request->getParam('action');
+        $loggedAdminId = $this->request->getSession()->read('admin_id');
         if ($action != 'forgotPassword' && $action != 'logout') {
             if (!$loggedAdminId && $action != "login" && $action != 'captcha') {
                 $this->redirect(['controller' => 'admins', 'action' => 'login']);
@@ -35,7 +34,7 @@ class CombinerequestsController extends AppController {
     public function index() {
 
         $this->set('title', ADMIN_TITLE . 'Manage Combinerequests');
-        $this->viewBuilder()->layout('admin');
+        $this->viewBuilder()->setLayout('admin');
         $this->set('manageCombinedRequests', '1');
         $this->set('combinedRequestsList', '1');
 
@@ -44,16 +43,17 @@ class CombinerequestsController extends AppController {
         //$condition = array('Combinerequests.parent_id' => 0);
 		
 		// to check if conv season selected from header then filter list
-		$sess_admin_header_season_id = $this->request->session()->read("sess_admin_header_season_id");
+		$sess_admin_header_season_id = $this->request->getSession()->read("sess_admin_header_season_id");
 		if($sess_admin_header_season_id>0)
 		{
 			$condition[] = "(Combinerequests.conventionseason_id = '".$sess_admin_header_season_id."')";
 		}
 
         if ($this->request->is('post')) {
-            if (isset($this->request->data['action'])) {
-                $idList = implode(',', $this->request->data['chkRecordId']);
-                $action = $this->request->data['action'];
+            $requestData = $this->request->getData();
+            if (isset($requestData['action'])) {
+                $idList = implode(',', $requestData['chkRecordId']);
+                $action = $requestData['action'];
                 if ($idList) {
                     if ($action == "Activate") {
                         $this->Combinerequests->updateAll(['status' => '1'], ["id IN ($idList)"]);
@@ -68,12 +68,12 @@ class CombinerequestsController extends AppController {
                 }
             }
 
-            if (isset($this->request->data['Combinerequests']['keyword']) && $this->request->data['Combinerequests']['keyword'] != '') {
-                $keyword = trim($this->request->data['Combinerequests']['keyword']);
+            if (isset($requestData['Combinerequests']['keyword']) && $requestData['Combinerequests']['keyword'] != '') {
+                $keyword = trim($requestData['Combinerequests']['keyword']);
             }
-        } elseif ($this->request->params) {
-            if (isset($this->request->params['pass'][0]) && $this->request->params['pass'][0] != '') {
-                $searchArr = $this->request->params['pass'];
+        } elseif ($this->request->getParam('pass')) {
+            if (isset($this->request->getParam('pass')[0]) && $this->request->getParam('pass')[0] != '') {
+                $searchArr = $this->request->getParam('pass');
                 foreach ($searchArr as $val) {
                     if (strpos($val, ":") !== false) {
                         $vars = explode(":", $val);
@@ -94,7 +94,7 @@ class CombinerequestsController extends AppController {
         $this->paginate = ['contain' => ['Conventions','Users','Combineduser','Events'], 'conditions' => $condition, 'limit' => 20, 'order' => ['Combinerequests.name' => 'ASC']];
         $this->set('combinerequests', $this->paginate($this->Combinerequests));
         if ($this->request->is("ajax")) {
-            $this->viewBuilder()->layout(($this->request->is("ajax")) ? "" : "default");
+            $this->viewBuilder()->setLayout(($this->request->is("ajax")) ? "" : "default");
             $this->viewBuilder()->templatePath('Element' . DS . 'Admin/Combinerequests');
             $this->render('index');
         }
@@ -120,15 +120,7 @@ class CombinerequestsController extends AppController {
 			
 			//echo $messageToSend; exit;
 			
-			$email = new Email();
-			$email->template('default', 'admintemplate')
-				->emailFormat('html')
-				->to($emailId)
-				->cc(ACCOUNTS_TEAM_ANOTHER_EMAIL)
-				->from([HEADERS_FROM_EMAIL => HEADERS_FROM_NAME])
-				->subject($subjectToSend)
-				->viewVars(['content_for_layout' => $messageToSend])
-				->send();
+            $this->sendLegacyHtmlEmail($emailId, $subjectToSend, $messageToSend, [HEADERS_FROM_EMAIL => HEADERS_FROM_NAME], ACCOUNTS_TEAM_ANOTHER_EMAIL);
 			
 			$this->Flash->success('Request approved successfully.');
 		
@@ -160,15 +152,7 @@ class CombinerequestsController extends AppController {
 			
 			//echo $messageToSend; exit;
 			
-			$email = new Email();
-			$email->template('default', 'admintemplate')
-				->emailFormat('html')
-				->to($emailId)
-				->cc(ACCOUNTS_TEAM_ANOTHER_EMAIL)
-				->from([HEADERS_FROM_EMAIL => HEADERS_FROM_NAME])
-				->subject($subjectToSend)
-				->viewVars(['content_for_layout' => $messageToSend])
-				->send();
+            $this->sendLegacyHtmlEmail($emailId, $subjectToSend, $messageToSend, [HEADERS_FROM_EMAIL => HEADERS_FROM_NAME], ACCOUNTS_TEAM_ANOTHER_EMAIL);
 			
 			$this->Flash->success('Request declined successfully.');
 		

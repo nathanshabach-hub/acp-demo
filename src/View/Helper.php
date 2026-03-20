@@ -75,7 +75,7 @@ class Helper implements EventListenerInterface
     /**
      * Request object
      *
-     * @var \Cake\Network\Request
+        * @var \Cake\Http\ServerRequest
      */
     public $request = null;
 
@@ -119,7 +119,7 @@ class Helper implements EventListenerInterface
         $this->_View = $View;
         $this->request = $View->request;
 
-        $this->config($config);
+        $this->setConfig($config);
 
         if (!empty($this->helpers)) {
             $this->_helperMap = $View->helpers()->normalizeArray($this->helpers);
@@ -251,7 +251,7 @@ class Helper implements EventListenerInterface
             'fieldset' => $this->fieldset,
             'tags' => $this->tags,
             'implementedEvents' => $this->implementedEvents(),
-            '_config' => $this->config(),
+            '_config' => $this->getConfig(),
         ];
     }
 }

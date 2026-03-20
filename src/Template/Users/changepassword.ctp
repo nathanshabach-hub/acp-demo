@@ -17,17 +17,17 @@ $(document).ready(function () {
 					
 					<div class="form-group">
 						<label for="name">Old Password</label>
-						<?php echo $this->Form->input('Users.old_password', ['id'=>'old_password', 'label'=>false, 'type'=>'password',  'div'=>false, 'class'=>'form-control required', 'placeholder'=>'Old Password','autocomplete' => 'off']); ?>
+						<?php echo $this->Form->control('Users.old_password', ['id'=>'old_password', 'label'=>false, 'type'=>'password',  'div'=>false, 'class'=>'form-control required', 'placeholder'=>'Old Password','autocomplete' => 'off']); ?>
 					</div>
 					
 					<div class="form-group">
 						<label for="name">New Password</label>
-						<?php echo $this->Form->input('Users.new_password', ['id'=>'new_password', 'label'=>false, 'type'=>'password',  'div'=>false, 'class'=>'form-control required', 'placeholder'=>'New Password', 'autocomplete' => 'off','minlength' => 6]); ?>
+						<?php echo $this->Form->control('Users.new_password', ['id'=>'new_password', 'label'=>false, 'type'=>'password',  'div'=>false, 'class'=>'form-control required', 'placeholder'=>'New Password', 'autocomplete' => 'off','minlength' => 6]); ?>
 					</div>
 					
 					<div class="form-group">
 						<label for="name">Confirm Password</label>
-						<?php echo $this->Form->input('Users.confirm_password', ['id'=>'confirm_password', 'label'=>false, 'type'=>'password',  'div'=>false, 'class'=>'form-control required', 'placeholder'=>'Confirm Password','autocomplete' => 'off','minlength' => 6, 'equalTo' => '#new_password']); ?>
+						<?php echo $this->Form->control('Users.confirm_password', ['id'=>'confirm_password', 'label'=>false, 'type'=>'password',  'div'=>false, 'class'=>'form-control required', 'placeholder'=>'Confirm Password','autocomplete' => 'off','minlength' => 6, 'equalTo' => '#new_password']); ?>
 					</div>
 					
 					<div class="form-group form-btns">

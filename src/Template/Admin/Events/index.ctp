@@ -18,7 +18,7 @@
                     <div class="form-group align_box dtpickr_inputs">
                        <span class="hints">Search Event</span>
                        <span class="hint">
-                           <?php echo $this->Form->input('Events.keyword', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control', 'placeholder'=>'Search by Event Name Or Number']); ?>
+                           <?php echo $this->Form->control('Events.keyword', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control', 'placeholder'=>'Search by Event Name Or Number']); ?>
                        </span>
 					   <span class="hint">
                            <?php echo $this->Form->select('Events.division_id', $divisionDD, ['id' => 'division_id', 'label' => false, 'div' => false, 'class' => 'form-control required', 'autocomplete' => 'off', 'empty' => 'Choose Division', 'style' => 'margin-bottom:2px;']); ?>

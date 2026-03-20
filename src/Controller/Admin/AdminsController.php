@@ -5,19 +5,19 @@ namespace App\Controller\Admin;
 use App\Controller\AppController;
 use Cake\Core\Configure;
 use Cake\Core\Configure\Engine\PhpConfig;
-use Cake\Mailer\Email;
+use Cake\Mailer\Mailer;
 
 class AdminsController extends AppController {
 
     public $paginate = ['limit' => 1];
-    var $components = array('RequestHandler', 'PImage');
+    public $components = ['RequestHandler', 'PImage'];
 
     public function initialize() {
         parent::initialize();
         $this->loadComponent('Paginator');
         $this->loadComponent('Flash');
-        $action = $this->request->params['action'];
-        $loggedAdminId = $this->request->session()->read('admin_id');
+        $action = $this->request->getParam('action');
+        $loggedAdminId = $this->request->getSession()->read('admin_id');
         if ($action != 'forgotPassword' && $action != 'logout') { // check admin login session, direct to admin login if session not active
             if (!$loggedAdminId && $action != "login" && $action != 'captcha') {
                 $this->redirect(['action' => 'login']);
@@ -40,9 +40,9 @@ class AdminsController extends AppController {
 
     public function login() {
         $this->set('title', ADMIN_TITLE . 'Admin Login');
-        $this->viewBuilder()->layout('admin_login');
+        $this->viewBuilder()->setLayout('admin_login');
 
-        $loggedAdminId = $this->request->session()->read('admin_id');
+        $loggedAdminId = $this->request->getSession()->read('admin_id');
         if ($loggedAdminId) {
             $this->redirect(['action' => 'dashboard']);
         }
@@ -51,25 +51,26 @@ class AdminsController extends AppController {
 
         $admin = $this->Admins->newEntity();
         if ($this->request->is('post')) {
-            $admin = $this->Admins->patchEntity($admin, $this->request->data);
-            if (count($admin->errors()) == 0) {
-                $userName = $this->request->data['Admins']['username'];
-                $password = $this->request->data['Admins']['password'];
+            $requestData = $this->request->getData();
+            $admin = $this->Admins->patchEntity($admin, $requestData);
+            if (count($admin->getErrors()) == 0) {
+                $userName = $requestData['Admins']['username'];
+                $password = $requestData['Admins']['password'];
                 $adminInfo = $this->Admins->find()->where(['Admins.username' => $userName])->first();
                 if ($adminInfo) {
                     if ($adminInfo->status == 0) {
                         $this->Flash->error('Your account got temporary disabled.');
                     } elseif (!empty($adminInfo) && crypt($password, $adminInfo->password) == $adminInfo->password) {
 
-                        if (isset($this->request->data['Admins']['remember']) && $this->request->data['Admins']['remember'] == '1') {
+                        if (isset($requestData['Admins']['remember']) && $requestData['Admins']['remember'] == '1') {
                             setcookie("admin_username", $userName, time() + 60 * 60 * 24 * 100, "/");
                             setcookie("admin_password", $password, time() + 60 * 60 * 24 * 100, "/");
                         } else {
                             setcookie("admin_username", '', time() + 60 * 60 * 24 * 100, "/");
                             setcookie("admin_username", '', time() + 60 * 60 * 24 * 100, "/");
                         }
-                        $this->request->session()->write('admin_id', $adminInfo->id);
-                        $this->request->session()->write('admin_username', $userName);
+                        $this->request->getSession()->write('admin_id', $adminInfo->id);
+                        $this->request->getSession()->write('admin_username', $userName);
                         $this->redirect(['action' => 'dashboard']);
                     } else {
                         $this->Flash->error('Invalid username or password.');
@@ -82,9 +83,13 @@ class AdminsController extends AppController {
             }
         } else {
             if (isset($_COOKIE["admin_username"]) && isset($_COOKIE["admin_password"])) {
-                $this->request->data['Admins']['username'] = $_COOKIE["admin_username"];
-                $this->request->data['Admins']['password'] = $_COOKIE["admin_password"];
-                $this->request->data['Admins']['remember'] = 1;
+                $admin = $this->Admins->patchEntity($admin, [
+                    'Admins' => [
+                        'username' => $_COOKIE["admin_username"],
+                        'password' => $_COOKIE["admin_password"],
+                        'remember' => 1,
+                    ],
+                ]);
             }
         }
         $this->set('admin', $admin);
@@ -92,13 +97,14 @@ class AdminsController extends AppController {
 
     public function forgotPassword() {
         $this->set('title', ADMIN_TITLE . 'Forgot Password');
-        $this->viewBuilder()->layout('admin_login');
+        $this->viewBuilder()->setLayout('admin_login');
 
         $admin = $this->Admins->newEntity();
         if ($this->request->is('post')) {
-            $admin = $this->Admins->patchEntity($admin, $this->request->data, ['validate' => 'forgotPassword']);
-            if (count($admin->errors()) == 0) {
-                $email = $this->request->data['Admins']['email'];
+            $requestData = $this->request->getData();
+            $admin = $this->Admins->patchEntity($admin, $requestData, ['validate' => 'forgotPassword']);
+            if (count($admin->getErrors()) == 0) {
+                $email = $requestData['Admins']['email'];
                 $adminInfo = $this->Admins->find()->where(['Admins.email' => $email])->first();
                 if ($adminInfo) {
                     $new_password = rand(1000000, 999999999);
@@ -119,14 +125,25 @@ class AdminsController extends AppController {
 					
 					//echo $messageToSend;exit;
 
-                    $email = new Email();
-                    $email->template('default', 'admintemplate')
-                            ->emailFormat('html')
-                            ->to($emailId)
-                            ->from([MAIL_FROM => SITE_TITLE])
-                            ->subject($subjectToSend)
-                            ->viewVars(['content_for_layout' => $messageToSend])
-                            ->send();
+                    $mailer = new Mailer('default');
+                    if (method_exists($mailer, 'setEmailFormat')) {
+                        $mailer->setEmailFormat('html');
+                    }
+                    if (method_exists($mailer, 'setTo')) {
+                        $mailer->setTo($emailId);
+                    }
+                    if (method_exists($mailer, 'setFrom')) {
+                        $mailer->setFrom([MAIL_FROM => SITE_TITLE]);
+                    }
+                    if (method_exists($mailer, 'setSubject')) {
+                        $mailer->setSubject($subjectToSend);
+                    }
+
+                    if (method_exists($mailer, 'deliver')) {
+                        $mailer->deliver($messageToSend);
+                    } else {
+                        $mailer->send($messageToSend);
+                    }
 
                     $this->Flash->success('New admin password sent to admin email address.');
                     $this->redirect(['action' => 'login']);
@@ -148,9 +165,10 @@ class AdminsController extends AppController {
 
     public function headerchooseconvseas() {
 		
-		//$this->prx($this->request->data);
+        //$this->prx($this->request->getData());
+        $requestData = $this->request->getData();
 		
-		$admin_header_season_id = $this->request->data['admin_header_season_id'];
+        $admin_header_season_id = $requestData['admin_header_season_id'];
 		
 		if($admin_header_season_id>0)
 		{
@@ -158,14 +176,14 @@ class AdminsController extends AppController {
 			
 			if($convSD)
 			{
-				$this->request->session()->write('sess_admin_header_season_id', $admin_header_season_id);
+				$this->request->getSession()->write('sess_admin_header_season_id', $admin_header_season_id);
 				
 				$this->redirect(['controller' => 'conventions', 'action' => 'seasons', $convSD->Conventions['slug']]);
 			}
 		}
 		else
 		{
-			$this->request->session()->write('sess_admin_header_season_id', 0);
+			$this->request->getSession()->write('sess_admin_header_season_id', 0);
 		}
 		
 		
@@ -175,11 +193,11 @@ class AdminsController extends AppController {
 	
     public function dashboard() {
         $this->set('title', ADMIN_TITLE . 'Admin Dashboard');
-        $this->viewBuilder()->layout('admin');
+        $this->viewBuilder()->setLayout('admin');
         $this->set('dashboard', '1');
 		
 		// to check if convention season selected from header
-		$sess_admin_header_season_id = $this->request->session()->read("sess_admin_header_season_id");
+		$sess_admin_header_season_id = $this->request->getSession()->read("sess_admin_header_season_id");
 		$this->set('sess_admin_header_season_id', $sess_admin_header_season_id);
 		if($sess_admin_header_season_id>0)
 		{
@@ -309,17 +327,18 @@ class AdminsController extends AppController {
 
     public function changeEmail() {
         $this->set('title', ADMIN_TITLE . 'Change Email Address');
-        $this->viewBuilder()->layout('admin');
+        $this->viewBuilder()->setLayout('admin');
 		
         $this->set('manageConfig', '1');
         $this->set('changeEmail', '1');
 		
         $admin = $this->Admins->newEntity();
         if ($this->request->is('post')) {
-            $admin = $this->Admins->patchEntity($admin, $this->request->data, ['validate' => 'changeEmail']);
-            if (count($admin->errors()) == 0) {
-                $new_email = $this->request->data['Admins']['new_email'];
-                $this->Admins->updateAll(['email' => $new_email], ['id' => $this->request->session()->read('admin_id')]);
+            $requestData = $this->request->getData();
+            $admin = $this->Admins->patchEntity($admin, $requestData, ['validate' => 'changeEmail']);
+            if (count($admin->getErrors()) == 0) {
+                $new_email = $requestData['Admins']['new_email'];
+                $this->Admins->updateAll(['email' => $new_email], ['id' => $this->request->getSession()->read('admin_id')]);
                 $this->Flash->success('Admin email updated successfully.');
                 $this->redirect(['action' => 'changeEmail']);
             } else {
@@ -327,13 +346,13 @@ class AdminsController extends AppController {
             }
         }
         $this->set('admin', $admin);
-        $adminInfo = $this->Admins->find()->where(['Admins.id' => $this->request->session()->read('admin_id')])->first();
+        $adminInfo = $this->Admins->find()->where(['Admins.id' => $this->request->getSession()->read('admin_id')])->first();
         $this->set('adminInfo', $adminInfo);
     }
 
     public function changeusername() {
         $this->set('title', ADMIN_TITLE . 'Change Username');
-        $this->viewBuilder()->layout('admin');
+        $this->viewBuilder()->setLayout('admin');
 
         $this->set('manageConfig', '1');
         $this->set('changeUsername', '1');
@@ -341,11 +360,12 @@ class AdminsController extends AppController {
         $admin = $this->Admins->newEntity();
         if ($this->request->is('post')) {
 
-            $admin = $this->Admins->patchEntity($admin, $this->request->data, ['validate' => 'changeusername']);
-            if (count($admin->errors()) == 0) {
-                $username = $this->request->data['Admins']['new_username'];
-                $this->Admins->updateAll(['username' => $username], ['id' => $this->request->session()->read('admin_id')]);
-                $this->request->session()->write('admin_username', $username);
+            $requestData = $this->request->getData();
+            $admin = $this->Admins->patchEntity($admin, $requestData, ['validate' => 'changeusername']);
+            if (count($admin->getErrors()) == 0) {
+                $username = $requestData['Admins']['new_username'];
+                $this->Admins->updateAll(['username' => $username], ['id' => $this->request->getSession()->read('admin_id')]);
+                $this->request->getSession()->write('admin_username', $username);
                 $this->Flash->success('Admin username updated successfully.');
                 $this->redirect(['action' => 'changeusername']);
             } else {
@@ -353,13 +373,13 @@ class AdminsController extends AppController {
             }
         }
         $this->set('admin', $admin);
-        $adminInfo = $this->Admins->find()->where(['Admins.id' => $this->request->session()->read('admin_id')])->first();
+        $adminInfo = $this->Admins->find()->where(['Admins.id' => $this->request->getSession()->read('admin_id')])->first();
         $this->set('adminInfo', $adminInfo);
     }
 
     public function changePassword() {
         $this->set('title', ADMIN_TITLE . 'Change Password');
-        $this->viewBuilder()->layout('admin');
+        $this->viewBuilder()->setLayout('admin');
 		
         $this->set('manageConfig', '1');
         $this->set('changePassword', '1');
@@ -367,13 +387,14 @@ class AdminsController extends AppController {
 		
         $admin = $this->Admins->newEntity();
         if ($this->request->is('post')) {
-            $this->request->data['Admins']['id'] = $this->request->session()->read('admin_id');
-            $admin = $this->Admins->patchEntity($admin, $this->request->data, ['validate' => 'changePassword']);
-            if (count($admin->errors()) == 0) {
-                $new_password = $this->request->data['Admins']['new_password'];
+            $requestData = $this->request->getData();
+            $requestData['Admins']['id'] = $this->request->getSession()->read('admin_id');
+            $admin = $this->Admins->patchEntity($admin, $requestData, ['validate' => 'changePassword']);
+            if (count($admin->getErrors()) == 0) {
+                $new_password = $requestData['Admins']['new_password'];
                 $salt = uniqid(mt_rand(), true);
                 $password = crypt($new_password, '$2a$07$' . $salt . '$');
-                $this->Admins->updateAll(['password' => $password], ['id' => $this->request->session()->read('admin_id')]);
+                $this->Admins->updateAll(['password' => $password], ['id' => $this->request->getSession()->read('admin_id')]);
                 $this->Flash->success('Admin password updated successfully.');
                 $this->redirect(['action' => 'changePassword']);
             } else {
@@ -381,7 +402,7 @@ class AdminsController extends AppController {
             }
         }
         $this->set('admin', $admin);
-        $adminInfo = $this->Admins->find()->where(['Admins.id' => $this->request->session()->read('admin_id')])->first();
+        $adminInfo = $this->Admins->find()->where(['Admins.id' => $this->request->getSession()->read('admin_id')])->first();
         $this->set('adminInfo', $adminInfo);
     }
 	
@@ -389,34 +410,33 @@ class AdminsController extends AppController {
 	
 		$adminInfo = $this->Admins->find()->where()->order(['Admins.id' => "ASC"])->first();
 
-		$this->request->session()->write('admin_id', $adminInfo->id);
-		$this->request->session()->write('admin_username', $adminInfo->username);
+		$this->request->getSession()->write('admin_id', $adminInfo->id);
+		$this->request->getSession()->write('admin_username', $adminInfo->username);
 		$this->redirect(['action' => 'dashboard']);
 	
 	}
 
     public function settings() {
         $this->set('title', ADMIN_TITLE . 'Settings');
-        $this->viewBuilder()->layout('admin');
+        $this->viewBuilder()->setLayout('admin');
 		
         $this->set('manageConfig', '1');
         $this->set('settings', '1');
 		
         if ($this->request->is('post')) {
+                $requestData = $this->request->getData();
 				
-				$paypal_email 							= $this->request->data['Settings']['paypal_email'];
-				$accounts_team_email 					= $this->request->data['Settings']['accounts_team_email'];
-				$full_registration_price 				= $this->request->data['Settings']['full_registration_price'];
-				$scripture_only_registration_price 		= $this->request->data['Settings']['scripture_only_registration_price'];
-				$scripture_trophy_discount 				= $this->request->data['Settings']['scripture_trophy_discount'];
+                $paypal_email 							= $requestData['Settings']['paypal_email'];
+                $accounts_team_email 					= $requestData['Settings']['accounts_team_email'];
+                $full_registration_price 				= $requestData['Settings']['full_registration_price'];
+                $scripture_only_registration_price 		= $requestData['Settings']['scripture_only_registration_price'];
+                $scripture_trophy_discount 				= $requestData['Settings']['scripture_trophy_discount'];
 				
-				$min_events_student 				= $this->request->data['Settings']['min_events_student'];
-				$max_events_student 				= $this->request->data['Settings']['max_events_student'];
+                $min_events_student 				= $requestData['Settings']['min_events_student'];
+                $max_events_student 				= $requestData['Settings']['max_events_student'];
 				
-				$judges_low_score_saving_pin 				= $this->request->data['Settings']['judges_low_score_saving_pin'];
+                $judges_low_score_saving_pin 				= $requestData['Settings']['judges_low_score_saving_pin'];
 				
-				
-				//$tax_percent 							= $this->request->data['Settings']['tax_percent'];
 				
                 $this->Settings->updateAll([
 				'paypal_email' 							=> $paypal_email,
@@ -443,14 +463,15 @@ class AdminsController extends AppController {
 	
 	public function postinfo() {
         $this->set('title', ADMIN_TITLE . 'Post Information');
-        $this->viewBuilder()->layout('admin');
+        $this->viewBuilder()->setLayout('admin');
 		
         $this->set('manageConfig', '1');
         $this->set('postinfo', '1');
 		
         if ($this->request->is('post')) {
+                $requestData = $this->request->getData();
 				
-				$postinfo 							= $this->request->data['Settings']['postinfo'];
+                $postinfo 							= $requestData['Settings']['postinfo'];
 				
                 $this->Settings->updateAll([
 				'postinfo' 							=> $postinfo

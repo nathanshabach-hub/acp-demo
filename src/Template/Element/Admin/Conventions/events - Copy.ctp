@@ -45,7 +45,7 @@
         
         <?php 
         if (isset($keyword) && $keyword != '') {
-            echo $this->Form->input('Conventions.keyword', ['label'=>false, 'type'=>'hidden', 'value'=>$keyword]);
+            echo $this->Form->control('Conventions.keyword', ['label'=>false, 'type'=>'hidden', 'value'=>$keyword]);
         }?>
         <?php echo $this->Form->end(); ?>
     

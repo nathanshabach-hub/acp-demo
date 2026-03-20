@@ -1,6 +1,6 @@
 <?php
 use Cake\ORM\TableRegistry;
-$this->Events = TableRegistry::get('Events');
+$this->Events = TableRegistry::getTableLocator()->get('Events');
 ?>
 <div class="admin_loader" id="loaderID"><?php echo $this->Html->image('loader_large_blue.gif');?></div>
   

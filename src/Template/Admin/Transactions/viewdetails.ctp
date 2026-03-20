@@ -41,7 +41,7 @@
 					<div class="form-group">
                       <label class="col-sm-2 control-label">Transaction ID <span class="require"></span></label>
                       <div class="col-sm-10">
-                          <?php echo $this->Form->input('Transactions.transaction_id_received', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control', 'placeholder'=>'Transaction ID', 'autocomplete'=>'off']); ?>
+                          <?php echo $this->Form->control('Transactions.transaction_id_received', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control', 'placeholder'=>'Transaction ID', 'autocomplete'=>'off']); ?>
 						  <em>Note: Please enter transaction ID from your bank statements on behalf of the payment received.</em>
                       </div>
                     </div>
@@ -49,14 +49,14 @@
 					<div class="form-group">
                       <label class="col-sm-2 control-label">Notes <span class="require"></span></label>
                       <div class="col-sm-10">
-                          <?php echo $this->Form->input('Transactions.transaction_data', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control', 'placeholder'=>'Notes', 'autocomplete'=>'off']); ?>
+                          <?php echo $this->Form->control('Transactions.transaction_data', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control', 'placeholder'=>'Notes', 'autocomplete'=>'off']); ?>
 						  <em>Note: Please enter any other information regarding this invoice or online payment.</em>
                       </div>
                     </div>
                     
                     <div class="box-footer">
                         <label class="col-sm-2 control-label" for="inputPassword3">&nbsp;</label>
-                        <?php echo $this->Form->input('Transactions.id', ['label'=>false, 'type'=>'hidden']); ?>
+                        <?php echo $this->Form->control('Transactions.id', ['label'=>false, 'type'=>'hidden']); ?>
                         <?php echo $this->Form->button('Save', ['type'=>'submit', 'class' => 'btn btn-info', 'div'=>false]); ?>
                         <?php echo $this->Html->link('Cancel', ['controller'=>'transactions', 'action' => 'index'], ['class'=>'btn btn-default canlcel_le']); ?>
                     </div>

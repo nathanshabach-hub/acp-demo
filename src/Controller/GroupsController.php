@@ -6,14 +6,13 @@ use Cake\Datasource\ConnectionManager;
 use App\Controller\AppController;
 use Cake\Core\Configure;
 use Cake\Core\Configure\Engine\PhpConfig;
-use Cake\Mailer\Email;
 use Cake\I18n\I18n;
 
 
 class GroupsController extends AppController {
 
     public $paginate = ['limit' => 50];
-    var $components = array('RequestHandler', 'PImage', 'PImageTest');
+    public $components = ['RequestHandler', 'PImage', 'PImageTest'];
 	
 	public function initialize() {
         parent::initialize();
@@ -37,23 +36,23 @@ class GroupsController extends AppController {
         $this->multiLoginCheck(['School','Teacher_Parent']);
 		
         $this->set("title_for_layout", "Student Grouping" . TITLE_FOR_PAGES);
-        $this->viewbuilder()->layout('home');
+        $this->viewBuilder()->setLayout('home');
         
 		$this->set('active_cr_studentgroups','active');
 		
         $msgString = '';
 
-		$user_id = $this->request->session()->read("user_id");
-		$user_type 	= $this->request->session()->read("user_type");
+		$user_id = $this->request->getSession()->read("user_id");
+		$user_type 	= $this->request->getSession()->read("user_type");
 		$userDetails = $this->Users->find()->where(['Users.id' => $user_id])->first();
         $this->set('userDetails', $userDetails);
 
         $separator = array();
         $condition = array();
 		
-		if($this->request->session()->read("sess_selected_convention_registration_id")>0)
+		if($this->request->getSession()->read("sess_selected_convention_registration_id")>0)
 		{
-			$sess_selected_convention_registration_id = $this->request->session()->read("sess_selected_convention_registration_id");
+			$sess_selected_convention_registration_id = $this->request->getSession()->read("sess_selected_convention_registration_id");
 			
 			// to get convention registration details
 			$conventionRegD = $this->Conventionregistrations->find()->where(['Conventionregistrations.id' => $sess_selected_convention_registration_id])->first();
@@ -96,20 +95,20 @@ class GroupsController extends AppController {
 		$this->multiLoginCheck(['School','Teacher_Parent']);
 		
 		//echo ' fsdf sdf sdf d';exit;
-		$this->viewbuilder()->layout("home");
+		$this->viewBuilder()->setLayout("home");
         $this->set("title_for_layout", "Event groups " . TITLE_FOR_PAGES);
 		
 		$this->set('active_cr_studentgroups','active');
 		
 		$this->set('event_slug',$event_slug);
 		
-        $user_id = $this->request->session()->read("user_id");
+        $user_id = $this->request->getSession()->read("user_id");
 		$userDetails = $this->Users->find()->where(['Users.id' => $user_id])->first();
         $this->set('userDetails', $userDetails);
 		
-		if($this->request->session()->read("sess_selected_convention_registration_id")>0)
+		if($this->request->getSession()->read("sess_selected_convention_registration_id")>0)
 		{
-			$sess_selected_convention_registration_id = $this->request->session()->read("sess_selected_convention_registration_id");
+			$sess_selected_convention_registration_id = $this->request->getSession()->read("sess_selected_convention_registration_id");
 			
 			// to get convention registration details
 			$conventionRegD = $this->Conventionregistrations->find()->where(['Conventionregistrations.id' => $sess_selected_convention_registration_id])->first();
@@ -172,8 +171,8 @@ class GroupsController extends AppController {
 		// to create group
 		if ($this->request->is('post')) {
             
-			$student_ids 	= $this->request->data['Groups']['student_id'];
-			$group_name 	= $this->request->data['Groups']['group_name'];
+			$student_ids 	= $this->request->getData()['Groups']['student_id'];
+			$group_name 	= $this->request->getData()['Groups']['group_name'];
             
 			// now update group name
 			foreach($student_ids as $student_id)
@@ -236,9 +235,9 @@ class GroupsController extends AppController {
 		//$this->schoolAdminLoginCheck();
 		$this->multiLoginCheck(['School','Teacher_Parent']);
 		
-		if($this->request->session()->read("sess_selected_convention_registration_id")>0)
+		if($this->request->getSession()->read("sess_selected_convention_registration_id")>0)
 		{
-			$sess_selected_convention_registration_id = $this->request->session()->read("sess_selected_convention_registration_id");
+			$sess_selected_convention_registration_id = $this->request->getSession()->read("sess_selected_convention_registration_id");
 			
 			// to get convention registration details
 			$conventionRegD = $this->Conventionregistrations->find()->where(['Conventionregistrations.id' => $sess_selected_convention_registration_id])->first();

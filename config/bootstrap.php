@@ -14,8 +14,8 @@
  */
 // phpinfo();exit;
 // You can remove this if you are confident that your PHP version is sufficient.
-if (version_compare(PHP_VERSION, '5.5.9') < 0) {
-    trigger_error('You PHP version must be equal or higher than 5.5.9 to use CakePHP.', E_USER_ERROR);
+if (version_compare(PHP_VERSION, '7.4.0') < 0) {
+    trigger_error('Your PHP version must be equal or higher than 7.4.0 to use this application.', E_USER_ERROR);
 }
 
 // You can remove this if you are confident you have intl installed.
@@ -61,9 +61,9 @@ use Cake\Datasource\ConnectionManager;
 use Cake\Error\ErrorHandler;
 use Cake\Log\Log;
 use Cake\Mailer\Email;
+use Cake\Http\ServerRequest;
 use Cake\Network\Request;
 use Cake\Routing\DispatcherFactory;
-use Cake\Utility\Inflector;
 use Cake\Utility\Security;
 
 /**
@@ -75,7 +75,11 @@ use Cake\Utility\Security;
  * that changes from configuration that does not. This makes deployment simpler.
  */
 try {
-    Configure::config('default', new PhpConfig());
+    if (method_exists(Configure::class, 'setConfig')) {
+        Configure::setConfig('default', new PhpConfig());
+    } else {
+        Configure::config('default', new PhpConfig());
+    }
     Configure::load('app', 'default', false);
 } catch (\Exception $e) {
     exit($e->getMessage() . "\n");
@@ -147,12 +151,12 @@ if (!Configure::read('App.fullBaseUrl')) {
     unset($httpHost, $s);
 }
 
-Cache::config(Configure::consume('Cache'));
-ConnectionManager::config(Configure::consume('Datasources'));
-Email::configTransport(Configure::consume('EmailTransport'));
-Email::config(Configure::consume('Email'));
-Log::config(Configure::consume('Log'));
-Security::salt(Configure::consume('Security.salt'));
+Cache::setConfig(Configure::consume('Cache'));
+ConnectionManager::setConfig(Configure::consume('Datasources'));
+\Cake\Mailer\TransportFactory::setConfig(Configure::consume('EmailTransport'));
+Email::setConfig(Configure::consume('Email'));
+Log::setConfig(Configure::consume('Log'));
+Security::setSalt(Configure::consume('Security.salt'));
 
 /**
  * The default crypto extension in 3.0 is OpenSSL.
@@ -164,14 +168,25 @@ Security::salt(Configure::consume('Security.salt'));
 /**
  * Setup detectors for mobile and tablet.
  */
-Request::addDetector('mobile', function ($request) {
-    $detector = new \Detection\MobileDetect();
-    return $detector->isMobile();
-});
-Request::addDetector('tablet', function ($request) {
-    $detector = new \Detection\MobileDetect();
-    return $detector->isTablet();
-});
+if (class_exists(ServerRequest::class)) {
+    ServerRequest::addDetector('mobile', function ($request) {
+        $detector = new \Detection\MobileDetect();
+        return $detector->isMobile();
+    });
+    ServerRequest::addDetector('tablet', function ($request) {
+        $detector = new \Detection\MobileDetect();
+        return $detector->isTablet();
+    });
+} else {
+    Request::addDetector('mobile', function ($request) {
+        $detector = new \Detection\MobileDetect();
+        return $detector->isMobile();
+    });
+    Request::addDetector('tablet', function ($request) {
+        $detector = new \Detection\MobileDetect();
+        return $detector->isTablet();
+    });
+}
 
 /**
  * Custom Inflector rules, can be set to correctly pluralize or singularize
@@ -200,15 +215,16 @@ Plugin::load('Migrations');
 // Debug Kit should not be installed on a production system
 if (Configure::read('debug')) {
    // Plugin::load('DebugKit', ['bootstrap' => true]);
-    Plugin::load('AkkaFacebook', ['autoload' => true]);
+    if (is_dir(ROOT . DS . 'plugins' . DS . 'AkkaFacebook')) {
+        Plugin::load('AkkaFacebook', ['autoload' => true]);
+    }
 }
 
-/**
- * Connect middleware/dispatcher filters.
- */
-DispatcherFactory::add('Asset');
-DispatcherFactory::add('Routing');
-DispatcherFactory::add('ControllerFactory');
+if (class_exists(DispatcherFactory::class) && method_exists(DispatcherFactory::class, 'add')) {
+    DispatcherFactory::add('Asset');
+    DispatcherFactory::add('Routing');
+    DispatcherFactory::add('ControllerFactory');
+}
 
 /**
  * Enable immutable time objects in the ORM.

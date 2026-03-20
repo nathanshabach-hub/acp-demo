@@ -24,7 +24,7 @@ $(document).ready(function () {
 						<h2 class="mb-4">Check Customer Code</h2>
 						 
 						<!--<input type="text" placeholder="ASC01" class="mb-4 w-100">-->
-						<?php echo $this->Form->input('Users.customer_code', ['label'=>false, 'type'=>'text', 'autocomplete'=>'off', 'div'=>false, 'class'=>'form-control required mb-0 w-100', 'placeholder'=>'Enter Code', 'autofocus'=>'']); ?>
+						<?php echo $this->Form->control('Users.customer_code', ['label'=>false, 'type'=>'text', 'autocomplete'=>'off', 'div'=>false, 'class'=>'form-control required mb-0 w-100', 'placeholder'=>'Enter Code', 'autofocus'=>'']); ?>
 						
 						<div class="d-flex justify-content-between">
 							<!--<button type="button" class="btn btn-secondary px-3"><a href="page-5.html">Check</a> </button>-->

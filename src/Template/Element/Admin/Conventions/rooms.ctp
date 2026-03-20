@@ -2,6 +2,21 @@
 <?php if (!$convrooms->isEmpty()) { ?> 
     <div class="panel-body">
         <div class="ersu_message"> <?php echo $this->Flash->render() ?></div>
+        
+        <!-- Excel Import Section -->
+        <div class="import-rooms-section" style="margin-bottom: 20px; padding: 15px; background-color: #f9f9f9; border: 1px solid #ddd; border-radius: 4px;">
+            <h4 style="margin-top: 0;">Import Rooms from Excel</h4>
+            <p style="font-size: 50px; color: #666;">Upload an Excel file with room names. File should have columns: <strong>Room Name</strong> and optionally <strong>Description</strong></p>
+            <?php echo $this->Form->create('Conventionrooms', ['type' => 'file', 'url' => ['controller' => 'conventions', 'action' => 'importroomexcel', $slug]]); ?>
+                <div class="form-group">
+                    <label for="import_file">Select Excel File:</label>
+                    <input type="file" name="import_file" id="import_file" accept=".xlsx,.xls,.csv" class="form-control" required>
+                    <small style="color: #999;">Supported formats: .xlsx, .xls, .csv</small>
+                </div>
+                <button type="submit" class="btn btn-primary btn-sm">Import Rooms</button>
+            <?php echo $this->Form->end(); ?>
+        </div>
+        
         <?php echo $this->Form->create('Conventions', ['id'=>'actionFrom', "method" => "Post"]);  ?>
         <section id="no-more-tables" class="lstng-section">
             <div class="topn">

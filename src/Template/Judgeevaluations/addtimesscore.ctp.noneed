@@ -42,13 +42,13 @@ else
 					
 					<div class="form-group">
 						<label for="name">Time</label>
-						<?php echo $this->Form->input('Judgeevaluations.time_score', ['id'=>'time_score', 'label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required', 'placeholder'=>'','autocomplete' => 'off', 'value' => $formattedTime]); ?>
+						<?php echo $this->Form->control('Judgeevaluations.time_score', ['id'=>'time_score', 'label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required', 'placeholder'=>'','autocomplete' => 'off', 'value' => $formattedTime]); ?>
 						<span class="help_text" style="padding-left:274px;"><i>Please enter time in format hh:mm:ss.ms</i></span>
 					</div>
 					
 					<div class="form-group">
 						<label for="name">Withdraw</label>
-						<?php echo $this->Form->input('Judgeevaluations.withdraw_yes_no', ['id'=>'withdraw_yes_no', 'label'=>false, 'type'=>'checkbox',  'div'=>false, 'placeholder'=>'','style' => 'width:2%;', $checkedS]); ?>
+						<?php echo $this->Form->control('Judgeevaluations.withdraw_yes_no', ['id'=>'withdraw_yes_no', 'label'=>false, 'type'=>'checkbox',  'div'=>false, 'placeholder'=>'','style' => 'width:2%;', $checkedS]); ?>
 					</div>
 					
 					<div class="form-group form-btns">

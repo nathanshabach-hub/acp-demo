@@ -6,12 +6,11 @@ use App\Controller\AppController;
 use Cake\Core\Configure;
 use Cake\Core\Configure\Engine\PhpConfig;
 use Cake\Datasource\ConnectionManager;
-use Cake\Mailer\Email;
 
 class HearteventsController extends AppController {
 
     public $paginate = ['limit' => 50, 'order' => ['Conventions.name' => 'asc']];
-    var $components = array('RequestHandler', 'PImage', 'PImageTest');
+    public $components = ['RequestHandler', 'PImage', 'PImageTest'];
 
     //public $helpers = array('Javascript', 'Ajax');
 
@@ -19,8 +18,8 @@ class HearteventsController extends AppController {
         parent::initialize();
         $this->loadComponent('Paginator');
         $this->loadComponent('Flash');
-        $action = $this->request->params['action'];
-        $loggedAdminId = $this->request->session()->read('admin_id');
+		$action = $this->request->getParam('action');
+		$loggedAdminId = $this->request->getSession()->read('admin_id');
         if ($action != 'forgotPassword' && $action != 'logout') {
             if (!$loggedAdminId && $action != "login" && $action != 'captcha') {
                 $this->redirect(['controller' => 'admins', 'action' => 'login']);
@@ -39,7 +38,7 @@ class HearteventsController extends AppController {
 	
 	public function listheartevents($slug_convention_season = null,$slug_convention = null) {
         
-        $this->viewBuilder()->layout('admin');
+        $this->viewBuilder()->setLayout('admin');
         
 		$this->set('manageConventions', '1');
         $this->set('conventionList', '1');
@@ -105,7 +104,7 @@ class HearteventsController extends AppController {
 		
 		
 		///////////////
-		$this->viewbuilder()->layout('');
+		$this->viewBuilder()->setLayout('');
 		
 		$arrCertData = array();
 		

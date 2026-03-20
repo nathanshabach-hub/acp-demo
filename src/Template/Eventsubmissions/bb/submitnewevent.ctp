@@ -63,7 +63,7 @@
 					<div class="d-flex">
 						<label for="event_document">Upload File</label>
 						<div class="input-multiple">
-							<?php echo $this->Form->input('Eventsubmissions.event_document', ['id' => 'event_document', 'label' => false, 'type' => 'file', 'div' => false, 'class' => 'form-control required', 'onchange' => 'imageValidation()']); ?>
+							<?php echo $this->Form->control('Eventsubmissions.event_document', ['id' => 'event_document', 'label' => false, 'type' => 'file', 'div' => false, 'class' => 'form-control required', 'onchange' => 'imageValidation()']); ?>
 							<span class="help_text">mp3, mp4, mpeg, mov, avi, amr, ape, nmf, 3gp, pdf, doc, docx, png, jpg, jpeg, ppt and pptx files allowed.</span>
 						</div>
 					</div>
@@ -73,7 +73,7 @@
 					<div class="d-flex">
 						<label for="event_document">Report</label>
 						<div class="input-multiple">
-							<?php echo $this->Form->input('Eventsubmissions.report', ['id' => 'report', 'label' => false, 'type' => 'file', 'div' => false, 'class' => 'form-control required', 'onchange' => 'imageValidationReport()']); ?>
+							<?php echo $this->Form->control('Eventsubmissions.report', ['id' => 'report', 'label' => false, 'type' => 'file', 'div' => false, 'class' => 'form-control required', 'onchange' => 'imageValidationReport()']); ?>
 							<span class="help_text">mp3, pdf, doc, docx, png, jpg, jpeg, ppt and pptx files allowed.</span>
 						</div>
 					</div>
@@ -83,7 +83,7 @@
 					<div class="d-flex">
 						<label for="event_document">Context Box</label>
 						<div class="input-multiple">
-							<?php echo $this->Form->input('Eventsubmissions.context_box', ['id' => 'context_box', 'label' => false, 'type' => 'text', 'div' => false, 'class' => 'form-control required']); ?>
+							<?php echo $this->Form->control('Eventsubmissions.context_box', ['id' => 'context_box', 'label' => false, 'type' => 'text', 'div' => false, 'class' => 'form-control required']); ?>
 						</div>
 					</div>
 				</div>
@@ -92,7 +92,7 @@
 					<div class="d-flex">
 						<label for="event_document">Score Sheet</label>
 						<div class="input-multiple">
-							<?php echo $this->Form->input('Eventsubmissions.score_sheet', ['id' => 'score_sheet', 'label' => false, 'type' => 'file', 'div' => false, 'class' => 'form-control required', 'onchange' => 'imageValidationSS()']); ?>
+							<?php echo $this->Form->control('Eventsubmissions.score_sheet', ['id' => 'score_sheet', 'label' => false, 'type' => 'file', 'div' => false, 'class' => 'form-control required', 'onchange' => 'imageValidationSS()']); ?>
 							<span class="help_text">mp3, pdf, doc, docx, png, jpg, jpeg, ppt and pptx files allowed.</span>
 						</div>
 					</div>
@@ -102,7 +102,7 @@
 					<div class="d-flex">
 						<label for="event_document">Additional Document</label>
 						<div class="input-multiple">
-							<?php echo $this->Form->input('Eventsubmissions.additional_documents', ['id' => 'additional_documents', 'label' => false, 'type' => 'file', 'div' => false, 'class' => 'form-control required', 'onchange' => 'imageValidationAD()']); ?>
+							<?php echo $this->Form->control('Eventsubmissions.additional_documents', ['id' => 'additional_documents', 'label' => false, 'type' => 'file', 'div' => false, 'class' => 'form-control required', 'onchange' => 'imageValidationAD()']); ?>
 							<span class="help_text">mp3, pdf, doc, docx, png, jpg, jpeg, ppt and pptx files allowed.</span>
 						</div>
 					</div>

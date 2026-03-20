@@ -1,12 +1,16 @@
-FROM php:7.4-apache
+FROM php:8.2-apache
 
 RUN apt-get update && apt-get install -y \
     libicu-dev \
     libzip-dev \
     libonig-dev \
     unzip \
+    git \
+    zip \
     && docker-php-ext-configure intl \
-    && docker-php-ext-install intl pdo pdo_mysql mbstring
+    && docker-php-ext-install intl pdo pdo_mysql mbstring zip \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
 RUN a2enmod rewrite
 

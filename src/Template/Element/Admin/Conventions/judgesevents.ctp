@@ -1,8 +1,8 @@
 <?php
 use Cake\ORM\TableRegistry;
-$this->Events = TableRegistry::get('Events');
-$this->Eventsubmissions = TableRegistry::get('Eventsubmissions');
-$this->Judgeevaluations = TableRegistry::get('Judgeevaluations');
+$this->Events = TableRegistry::getTableLocator()->get('Events');
+$this->Eventsubmissions = TableRegistry::getTableLocator()->get('Eventsubmissions');
+$this->Judgeevaluations = TableRegistry::getTableLocator()->get('Judgeevaluations');
 ?>
 <div class="admin_loader" id="loaderID"><?php echo $this->Html->image('loader_large_blue.gif');?></div>
   

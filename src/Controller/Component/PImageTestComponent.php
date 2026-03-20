@@ -3,8 +3,8 @@ namespace Cake\Controller\Component;
 
 use Cake\Controller\Component;
 use Cake\I18n\Time;
-use Cake\Network\Request;
-use Cake\Network\Response;
+use Cake\Http\Request;
+use Cake\Http\Response;
 use Cake\Utility\CookieCryptTrait;
 use Cake\Utility\Hash;
 use Cake\Utility\Security;

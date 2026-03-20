@@ -1,6 +1,6 @@
 <?php
 use Cake\ORM\TableRegistry;
-$this->Schedulingtimings = TableRegistry::get('Schedulingtimings');
+$this->Schedulingtimings = TableRegistry::getTableLocator()->get('Schedulingtimings');
 ?>
 <script type="text/javascript">
     $(document).ready(function() {
@@ -123,7 +123,88 @@ $this->Schedulingtimings = TableRegistry::get('Schedulingtimings');
 					echo $this->Html->link('Start Scheduling', ['controller'=>'schedulingtimings', 'action' => 'startschedulec1',$convention_season_slug], ['class'=>'btn btn-primary canlcel_le', 'confirm' => 'Are you sure you want to start scheduling?']);
 				}
 				?>
+				&nbsp;&nbsp;
+				<?php echo $this->Html->link('Post-Schedule Overview', ['controller'=>'schedulingtimings', 'action'=>'postscheduleoverview', $convention_season_slug], ['escape'=>false, 'class'=>'btn btn-info']); ?>
+				&nbsp;&nbsp;
+				<?php echo $this->Html->link('Export Auto-Assign Runs (CSV)', ['controller'=>'schedulingtimings', 'action'=>'exportautoassignruns', $convention_season_slug], ['escape'=>false, 'class'=>'btn btn-primary']); ?>
 				</h2> 
+
+				<?php if (!empty($scheduleHealth)) { ?>
+				<div class="panel panel-default" style="margin-bottom:15px;">
+					<div class="panel-heading"><strong>Schedule Health</strong></div>
+					<div class="panel-body">
+						<div class="row">
+							<div class="col-md-4">
+								<div class="alert alert-info" style="margin-bottom:10px;">
+									<strong>Conflicts by Type</strong><br>
+									Room conflicts: <?php echo (int)$scheduleHealth['room_conflicts']; ?><br>
+									Participant conflicts (same category): <?php echo (int)$scheduleHealth['same_category_participant_conflicts']; ?><br>
+									Participant conflicts (cross category): <?php echo (int)$scheduleHealth['cross_category_participant_conflicts']; ?>
+								</div>
+							</div>
+							<div class="col-md-8">
+								<div class="alert alert-info" style="margin-bottom:10px;">
+									<strong>Mon-Thu Room Utilization</strong><br>
+									Average utilization: <?php echo number_format((float)$scheduleHealth['average_room_utilization_pct'], 1); ?>%
+								</div>
+								<?php if (!empty($scheduleHealth['room_utilization'])) { ?>
+								<div class="table-responsive">
+									<table class="table table-bordered table-condensed" style="margin-bottom:0;">
+										<thead>
+											<tr>
+												<th>Room</th>
+												<th>Used (mins)</th>
+												<th>Capacity (mins)</th>
+												<th>Utilization</th>
+											</tr>
+										</thead>
+										<tbody>
+										<?php foreach ($scheduleHealth['room_utilization'] as $uRow) { ?>
+											<tr>
+												<td><?php echo h($uRow['room_name']); ?></td>
+												<td><?php echo (int)$uRow['minutes_used']; ?></td>
+												<td><?php echo (int)$uRow['capacity_minutes']; ?></td>
+												<td><?php echo number_format((float)$uRow['utilization_pct'], 1); ?>%</td>
+											</tr>
+										<?php } ?>
+										</tbody>
+									</table>
+								</div>
+								<?php } ?>
+							</div>
+						</div>
+
+						<?php if (!empty($overflowTrendRows)) { ?>
+						<div class="table-responsive" style="margin-top:12px;">
+							<table class="table table-bordered table-condensed" style="margin-bottom:0;">
+								<thead>
+									<tr>
+										<th>Recent Auto-Assign Trend</th>
+										<th>Category</th>
+										<th>Before</th>
+										<th>Assigned</th>
+										<th>After</th>
+										<th>When</th>
+									</tr>
+								</thead>
+								<tbody>
+								<?php foreach ($overflowTrendRows as $trendRow) { ?>
+									<tr>
+										<td><?php echo h($trendRow['trigger_source']); ?></td>
+										<td><?php echo $trendRow['schedule_category'] === null ? 'All' : (int)$trendRow['schedule_category']; ?></td>
+										<td><?php echo (int)$trendRow['overflow_before']; ?></td>
+										<td><?php echo (int)$trendRow['assigned_count']; ?></td>
+										<td><?php echo (int)$trendRow['overflow_after']; ?></td>
+										<td><?php echo h($trendRow['created']); ?></td>
+									</tr>
+								<?php } ?>
+								</tbody>
+							</table>
+						</div>
+						<?php } ?>
+					</div>
+				</div>
+				<?php } ?>
 
 				<?php if (!empty($dayLoadRows)) { ?>
 				<div class="panel panel-default" style="margin-bottom:15px;">
@@ -411,6 +492,12 @@ $this->Schedulingtimings = TableRegistry::get('Schedulingtimings');
 						echo $this->Html->link('<< Back To Pre-check', ['controller'=>'schedulings', 'action' => 'precheck',$convention_season_slug], ['class'=>'btn btn-default canlcel_le']);
 						
 						echo $this->Html->link('Room Restrictions', ['controller'=>'schedulings', 'action' => 'roomrestrictions',$convention_season_slug], ['class'=>'btn btn-info canlcel_le', 'title'=>'Change room day/time availability after scheduling']);
+
+						$schedulingD_check = null;
+						try {
+							$Schedulings = \Cake\ORM\TableRegistry::getTableLocator()->get('Schedulings');
+							$schedulingD_check = $Schedulings->find()->where(['Schedulings.conventionseasons_id' => $conventionSD->id])->first();
+						} catch(\Exception $e) {}
 						
 						$_totalConflict = 0;
 						if($schedulingD_check) {
@@ -427,11 +514,6 @@ $this->Schedulingtimings = TableRegistry::get('Schedulingtimings');
 						&nbsp;&nbsp;
 						<?php
 						// Finalize / Lock schedule button
-						$schedulingD_check = null;
-						try {
-							$Schedulings = \Cake\ORM\TableRegistry::get('Schedulings');
-							$schedulingD_check = $Schedulings->find()->where(['Schedulings.conventionseasons_id' => $conventionSD->id])->first();
-						} catch(\Exception $e) {}
 						if($schedulingD_check) {
 							if($schedulingD_check->is_finalized == 1) {
 								echo $this->Form->postLink('&#10003; Schedule Finalized — Unlock', ['controller'=>'schedulings', 'action'=>'finalizeschedule',$convention_season_slug], ['class'=>'btn btn-success canlcel_le', 'escape'=>false, 'confirm'=>'Are you sure you want to UNLOCK this schedule for editing?']);

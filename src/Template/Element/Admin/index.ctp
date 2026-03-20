@@ -2,7 +2,7 @@
 
 use Cake\ORM\TableRegistry;
 
-$this->Categories = TableRegistry::get('Categories');
+$this->Categories = TableRegistry::getTableLocator()->get('Categories');
 ?>
 <?php echo $this->Html->script('facebox.js'); ?>
 <?php echo $this->Html->css('facebox.css'); ?>
@@ -153,12 +153,12 @@ $this->Categories = TableRegistry::get('Categories');
                 'Deactivate' => "Deactivate"
             );
             ?>
-            <div class="list_sel"><?php echo $this->Form->input('action', ['options' => $arr, 'type'=>'select', 'label'=>false, 'class'=>"small form-control",'id'=>'action']);?></div>
+            <div class="list_sel"><?php echo $this->Form->control('action', ['options' => $arr, 'type'=>'select', 'label'=>false, 'class'=>"small form-control",'id'=>'action']);?></div>
             <button type="submit" class="small btn btn-success btn-cons btn-info" onclick="return ajaxActionFunction();" id="submit_action">OK</button>
         </div>
         <?php 
         if (isset($keyword) && $keyword != '') {
-            echo $this->Form->input('Trucks.keyword', ['label'=>false, 'type'=>'hidden', 'value'=>$keyword]);
+            echo $this->Form->control('Trucks.keyword', ['label'=>false, 'type'=>'hidden', 'value'=>$keyword]);
         }?>
         <?php echo $this->Form->end(); ?>
     

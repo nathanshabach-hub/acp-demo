@@ -155,7 +155,7 @@ if($schedulings->sports_day_having_events_after_sport_yes_no)
 					<div class="form-group">
                       <label class="col-sm-2 control-label">Start Date <span class="require">*</span></label>
                       <div class="col-sm-10">
-						  <?php echo $this->Form->input('Schedulings.start_date', ['id'=>'start_date', 'label'=>false, 'type'=>'test',  'div'=>false, 'class'=>'form-control required', 'placeholder'=>'Start Date']); ?>
+						  <?php echo $this->Form->control('Schedulings.start_date', ['id'=>'start_date', 'label'=>false, 'type'=>'test',  'div'=>false, 'class'=>'form-control required', 'placeholder'=>'Start Date']); ?>
                       </div>
                     </div>
 					
@@ -169,7 +169,7 @@ if($schedulings->sports_day_having_events_after_sport_yes_no)
 					<div class="form-group">
                       <label class="col-sm-2 control-label">Number of Days <span class="require">*</span></label>
                       <div class="col-sm-10">
-                          <?php echo $this->Form->input('Schedulings.number_of_days', ['label'=>false, 'type'=>'number',  'div'=>false, 'class'=>'form-control required number', 'placeholder'=>'Number of Days']); ?>
+                          <?php echo $this->Form->control('Schedulings.number_of_days', ['label'=>false, 'type'=>'number',  'div'=>false, 'class'=>'form-control required number', 'placeholder'=>'Number of Days']); ?>
                       </div>
                     </div>
 					<!-- Convention Days Ends -->
@@ -186,25 +186,25 @@ if($schedulings->sports_day_having_events_after_sport_yes_no)
 					<div class="form-group">
                       <label class="col-sm-2 control-label">Normal Starting Time <span class="require">*</span></label>
                       <div class="col-sm-10">
-                          <?php echo $this->Form->input('Schedulings.normal_starting_time', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required mdtpicker', 'placeholder'=>'Normal Starting Time']); ?>
+                          <?php echo $this->Form->control('Schedulings.normal_starting_time', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required mdtpicker', 'placeholder'=>'Normal Starting Time']); ?>
                       </div>
                     </div>
 					<div class="form-group">
                       <label class="col-sm-2 control-label">Normal Finish Time <span class="require">*</span></label>
                       <div class="col-sm-10">
-                          <?php echo $this->Form->input('Schedulings.normal_finish_time', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required mdtpicker', 'placeholder'=>'Normal Finish Time']); ?>
+                          <?php echo $this->Form->control('Schedulings.normal_finish_time', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required mdtpicker', 'placeholder'=>'Normal Finish Time']); ?>
                       </div>
                     </div>
 					<div class="form-group">
                       <label class="col-sm-2 control-label">Lunch Time Start <span class="require">*</span></label>
                       <div class="col-sm-10">
-                          <?php echo $this->Form->input('Schedulings.lunch_time_start', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required mdtpicker', 'placeholder'=>'Lunch Time Start']); ?>
+                          <?php echo $this->Form->control('Schedulings.lunch_time_start', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required mdtpicker', 'placeholder'=>'Lunch Time Start']); ?>
                       </div>
                     </div>
 					<div class="form-group">
                       <label class="col-sm-2 control-label">Lunch Time End <span class="require">*</span></label>
                       <div class="col-sm-10">
-                          <?php echo $this->Form->input('Schedulings.lunch_time_end', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required mdtpicker', 'placeholder'=>'Lunch Time End']); ?>
+                          <?php echo $this->Form->control('Schedulings.lunch_time_end', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required mdtpicker', 'placeholder'=>'Lunch Time End']); ?>
                       </div>
                     </div>
 					<div class="form-group">
@@ -219,13 +219,13 @@ if($schedulings->sports_day_having_events_after_sport_yes_no)
 						<div class="form-group">
 						  <label class="col-sm-2 control-label">First Day Start Time <span class="require">*</span></label>
 						  <div class="col-sm-10">
-							  <?php echo $this->Form->input('Schedulings.different_first_day_start_time', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required mdtpicker', 'placeholder'=>'First Day Start Time']); ?>
+							  <?php echo $this->Form->control('Schedulings.different_first_day_start_time', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required mdtpicker', 'placeholder'=>'First Day Start Time']); ?>
 						  </div>
 						</div>
 						<div class="form-group">
 						  <label class="col-sm-2 control-label">First Day End Time <span class="require">*</span></label>
 						  <div class="col-sm-10">
-							  <?php echo $this->Form->input('Schedulings.different_first_day_end_time', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required mdtpicker', 'placeholder'=>'First Day End Time']); ?>
+							  <?php echo $this->Form->control('Schedulings.different_first_day_end_time', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required mdtpicker', 'placeholder'=>'First Day End Time']); ?>
 						  </div>
 						</div>
                     </div>
@@ -254,25 +254,25 @@ if($schedulings->sports_day_having_events_after_sport_yes_no)
 						<div class="form-group">
 						  <label class="col-sm-2 control-label">Morning Break Starting Time<span class="require">*</span></label>
 						  <div class="col-sm-10">
-								<?php echo $this->Form->input('Schedulings.judging_breaks_morning_break_starting_time', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required mdtpicker', 'placeholder'=>'Morning Break Starting Time']); ?>
+								<?php echo $this->Form->control('Schedulings.judging_breaks_morning_break_starting_time', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required mdtpicker', 'placeholder'=>'Morning Break Starting Time']); ?>
 						  </div>
 						</div>
 						<div class="form-group">
 						  <label class="col-sm-2 control-label">Morning Break Finish Time<span class="require">*</span></label>
 						  <div class="col-sm-10">
-								<?php echo $this->Form->input('Schedulings.judging_breaks_morning_break_finish_time', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required mdtpicker', 'placeholder'=>'Morning Break Finish Time']); ?>
+								<?php echo $this->Form->control('Schedulings.judging_breaks_morning_break_finish_time', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required mdtpicker', 'placeholder'=>'Morning Break Finish Time']); ?>
 						  </div>
 						</div>
 						<div class="form-group">
 						  <label class="col-sm-2 control-label">Afternoon Break Start Time<span class="require">*</span></label>
 						  <div class="col-sm-10">
-								<?php echo $this->Form->input('Schedulings.judging_breaks_afternoon_break_start_time', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required mdtpicker', 'placeholder'=>'Afternoon Break Start Time']); ?>
+								<?php echo $this->Form->control('Schedulings.judging_breaks_afternoon_break_start_time', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required mdtpicker', 'placeholder'=>'Afternoon Break Start Time']); ?>
 						  </div>
 						</div>
 						<div class="form-group">
 						  <label class="col-sm-2 control-label">Afternoon Break Finish Time<span class="require">*</span></label>
 						  <div class="col-sm-10">
-							<?php echo $this->Form->input('Schedulings.judging_breaks_afternoon_break_finish_time', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required mdtpicker', 'placeholder'=>'Afternoon Break Finish Time']); ?>
+							<?php echo $this->Form->control('Schedulings.judging_breaks_afternoon_break_finish_time', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required mdtpicker', 'placeholder'=>'Afternoon Break Finish Time']); ?>
 						  </div>
 						</div>
 					
@@ -309,13 +309,13 @@ if($schedulings->sports_day_having_events_after_sport_yes_no)
 						<div class="form-group">
 						  <label class="col-sm-2 control-label">Starting Time <span class="require"></span></label>
 						  <div class="col-sm-10">
-								<?php echo $this->Form->input('Schedulings.sports_day_starting_time', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required mdtpicker', 'placeholder'=>'Starting Time']); ?>
+								<?php echo $this->Form->control('Schedulings.sports_day_starting_time', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required mdtpicker', 'placeholder'=>'Starting Time']); ?>
 						  </div>
 						</div>
 						<div class="form-group">
 						  <label class="col-sm-2 control-label">Finish Time <span class="require"></span></label>
 						  <div class="col-sm-10">
-								<?php echo $this->Form->input('Schedulings.sports_day_finish_time', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required mdtpicker', 'placeholder'=>'Finish Time']); ?>
+								<?php echo $this->Form->control('Schedulings.sports_day_finish_time', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required mdtpicker', 'placeholder'=>'Finish Time']); ?>
 						  </div>
 						</div>
 					
@@ -335,13 +335,13 @@ if($schedulings->sports_day_having_events_after_sport_yes_no)
 						<div class="form-group">
 						  <label class="col-sm-2 control-label">Starting Time <span class="require"></span></label>
 						  <div class="col-sm-10">
-								<?php echo $this->Form->input('Schedulings.sports_day_other_starting_time', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required mdtpicker', 'placeholder'=>'Starting Time']); ?>
+								<?php echo $this->Form->control('Schedulings.sports_day_other_starting_time', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required mdtpicker', 'placeholder'=>'Starting Time']); ?>
 						  </div>
 						</div>
 						<div class="form-group">
 						  <label class="col-sm-2 control-label">Finish Time <span class="require"></span></label>
 						  <div class="col-sm-10">
-							  <?php echo $this->Form->input('Schedulings.sports_day_other_finish_time', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required mdtpicker', 'placeholder'=>'Finish Time']); ?>
+							  <?php echo $this->Form->control('Schedulings.sports_day_other_finish_time', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required mdtpicker', 'placeholder'=>'Finish Time']); ?>
 						  </div>
 						</div>
 					
@@ -367,7 +367,7 @@ if($schedulings->sports_day_having_events_after_sport_yes_no)
 					<div class="form-group">
                       <label class="col-sm-2 control-label">Settling Time (minutes) <span class="require">*</span></label>
                       <div class="col-sm-10">
-                          <?php echo $this->Form->input('Schedulings.settling_time_minutes', ['label'=>false, 'type'=>'number', 'min'=>'0', 'max'=>'120', 'div'=>false, 'class'=>'form-control required number', 'placeholder'=>'Settling Time in Minutes (default 15)']); ?>
+						  <?php echo $this->Form->control('Schedulings.buffer_minutes', ['label'=>false, 'type'=>'number', 'min'=>'0', 'max'=>'120', 'div'=>false, 'class'=>'form-control required number', 'placeholder'=>'Settling Time in Minutes (default 15)']); ?>
                       </div>
                     </div>
 					<!-- Settling Time Ends -->
@@ -384,7 +384,7 @@ if($schedulings->sports_day_having_events_after_sport_yes_no)
 					<div class="form-group">
                       <label class="col-sm-2 control-label">Preliminary Rounds Before Conflicts Allowed <span class="require">*</span></label>
                       <div class="col-sm-10">
-                          <?php echo $this->Form->input('Schedulings.elimination_rounds_buffer', ['label'=>false, 'type'=>'number', 'min'=>'1', 'max'=>'10', 'div'=>false, 'class'=>'form-control required number', 'placeholder'=>'Elimination Rounds Buffer (default 3)']); ?>
+                          <?php echo $this->Form->control('Schedulings.elimination_rounds_buffer', ['label'=>false, 'type'=>'number', 'min'=>'1', 'max'=>'10', 'div'=>false, 'class'=>'form-control required number', 'placeholder'=>'Elimination Rounds Buffer (default 3)']); ?>
                       </div>
                     </div>
 					<!-- Elimination Rounds Buffer Ends -->
@@ -401,7 +401,7 @@ if($schedulings->sports_day_having_events_after_sport_yes_no)
 					<div class="form-group">
                       <label class="col-sm-2 control-label">Release Date &amp; Time </label>
                       <div class="col-sm-10">
-                          <?php echo $this->Form->input('Schedulings.schedule_release_date', ['label'=>false, 'type'=>'text', 'div'=>false, 'class'=>'form-control', 'placeholder'=>'YYYY-MM-DD HH:MM (leave blank to keep hidden)', 'id'=>'schedule_release_date']); ?>
+                          <?php echo $this->Form->control('Schedulings.schedule_release_date', ['label'=>false, 'type'=>'text', 'div'=>false, 'class'=>'form-control', 'placeholder'=>'YYYY-MM-DD HH:MM (leave blank to keep hidden)', 'id'=>'schedule_release_date']); ?>
                       </div>
                     </div>
 					<!-- Schedule Release Ends -->
@@ -413,7 +413,7 @@ if($schedulings->sports_day_having_events_after_sport_yes_no)
 					
                     <div class="box-footer">
                         <label class="col-sm-2 control-label" for="inputPassword3">&nbsp;</label>
-                        <?php echo $this->Form->input('Schedulings.id', ['label'=>false, 'type'=>'hidden']); ?>
+                        <?php echo $this->Form->control('Schedulings.id', ['label'=>false, 'type'=>'hidden']); ?>
                         <?php echo $this->Form->button('Save', ['type'=>'submit', 'class' => 'btn btn-info', 'div'=>false]); ?>
                         <?php echo $this->Html->link('Cancel', ['controller'=>'schedulings', 'action' => 'precheck', $convention_season_slug], ['class'=>'btn btn-default canlcel_le']); ?>
                     </div>
@@ -492,4 +492,3 @@ if($schedulings->sports_day_having_events_after_sport_yes_no)
     });
 </script>
 
-  

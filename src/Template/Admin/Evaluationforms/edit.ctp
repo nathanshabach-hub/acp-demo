@@ -38,7 +38,7 @@ if(!empty($evaluationforms->event_id_numbers))
 					<div class="form-group">
                       <label class="col-sm-2 control-label">Form Name <span class="require">*</span></label>
                       <div class="col-sm-10">
-                          <?php echo $this->Form->input('Evaluationforms.name', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required', 'placeholder'=>'Form Name', 'autocomplete'=>'off']); ?>
+                          <?php echo $this->Form->control('Evaluationforms.name', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required', 'placeholder'=>'Form Name', 'autocomplete'=>'off']); ?>
                       </div>
                     </div>
 					
@@ -69,7 +69,7 @@ if(!empty($evaluationforms->event_id_numbers))
 					<div class="form-group">
                       <label class="col-sm-2 control-label">Reference PDF File <span class="require"></span></label>
                       <div class="col-sm-10">
-                          <?php echo $this->Form->input('Evaluationforms.reference_pdf_file_name', ['id'=>'reference_pdf_file_name', 'label'=>false, 'type'=>'file',  'div'=>false, 'class'=>'form-control', 'onchange'=>'imageValidation()', 'id'=>'reference_pdf_file_name']); ?>
+                          <?php echo $this->Form->control('Evaluationforms.reference_pdf_file_name', ['id'=>'reference_pdf_file_name', 'label'=>false, 'type'=>'file',  'div'=>false, 'class'=>'form-control', 'onchange'=>'imageValidation()', 'id'=>'reference_pdf_file_name']); ?>
                       </div>
                     </div>
 					
@@ -94,7 +94,7 @@ if(!empty($evaluationforms->event_id_numbers))
                         <label class="col-sm-2 control-label">Remove PDF <span class="require"></span></label>
                         <div class="col-sm-10">
                             <?php echo $this->Html->link('<i class="fa fa-trash-o"></i>', ['controller' => 'evaluationforms', 'action' => 'deletepdf',$evaluationforms->slug], [ 'escape' => false, 'title' => 'Delete', 'class'=>'btn btn-danger btn-xs action-list delete-list', 'confirm' => 'Are you sure you want to remove pdf ?']); ?>
-							<?php echo $this->Form->input('Evaluationforms.hidd_icon', ['label'=>false, 'type'=>'hidden', 'value'=>$evaluationforms->reference_pdf_file_name]); ?>
+							<?php echo $this->Form->control('Evaluationforms.hidd_icon', ['label'=>false, 'type'=>'hidden', 'value'=>$evaluationforms->reference_pdf_file_name]); ?>
                         </div>
                     </div>
 					
@@ -105,13 +105,13 @@ if(!empty($evaluationforms->event_id_numbers))
 					<div class="form-group">
                       <label class="col-sm-2 control-label">Notes <span class="require"></span></label>
                       <div class="col-sm-10">
-                          <?php echo $this->Form->input('Evaluationforms.notes', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control', 'placeholder'=>'Notes', 'autocomplete'=>'off']); ?>
+                          <?php echo $this->Form->control('Evaluationforms.notes', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control', 'placeholder'=>'Notes', 'autocomplete'=>'off']); ?>
                       </div>
                     </div>
                     
                     <div class="box-footer">
                         <label class="col-sm-2 control-label" for="inputPassword3">&nbsp;</label>
-                        <?php echo $this->Form->input('Evaluationforms.id', ['label'=>false, 'type'=>'hidden']); ?>
+                        <?php echo $this->Form->control('Evaluationforms.id', ['label'=>false, 'type'=>'hidden']); ?>
                         <?php echo $this->Form->button('Save', ['type'=>'submit', 'class' => 'btn btn-info', 'div'=>false]); ?>
                         <?php echo $this->Html->link('Cancel', ['controller'=>'evaluationforms', 'action' => 'index'], ['class'=>'btn btn-default canlcel_le']); ?>
                     </div>

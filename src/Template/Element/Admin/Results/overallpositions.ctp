@@ -1,9 +1,9 @@
 <?php
 use Cake\ORM\TableRegistry;
-$this->Events = TableRegistry::get('Events');
-$this->Users = TableRegistry::get('Users');
-$this->Resultpositions = TableRegistry::get('Resultpositions');
-$this->Crstudentevents = TableRegistry::get('Crstudentevents');
+$this->Events = TableRegistry::getTableLocator()->get('Events');
+$this->Users = TableRegistry::getTableLocator()->get('Users');
+$this->Resultpositions = TableRegistry::getTableLocator()->get('Resultpositions');
+$this->Crstudentevents = TableRegistry::getTableLocator()->get('Crstudentevents');
 ?>
 <style>
     .search-container {

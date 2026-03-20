@@ -1,8 +1,8 @@
 <?php
 use Cake\ORM\TableRegistry;
-$this->Conventionregistrations = TableRegistry::get('Conventionregistrations');
-$this->Eventsubmissions = TableRegistry::get('Eventsubmissions');
-$this->Conventionseasonroomevents = TableRegistry::get('Conventionseasonroomevents');
+$this->Conventionregistrations = TableRegistry::getTableLocator()->get('Conventionregistrations');
+$this->Eventsubmissions = TableRegistry::getTableLocator()->get('Eventsubmissions');
+$this->Conventionseasonroomevents = TableRegistry::getTableLocator()->get('Conventionseasonroomevents');
 ?>
 <div class="admin_loader" id="loaderID"><?php echo $this->Html->image('loader_large_blue.gif');?></div>
 <?php if (!$conventionseasonevents->isEmpty()) { ?> 
@@ -255,12 +255,12 @@ $this->Conventionseasonroomevents = TableRegistry::get('Conventionseasonroomeven
                 //'Delete' => "Delete",
             );
             ?>
-            <div class="list_sel"><?php echo $this->Form->input('action', ['options' => $arr, 'type'=>'select', 'label'=>false, 'class'=>"small form-control",'id'=>'action']);?></div>
+            <div class="list_sel"><?php echo $this->Form->control('action', ['options' => $arr, 'type'=>'select', 'label'=>false, 'class'=>"small form-control",'id'=>'action']);?></div>
             <button type="submit" class="small btn btn-success btn-cons btn-info" onclick="return ajaxActionFunction();" id="submit_action">OK</button>
         </div>
         <?php 
         if (isset($keyword) && $keyword != '') {
-            echo $this->Form->input('Divisions.keyword', ['label'=>false, 'type'=>'hidden', 'value'=>$keyword]);
+            echo $this->Form->control('Divisions.keyword', ['label'=>false, 'type'=>'hidden', 'value'=>$keyword]);
         }?>
         <?php echo $this->Form->end(); ?>
     

@@ -9,7 +9,7 @@ use Cake\Core\Configure\Engine\PhpConfig;
 class EventsController extends AppController {
 
     public $paginate = ['limit' => 50, 'order' => ['Events.name' => 'asc']];
-    var $components = array('RequestHandler', 'PImage', 'PImageTest');
+    public $components = ['RequestHandler', 'PImage', 'PImageTest'];
 
     //public $helpers = array('Javascript', 'Ajax');
 
@@ -17,8 +17,8 @@ class EventsController extends AppController {
         parent::initialize();
         $this->loadComponent('Paginator');
         $this->loadComponent('Flash');
-        $action = $this->request->params['action'];
-        $loggedAdminId = $this->request->session()->read('admin_id');
+        $action = $this->request->getParam('action');
+        $loggedAdminId = $this->request->getSession()->read('admin_id');
         if ($action != 'forgotPassword' && $action != 'logout') {
             if (!$loggedAdminId && $action != "login" && $action != 'captcha') {
                 $this->redirect(['controller' => 'admins', 'action' => 'login']);
@@ -33,7 +33,7 @@ class EventsController extends AppController {
     public function index() {
 
         $this->set('title', ADMIN_TITLE . 'Manage Global Events');
-        $this->viewBuilder()->layout('admin');
+        $this->viewBuilder()->setLayout('admin');
         $this->set('manageEvents', '1');
         $this->set('eventList', '1');
 		
@@ -45,9 +45,10 @@ class EventsController extends AppController {
         //$condition = array('Events.parent_id' => 0);
 
         if ($this->request->is('post')) {
-            if (isset($this->request->data['action'])) {
-                $idList = implode(',', $this->request->data['chkRecordId']);
-                $action = $this->request->data['action'];
+            $requestData = $this->request->getData();
+            if (isset($requestData['action'])) {
+                $idList = implode(',', $requestData['chkRecordId']);
+                $action = $requestData['action'];
                 if ($idList) {
                     if ($action == "Activate") {
                         $this->Events->updateAll(['status' => '1'], ["id IN ($idList)"]);
@@ -62,17 +63,17 @@ class EventsController extends AppController {
                 }
             }
 
-            if (isset($this->request->data['Events']['keyword']) && $this->request->data['Events']['keyword'] != '') {
-                $keyword = trim($this->request->data['Events']['keyword']);
+            if (isset($requestData['Events']['keyword']) && $requestData['Events']['keyword'] != '') {
+                $keyword = trim($requestData['Events']['keyword']);
             }
 			
-			if (isset($this->request->data['Events']['division_id']) && $this->request->data['Events']['division_id'] != '') {
-                $division_id = trim($this->request->data['Events']['division_id']);
+			if (isset($requestData['Events']['division_id']) && $requestData['Events']['division_id'] != '') {
+				$division_id = trim($requestData['Events']['division_id']);
             }
 			
-        } elseif ($this->request->params) {
-            if (isset($this->request->params['pass'][0]) && $this->request->params['pass'][0] != '') {
-                $searchArr = $this->request->params['pass'];
+        } elseif ($this->request->getParam('pass')) {
+            if (isset($this->request->getParam('pass')[0]) && $this->request->getParam('pass')[0] != '') {
+                $searchArr = $this->request->getParam('pass');
                 foreach ($searchArr as $val) {
                     if (strpos($val, ":") !== false) {
                         $vars = explode(":", $val);
@@ -99,7 +100,7 @@ class EventsController extends AppController {
         $this->paginate = ['contain' => ['Divisions'], 'conditions' => $condition, 'limit' => 50, 'order' => ['Events.event_id_number' => 'ASC']];
         $this->set('events', $this->paginate($this->Events));
         if ($this->request->is("ajax")) {
-            $this->viewBuilder()->layout(($this->request->is("ajax")) ? "" : "default");
+            $this->viewBuilder()->setLayout(($this->request->is("ajax")) ? "" : "default");
             $this->viewBuilder()->templatePath('Element' . DS . 'Admin/Events');
             $this->render('index');
         }
@@ -107,7 +108,7 @@ class EventsController extends AppController {
 
     public function activateevent($slug = null) {
         if ($slug != '') {
-            $this->viewBuilder()->layout("");
+            $this->viewBuilder()->setLayout("");
             $this->Events->updateAll(['status' => '1'], ["slug" => $slug]);
             $this->set('action', '/admin/events/deactivatev/' . $slug);
             $this->set('status', 1);
@@ -118,7 +119,7 @@ class EventsController extends AppController {
 
     public function deactivateevent($slug = null) {
         if ($slug != '') {
-            $this->viewBuilder()->layout("");
+            $this->viewBuilder()->setLayout("");
             $this->Events->updateAll(['status' => '0'], ["slug" => $slug]);
             $this->set('action', '/admin/events/activateevent/' . $slug);
             $this->set('status', 0);
@@ -162,7 +163,7 @@ class EventsController extends AppController {
 
     public function add() {
         $this->set('title', ADMIN_TITLE . 'Add Event');
-        $this->viewBuilder()->layout('admin');
+        $this->viewBuilder()->setLayout('admin');
 		
         $this->set('manageEvents', '1');
         $this->set('eventAdd', '1');
@@ -197,11 +198,12 @@ class EventsController extends AppController {
         $events = $this->Events->newEntity();
         if ($this->request->is('post')) {
 			
-			//$this->prx($this->request->data);
+            //$this->prx($this->request->getData());
+            $requestData = $this->request->getData();
 			
-            $data = $this->Events->patchEntity($events, $this->request->data, ['validate' => 'add']);
+            $data = $this->Events->patchEntity($events, $requestData, ['validate' => 'add']);
 			
-			$book_ids = $this->request->data['Events']['book_ids'];
+            $book_ids = $requestData['Events']['book_ids'];
 			
 			if(isset($book_ids) && count($book_ids))
 			{
@@ -212,9 +214,9 @@ class EventsController extends AppController {
 				$data->book_ids = '';
 			}
 			
-            if (count($data->errors()) == 0) {
+            if (count($data->getErrors()) == 0) {
 
-				$slug = $this->getSlug($this->request->data['Events']['event_name'] . ' ' . time(), 'Events');
+				$slug = $this->getSlug($requestData['Events']['event_name'] . ' ' . time(), 'Events');
                 $data->slug 			= $slug;
                 $data->status 			= 1;
                 $data->created 			= date('Y-m-d H:i:s');
@@ -232,7 +234,7 @@ class EventsController extends AppController {
 
     public function edit($slug = null) {
         $this->set('title', ADMIN_TITLE . 'Edit Event');
-        $this->viewBuilder()->layout('admin');
+        $this->viewBuilder()->setLayout('admin');
         
 		$this->set('manageEvents', '1');
         $this->set('eventList', '1');
@@ -271,9 +273,10 @@ class EventsController extends AppController {
 		
         $events = $this->Events->get($uid);
         if ($this->request->is(['post', 'put'])) {
-            $data = $this->Events->patchEntity($events, $this->request->data);
+			$requestData = $this->request->getData();
+            $data = $this->Events->patchEntity($events, $requestData);
 			
-			$book_ids = $this->request->data['Events']['book_ids'];
+			$book_ids = $requestData['Events']['book_ids'];
 			
 			
 			
@@ -286,7 +289,7 @@ class EventsController extends AppController {
 				$data->book_ids = '';
 			}
 			
-            if (count($data->errors()) == 0) {
+            if (count($data->getErrors()) == 0) {
 				
 				$data->modified = date("Y-m-d H:i:s");
                 if ($this->Events->save($data)) {

@@ -28,37 +28,37 @@
 							
 							<div class="lables">
 								<span class="col-4">First Name</span>
-								<?php echo $this->Form->input('Users.first_name', ['label' => false, 'type' => 'text', 'autocomplete' => 'off', 'div' => false, 'class' => 'form-control required', 'placeholder' => 'First Name']); ?>
+								<?php echo $this->Form->control('Users.first_name', ['label' => false, 'type' => 'text', 'autocomplete' => 'off', 'div' => false, 'class' => 'form-control required', 'placeholder' => 'First Name']); ?>
 							</div>
 							
 							<div class="lables">
 								<span class="col-4">Surname</span>
-								<?php echo $this->Form->input('Users.last_name', ['label' => false, 'type' => 'text', 'autocomplete' => 'off', 'div' => false, 'class' => 'form-control required', 'placeholder' => 'Surname']); ?>
+								<?php echo $this->Form->control('Users.last_name', ['label' => false, 'type' => 'text', 'autocomplete' => 'off', 'div' => false, 'class' => 'form-control required', 'placeholder' => 'Surname']); ?>
 							</div>
 							
 							<div class="lables">
 								<span class="col-4">Email Address</span>
-								<?php echo $this->Form->input('Users.email_address', ['label' => false, 'type' => 'text', 'autocomplete' => 'off', 'div' => false, 'class' => 'form-control required email', 'placeholder' => 'Email Address']); ?>
+								<?php echo $this->Form->control('Users.email_address', ['label' => false, 'type' => 'text', 'autocomplete' => 'off', 'div' => false, 'class' => 'form-control required email', 'placeholder' => 'Email Address']); ?>
 							</div>
 
 							<div class="lables">
 								<span class="col-4">Password</span>
-								<?php echo $this->Form->input('Users.password', ['label' => '', 'type' => 'password', 'label' => false, 'div' => false, 'class' => "form-control required", 'placeholder' => 'Password', 'minlength'=>6]); ?>
+								<?php echo $this->Form->control('Users.password', ['label' => '', 'type' => 'password', 'label' => false, 'div' => false, 'class' => "form-control required", 'placeholder' => 'Password', 'minlength'=>6]); ?>
 							</div>
 							
 							<div class="lables">
 								<span class="col-4">Confirm Password</span>
-								<?php echo $this->Form->input('Users.confirm_password', ['id' => 'confirm_password','label' => '', 'type' => 'password', 'label' => false, 'div' => false, 'class' => "form-control required", 'placeholder' => 'Confirm Password', 'equalTo'=>'#users-password']); ?>
+								<?php echo $this->Form->control('Users.confirm_password', ['id' => 'confirm_password','label' => '', 'type' => 'password', 'label' => false, 'div' => false, 'class' => "form-control required", 'placeholder' => 'Confirm Password', 'equalTo'=>'#users-password']); ?>
 							</div>
 							
 							<div class="lables">
 								<span class="col-4">Previous convention experience ? </span>
-								<?php echo $this->Form->input('Users.previous_convention_experience', ['id' => '', 'label' => false, 'type' => 'textarea', 'autocomplete' => 'off', 'div' => false, 'class' => 'form-control required', 'placeholder' => 'What is your previous convention experience?']); ?>
+								<?php echo $this->Form->control('Users.previous_convention_experience', ['id' => '', 'label' => false, 'type' => 'textarea', 'autocomplete' => 'off', 'div' => false, 'class' => 'form-control required', 'placeholder' => 'What is your previous convention experience?']); ?>
 							</div>
 							
 							<div class="lables">
 								<span class="col-4">Other non-convention experience? </span>
-								<?php echo $this->Form->input('Users.non_convention_experience', ['label' => false, 'type' => 'textarea', 'autocomplete' => 'off', 'div' => false, 'class' => 'form-control required', 'placeholder' => 'What other non-convention experience do you have that would assist in your area of interest for judging?']); ?>
+								<?php echo $this->Form->control('Users.non_convention_experience', ['label' => false, 'type' => 'textarea', 'autocomplete' => 'off', 'div' => false, 'class' => 'form-control required', 'placeholder' => 'What other non-convention experience do you have that would assist in your area of interest for judging?']); ?>
 							</div>
 
 							<div class="btns col-8 float-end">

@@ -33,13 +33,13 @@
 
 				<div class="form-group">
 					<label for="mediafile_title">Document Title</label>
-					<?php echo $this->Form->input('Heartevents.mediafile_title', ['id' => 'mediafile_title', 'label' => false, 'type' => 'text', 'div' => false, 'class' => 'form-control required']); ?>
+					<?php echo $this->Form->control('Heartevents.mediafile_title', ['id' => 'mediafile_title', 'label' => false, 'type' => 'text', 'div' => false, 'class' => 'form-control required']); ?>
 				</div>
 
 				<div class="form-group mb-5">
 					<label for="event_document">Upload File</label>
 					<div class="input">
-					<?php echo $this->Form->input('Heartevents.event_document', ['id' => 'event_document', 'label' => false, 'type' => 'file', 'div' => false, 'class' => 'form-control required', 'onchange' => 'imageValidation()']); ?>
+					<?php echo $this->Form->control('Heartevents.event_document', ['id' => 'event_document', 'label' => false, 'type' => 'file', 'div' => false, 'class' => 'form-control required', 'onchange' => 'imageValidation()']); ?>
 					<span class="help_text">pdf, doc, docx, png, jpg and jpeg files allowed.</span>
 					</div>
 				</div>

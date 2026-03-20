@@ -12,7 +12,7 @@
     <?= $this->Flash->render() ?>
     <?php echo $this->Form->create($admin, ['id'=>'adminlogin']); ?>
         <div class="form-group has-feedback">
-            <?php echo $this->Form->input('Admins.email', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required email', 'placeholder'=>'Email Address']); ?>
+            <?php echo $this->Form->control('Admins.email', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required email', 'placeholder'=>'Email Address']); ?>
             <span class="glyphicon glyphicon-envelope form-control-feedback"></span>
         </div>
         <div class="row">

@@ -29,7 +29,7 @@
 					<div class="form-group">
                       <label class="col-sm-2 control-label">Convention Name <span class="require">*</span></label>
                       <div class="col-sm-10">
-                          <?php echo $this->Form->input('Conventions.name', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required', 'placeholder'=>'Convention Name', 'autocomplete'=>'off']); ?>
+                          <?php echo $this->Form->control('Conventions.name', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required', 'placeholder'=>'Convention Name', 'autocomplete'=>'off']); ?>
                       </div>
                     </div>
 					
@@ -43,7 +43,7 @@
 					<div class="form-group">
                       <label class="col-sm-2 control-label">Address <span class="require">*</span></label>
                       <div class="col-sm-10">
-                          <?php echo $this->Form->input('Conventions.address', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required', 'placeholder'=>'Address', 'autocomplete'=>'off']); ?>
+                          <?php echo $this->Form->control('Conventions.address', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control required', 'placeholder'=>'Address', 'autocomplete'=>'off']); ?>
                       </div>
                     </div>
 					

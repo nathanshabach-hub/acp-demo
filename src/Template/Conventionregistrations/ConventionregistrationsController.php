@@ -6,7 +6,6 @@ use Cake\Datasource\ConnectionManager;
 use App\Controller\AppController;
 use Cake\Core\Configure;
 use Cake\Core\Configure\Engine\PhpConfig;
-use Cake\Mailer\Email;
 use Cake\I18n\I18n;
 
 class ConventionregistrationsController extends AppController {
@@ -44,11 +43,11 @@ class ConventionregistrationsController extends AppController {
         $this->multiLoginCheck(['School','Teacher_Parent','Judge']);
 		
         $this->set("title_for_layout", "Convention Registrations" . TITLE_FOR_PAGES);
-        $this->viewbuilder()->layout('home');
+        $this->viewBuilder()->setLayout('home');
         
 		$this->set('active_convention_registrations','active');
 		
-		$user_id = $this->request->session()->read("user_id");
+		$user_id = $this->request->getSession()->read("user_id");
 		$userDetails = $this->Users->find()->where(['Users.id' => $user_id])->first();
         $this->set('userDetails', $userDetails);
 		
@@ -105,7 +104,7 @@ class ConventionregistrationsController extends AppController {
 	
 	public function pastregistrationdetails($convRegSlug = null) {
 		
-		$user_id = $this->request->session()->read("user_id");
+		$user_id = $this->request->getSession()->read("user_id");
 		$userDetails = $this->Users->find()->where(['Users.id' => $user_id])->first();
 		
 		$convRegD = $this->Conventionregistrations->find()->where(['Conventionregistrations.slug' => $convRegSlug,'Conventionregistrations.user_id' => $user_id])->first();
@@ -113,8 +112,8 @@ class ConventionregistrationsController extends AppController {
 		
 		if($convRegD->id>0)
 		{
-			$this->request->session()->write("sess_selected_convention_registration_id", $convRegD->id);
-			$this->request->session()->write("sess_selected_convention_id", $convRegD->convention_id);
+			$this->request->getSession()->write("sess_selected_convention_registration_id", $convRegD->id);
+			$this->request->getSession()->write("sess_selected_convention_id", $convRegD->convention_id);
 		}
 		else
 		{
@@ -130,22 +129,22 @@ class ConventionregistrationsController extends AppController {
         $this->schoolAdminLoginCheck();
 		
         $this->set("title_for_layout", "Supervisor Registration" . TITLE_FOR_PAGES);
-        $this->viewbuilder()->layout('home');
+        $this->viewBuilder()->setLayout('home');
         
 		$this->set('active_cr_teachers','active');
 		
         $msgString = '';
 
-		$user_id = $this->request->session()->read("user_id");
+		$user_id = $this->request->getSession()->read("user_id");
 		$userDetails = $this->Users->find()->where(['Users.id' => $user_id])->first();
         $this->set('userDetails', $userDetails);
 
         $separator = array();
         $condition = array();
 		
-		if($this->request->session()->read("sess_selected_convention_registration_id")>0)
+		if($this->request->getSession()->read("sess_selected_convention_registration_id")>0)
 		{
-			$condition[] = "(Conventionregistrationteachers.conventionregistration_id = '".$this->request->session()->read("sess_selected_convention_registration_id")."')";
+			$condition[] = "(Conventionregistrationteachers.conventionregistration_id = '".$this->request->getSession()->read("sess_selected_convention_registration_id")."')";
 		}
 		else
 		{
@@ -153,10 +152,10 @@ class ConventionregistrationsController extends AppController {
 			$this->redirect(['controller' => 'users', 'action' => 'dashboard']);
 		}
 
-        if ($this->request->is('post')) {
-            if (isset($this->request->data['action'])) {
-                $idList = implode(',', $this->request->data['chkRecordId']);
-                $action = $this->request->data['action'];
+		if ($this->request->is('post')) {
+			if (isset($this->request->getData()['action'])) {
+				$idList = implode(',', $this->request->getData()['chkRecordId']);
+				$action = $this->request->getData()['action'];
                 if ($idList) {
                     if ($action == "Activate") {
                         $this->Conventionregistrationteachers->updateAll(['status' => '1'], ["id IN ($idList)"]);
@@ -171,12 +170,12 @@ class ConventionregistrationsController extends AppController {
                 }
             }
 
-            if (isset($this->request->data['Conventionregistrationteachers']['keyword']) && $this->request->data['Conventionregistrationteachers']['keyword'] != '') {
-                $keyword = trim($this->request->data['Conventionregistrationteachers']['keyword']);
+			if (isset($this->request->getData()['Conventionregistrationteachers']['keyword']) && $this->request->getData()['Conventionregistrationteachers']['keyword'] != '') {
+				$keyword = trim($this->request->getData()['Conventionregistrationteachers']['keyword']);
             }
-        } elseif ($this->request->params) {
-            if (isset($this->request->params['pass'][0]) && $this->request->params['pass'][0] != '') {
-                $searchArr = $this->request->params['pass'];
+        } elseif (!empty($this->request->getParam('pass'))) {
+            if (isset($this->request->getParam('pass')[0]) && $this->request->getParam('pass')[0] != '') {
+                $searchArr = $this->request->getParam('pass');
                 foreach ($searchArr as $val) {
                     if (strpos($val, ":") !== false) {
                         $vars = explode(":", $val);
@@ -197,7 +196,7 @@ class ConventionregistrationsController extends AppController {
         $this->paginate = ['contain' => ['Conventions','Teachers'],'conditions' => $condition, 'limit' => 30, 'order' => ['Conventionregistrationteachers.season_year' => 'DESC']];
         $this->set('conventionregistrationteachers', $this->paginate($this->Conventionregistrationteachers));
         if ($this->request->is("ajax")) {
-            $this->viewBuilder()->layout(($this->request->is("ajax")) ? "" : "default");
+            $this->viewBuilder()->setLayout(($this->request->is("ajax")) ? "" : "default");
             $this->viewBuilder()->templatePath('Element' . DS . 'Conventionregistrations');
             $this->render('teachers');
         }
@@ -209,21 +208,21 @@ class ConventionregistrationsController extends AppController {
 		$this->schoolAdminLoginCheck();
 		
 		// to check if registration is still open
-		$this->checkRegistrationStillOpen($this->request->session()->read("sess_selected_convention_registration_id"));
+		$this->checkRegistrationStillOpen($this->request->getSession()->read("sess_selected_convention_registration_id"));
 		
 		//echo ' fsdf sdf sdf d';exit;
-		$this->viewbuilder()->layout("home");
+		$this->viewBuilder()->setLayout("home");
         $this->set("title_for_layout", "Convention Registration - Add Supervisor " . TITLE_FOR_PAGES);
 		
 		$this->set('active_cr_teachers','active');
 		
-        $user_id = $this->request->session()->read("user_id");
+        $user_id = $this->request->getSession()->read("user_id");
 		$userDetails = $this->Users->find()->where(['Users.id' => $user_id])->first();
         $this->set('userDetails', $userDetails);
 		
-		if($this->request->session()->read("sess_selected_convention_registration_id")>0)
+		if($this->request->getSession()->read("sess_selected_convention_registration_id")>0)
 		{
-			$sess_selected_convention_registration_id = $this->request->session()->read("sess_selected_convention_registration_id");
+			$sess_selected_convention_registration_id = $this->request->getSession()->read("sess_selected_convention_registration_id");
 			
 			// to get convention registration details
 			$conventionRegD = $this->Conventionregistrations->find()->where(['Conventionregistrations.id' => $sess_selected_convention_registration_id])->first();
@@ -261,12 +260,12 @@ class ConventionregistrationsController extends AppController {
 		
         if ($this->request->is('post')) {
 			
-			//$this->prx($this->request->data);
+			//$this->prx($this->request->getData());
 			
-			$teacher_id = $this->request->data['Conventionregistrationteachers']['teacher_id'];
+			$teacher_id = $this->request->getData()['Conventionregistrationteachers']['teacher_id'];
 			
 			$conventionregistrationteachers = $this->Conventionregistrationteachers->newEntity();
-			$dataCRT = $this->Conventionregistrationteachers->patchEntity($conventionregistrationteachers, $this->request->data);
+			$dataCRT = $this->Conventionregistrationteachers->patchEntity($conventionregistrationteachers, $this->request->getData());
 
 			$dataCRT->slug 								= "conv-reg-supervisor-".$sess_selected_convention_registration_id.'-'.$teacher_id.'-'.time();
 			$dataCRT->conventionregistration_id			= $sess_selected_convention_registration_id;
@@ -291,13 +290,13 @@ class ConventionregistrationsController extends AppController {
 		$this->userLoginCheck();
 		$this->schoolAdminLoginCheck();
 		
-        $user_id = $this->request->session()->read("user_id");
+        $user_id = $this->request->getSession()->read("user_id");
 		$userDetails = $this->Users->find()->where(['Users.id' => $user_id])->first();
         $this->set('userDetails', $userDetails);
 		
-		if($this->request->session()->read("sess_selected_convention_registration_id")>0)
+		if($this->request->getSession()->read("sess_selected_convention_registration_id")>0)
 		{
-			$sess_selected_convention_registration_id = $this->request->session()->read("sess_selected_convention_registration_id");
+			$sess_selected_convention_registration_id = $this->request->getSession()->read("sess_selected_convention_registration_id");
 			
 			// to check if slug exists
 			$checkCRT = $this->Conventionregistrationteachers->find()->where(['Conventionregistrationteachers.slug' => $crt_slug,'Conventionregistrationteachers.conventionregistration_id' => $sess_selected_convention_registration_id])->first();
@@ -336,20 +335,20 @@ class ConventionregistrationsController extends AppController {
         $this->schoolAdminLoginCheck();
 		
         $this->set("title_for_layout", "Student Registration" . TITLE_FOR_PAGES);
-        $this->viewbuilder()->layout('home');
+        $this->viewBuilder()->setLayout('home');
         
 		$this->set('active_cr_students','active');
 		
         $msgString = '';
 
-		$user_id = $this->request->session()->read("user_id");
+		$user_id = $this->request->getSession()->read("user_id");
 		$userDetails = $this->Users->find()->where(['Users.id' => $user_id])->first();
         $this->set('userDetails', $userDetails);
 		
 		// to get the list of teachers/parents (rename to Supervisors) chosen for this convention registration
 		$teacherDDCR = array();
 		$teacherDDCR[] = 0;
-		$teacherLConvReg = $this->Conventionregistrationteachers->find()->where(['Conventionregistrationteachers.conventionregistration_id' => $this->request->session()->read("sess_selected_convention_registration_id")])->order(['Conventionregistrationteachers.id' => 'DESC'])->all();
+		$teacherLConvReg = $this->Conventionregistrationteachers->find()->where(['Conventionregistrationteachers.conventionregistration_id' => $this->request->getSession()->read("sess_selected_convention_registration_id")])->order(['Conventionregistrationteachers.id' => 'DESC'])->all();
 		foreach($teacherLConvReg as $teachercr)
 		{
 			$teacherDDCR[] = $teachercr->teacher_id;
@@ -370,7 +369,7 @@ class ConventionregistrationsController extends AppController {
 		//$this->prx($teacherDropDownData);
 		
 		// to check if price structure chosen for this convention registration or not
-		$checkPriceStructure = $this->Conventionregistrations->find()->where(['Conventionregistrations.id' => $this->request->session()->read("sess_selected_convention_registration_id")])->first();
+		$checkPriceStructure = $this->Conventionregistrations->find()->where(['Conventionregistrations.id' => $this->request->getSession()->read("sess_selected_convention_registration_id")])->first();
 		$this->set('checkPriceStructure', $checkPriceStructure);
 		
 		// to get list of events in which certificate print is allowed
@@ -386,9 +385,9 @@ class ConventionregistrationsController extends AppController {
         $separator = array();
         $condition = array();
 		
-		if($this->request->session()->read("sess_selected_convention_registration_id")>0)
+		if($this->request->getSession()->read("sess_selected_convention_registration_id")>0)
 		{
-			$condition[] = "(Conventionregistrationstudents.conventionregistration_id = '".$this->request->session()->read("sess_selected_convention_registration_id")."')";
+			$condition[] = "(Conventionregistrationstudents.conventionregistration_id = '".$this->request->getSession()->read("sess_selected_convention_registration_id")."')";
 		}
 		else
 		{
@@ -396,10 +395,10 @@ class ConventionregistrationsController extends AppController {
 			$this->redirect(['controller' => 'users', 'action' => 'dashboard']);
 		}
 
-        if ($this->request->is('post')) {
-            if (isset($this->request->data['action'])) {
-                $idList = implode(',', $this->request->data['chkRecordId']);
-                $action = $this->request->data['action'];
+		if ($this->request->is('post')) {
+			if (isset($this->request->getData()['action'])) {
+				$idList = implode(',', $this->request->getData()['chkRecordId']);
+				$action = $this->request->getData()['action'];
                 if ($idList) {
                     if ($action == "Activate") {
                         $this->Conventionregistrationstudents->updateAll(['status' => '1'], ["id IN ($idList)"]);
@@ -414,12 +413,12 @@ class ConventionregistrationsController extends AppController {
                 }
             }
 
-            if (isset($this->request->data['Conventionregistrationstudents']['keyword']) && $this->request->data['Conventionregistrationstudents']['keyword'] != '') {
-                $keyword = trim($this->request->data['Conventionregistrationstudents']['keyword']);
+			if (isset($this->request->getData()['Conventionregistrationstudents']['keyword']) && $this->request->getData()['Conventionregistrationstudents']['keyword'] != '') {
+				$keyword = trim($this->request->getData()['Conventionregistrationstudents']['keyword']);
             }
-        } elseif ($this->request->params) {
-            if (isset($this->request->params['pass'][0]) && $this->request->params['pass'][0] != '') {
-                $searchArr = $this->request->params['pass'];
+        } elseif (!empty($this->request->getParam('pass'))) {
+            if (isset($this->request->getParam('pass')[0]) && $this->request->getParam('pass')[0] != '') {
+                $searchArr = $this->request->getParam('pass');
                 foreach ($searchArr as $val) {
                     if (strpos($val, ":") !== false) {
                         $vars = explode(":", $val);
@@ -440,7 +439,7 @@ class ConventionregistrationsController extends AppController {
         $this->paginate = ['contain' => ['Conventions','Students'],'conditions' => $condition, 'limit' => 30, 'order' => ['Conventionregistrationstudents.season_year' => 'DESC']];
         $this->set('conventionregistrationstudents', $this->paginate($this->Conventionregistrationstudents));
         if ($this->request->is("ajax")) {
-            $this->viewBuilder()->layout(($this->request->is("ajax")) ? "" : "default");
+            $this->viewBuilder()->setLayout(($this->request->is("ajax")) ? "" : "default");
             $this->viewBuilder()->templatePath('Element' . DS . 'Conventionregistrations');
             $this->render('students');
         }
@@ -452,21 +451,21 @@ class ConventionregistrationsController extends AppController {
 		$this->schoolAdminLoginCheck();
 		
 		// to check if registration is still open
-		$this->checkRegistrationStillOpen($this->request->session()->read("sess_selected_convention_registration_id"));
+		$this->checkRegistrationStillOpen($this->request->getSession()->read("sess_selected_convention_registration_id"));
 		
 		//echo ' fsdf sdf sdf d';exit;
-		$this->viewbuilder()->layout("home");
+		$this->viewBuilder()->setLayout("home");
         $this->set("title_for_layout", "Convention Registration - Add Student " . TITLE_FOR_PAGES);
 		
 		$this->set('active_cr_students','active');
 		
-        $user_id = $this->request->session()->read("user_id");
+        $user_id = $this->request->getSession()->read("user_id");
 		$userDetails = $this->Users->find()->where(['Users.id' => $user_id])->first();
         $this->set('userDetails', $userDetails);
 		
-		if($this->request->session()->read("sess_selected_convention_registration_id")>0)
+		if($this->request->getSession()->read("sess_selected_convention_registration_id")>0)
 		{
-			$sess_selected_convention_registration_id = $this->request->session()->read("sess_selected_convention_registration_id");
+			$sess_selected_convention_registration_id = $this->request->getSession()->read("sess_selected_convention_registration_id");
 			
 			// to get convention registration details
 			$conventionRegD = $this->Conventionregistrations->find()->where(['Conventionregistrations.id' => $sess_selected_convention_registration_id])->first();
@@ -500,7 +499,7 @@ class ConventionregistrationsController extends AppController {
 			// to get the list of teachers/parents (rename to Supervisors) chosen for this convention registration
 			$teacherDDCR = array();
 			$teacherDDCR[] = 0;
-			$teacherLConvReg = $this->Conventionregistrationteachers->find()->where(['Conventionregistrationteachers.conventionregistration_id' => $this->request->session()->read("sess_selected_convention_registration_id")])->order(['Conventionregistrationteachers.id' => 'DESC'])->all();
+			$teacherLConvReg = $this->Conventionregistrationteachers->find()->where(['Conventionregistrationteachers.conventionregistration_id' => $this->request->getSession()->read("sess_selected_convention_registration_id")])->order(['Conventionregistrationteachers.id' => 'DESC'])->all();
 			foreach($teacherLConvReg as $teachercr)
 			{
 				$teacherDDCR[] = $teachercr->teacher_id;
@@ -528,7 +527,7 @@ class ConventionregistrationsController extends AppController {
         $conventionregistrationstudents = $this->Conventionregistrationstudents->newEntity();
 		if ($this->request->is('post')) {
 			
-			$data = $this->Conventionregistrationstudents->patchEntity($conventionregistrationstudents, $this->request->data);
+			$data = $this->Conventionregistrationstudents->patchEntity($conventionregistrationstudents, $this->request->getData());
 			
 			$flagCheckAge = 1;
 			
@@ -542,7 +541,7 @@ class ConventionregistrationsController extends AppController {
 				$this->Flash->error('Students must be between between 11 years - 20 years in convention year.');
 			}
 			
-            if (count($data->errors()) == 0 && $flagCheckAge == 1) {
+			if (count($data->getErrors()) == 0 && $flagCheckAge == 1) {
 
 				$data->slug 						= 'conv-reg-student-'.$sess_selected_convention_registration_id.'-'.$data->student_id.'-'.time();
 				$data->conventionregistration_id	= $sess_selected_convention_registration_id;
@@ -572,13 +571,13 @@ class ConventionregistrationsController extends AppController {
 		$this->userLoginCheck();
 		$this->schoolAdminLoginCheck();
 		
-        $user_id = $this->request->session()->read("user_id");
+        $user_id = $this->request->getSession()->read("user_id");
 		$userDetails = $this->Users->find()->where(['Users.id' => $user_id])->first();
         $this->set('userDetails', $userDetails);
 		
-		if($this->request->session()->read("sess_selected_convention_registration_id")>0)
+		if($this->request->getSession()->read("sess_selected_convention_registration_id")>0)
 		{
-			$sess_selected_convention_registration_id = $this->request->session()->read("sess_selected_convention_registration_id");
+			$sess_selected_convention_registration_id = $this->request->getSession()->read("sess_selected_convention_registration_id");
 			
 			// to check if slug exists
 			$checkCRS = $this->Conventionregistrationstudents->find()->where(['Conventionregistrationstudents.slug' => $crs_slug,'Conventionregistrationstudents.conventionregistration_id' => $sess_selected_convention_registration_id])->first();
@@ -606,7 +605,7 @@ class ConventionregistrationsController extends AppController {
 		$this->userLoginCheck();
 		$this->schoolAdminLoginCheck();
 		
-		$user_id = $this->request->session()->read("user_id");
+		$user_id = $this->request->getSession()->read("user_id");
 		$userDetails = $this->Users->find()->where(['Users.id' => $user_id])->first();
 		
 		// check convention details
@@ -695,18 +694,18 @@ class ConventionregistrationsController extends AppController {
 		$this->schoolAdminLoginCheck();
 		
 		//echo ' fsdf sdf sdf d';exit;
-		$this->viewbuilder()->layout("home");
+		$this->viewBuilder()->setLayout("home");
         $this->set("title_for_layout", "Price Structure " . TITLE_FOR_PAGES);
 		
 		$this->set('active_cr_price_structure','active');
 		
-        $user_id = $this->request->session()->read("user_id");
+        $user_id = $this->request->getSession()->read("user_id");
 		$userDetails = $this->Users->find()->where(['Users.id' => $user_id])->first();
         $this->set('userDetails', $userDetails);
 		
-		if($this->request->session()->read("sess_selected_convention_registration_id")>0)
+		if($this->request->getSession()->read("sess_selected_convention_registration_id")>0)
 		{
-			$sess_selected_convention_registration_id = $this->request->session()->read("sess_selected_convention_registration_id");
+			$sess_selected_convention_registration_id = $this->request->getSession()->read("sess_selected_convention_registration_id");
 			
 			// to get convention registration details
 			$conventionRegD = $this->Conventionregistrations->find()->where(['Conventionregistrations.id' => $sess_selected_convention_registration_id])->first();
@@ -764,9 +763,9 @@ class ConventionregistrationsController extends AppController {
 		
         if ($this->request->is('post')) {
 			
-			//$this->prx($this->request->data);
+			//$this->prx($this->request->getData());
 			
-			$price_structure = $this->request->data['Conventionregistrations']['price_structure'];
+			$price_structure = $this->request->getData()['Conventionregistrations']['price_structure'];
 			
 			if($price_structure == "student_registration_fees")
 			{
@@ -799,14 +798,14 @@ class ConventionregistrationsController extends AppController {
         $this->multiLoginCheck(array("School","Teacher_Parent"));
 		
         $this->set("title_for_layout", "Student Event Registration" . TITLE_FOR_PAGES);
-        $this->viewbuilder()->layout('home');
+        $this->viewBuilder()->setLayout('home');
         
 		$this->set('active_cr_studentevents','active');
 		
         $msgString = '';
 
-		$user_id 	= $this->request->session()->read("user_id");
-		$user_type 	= $this->request->session()->read("user_type");
+		$user_id 	= $this->request->getSession()->read("user_id");
+		$user_type 	= $this->request->getSession()->read("user_type");
 		$userDetails = $this->Users->find()->where(['Users.id' => $user_id])->first();
         $this->set('userDetails', $userDetails);
 
@@ -815,9 +814,9 @@ class ConventionregistrationsController extends AppController {
 		
 		$condition[] = "(Conventionregistrationstudents.event_ids != '' AND Conventionregistrationstudents.event_ids IS NOT NULL)";
 		
-		if($this->request->session()->read("sess_selected_convention_registration_id")>0)
+		if($this->request->getSession()->read("sess_selected_convention_registration_id")>0)
 		{
-			$condition[] = "(Conventionregistrationstudents.conventionregistration_id = '".$this->request->session()->read("sess_selected_convention_registration_id")."')";
+			$condition[] = "(Conventionregistrationstudents.conventionregistration_id = '".$this->request->getSession()->read("sess_selected_convention_registration_id")."')";
 		}
 		else
 		{
@@ -831,10 +830,10 @@ class ConventionregistrationsController extends AppController {
 			$condition[] = "(Conventionregistrationstudents.teacher_parent_id = '".$user_id."')";
 		}
 
-        if ($this->request->is('post')) {
-            if (isset($this->request->data['action'])) {
-                $idList = implode(',', $this->request->data['chkRecordId']);
-                $action = $this->request->data['action'];
+		if ($this->request->is('post')) {
+			if (isset($this->request->getData()['action'])) {
+				$idList = implode(',', $this->request->getData()['chkRecordId']);
+				$action = $this->request->getData()['action'];
                 if ($idList) {
                     if ($action == "Activate") {
                         $this->Conventionregistrationstudents->updateAll(['status' => '1'], ["id IN ($idList)"]);
@@ -849,12 +848,12 @@ class ConventionregistrationsController extends AppController {
                 }
             }
 
-            if (isset($this->request->data['Conventionregistrationstudents']['keyword']) && $this->request->data['Conventionregistrationstudents']['keyword'] != '') {
-                $keyword = trim($this->request->data['Conventionregistrationstudents']['keyword']);
+			if (isset($this->request->getData()['Conventionregistrationstudents']['keyword']) && $this->request->getData()['Conventionregistrationstudents']['keyword'] != '') {
+				$keyword = trim($this->request->getData()['Conventionregistrationstudents']['keyword']);
             }
-        } elseif ($this->request->params) {
-            if (isset($this->request->params['pass'][0]) && $this->request->params['pass'][0] != '') {
-                $searchArr = $this->request->params['pass'];
+        } elseif (!empty($this->request->getParam('pass'))) {
+            if (isset($this->request->getParam('pass')[0]) && $this->request->getParam('pass')[0] != '') {
+                $searchArr = $this->request->getParam('pass');
                 foreach ($searchArr as $val) {
                     if (strpos($val, ":") !== false) {
                         $vars = explode(":", $val);
@@ -875,7 +874,7 @@ class ConventionregistrationsController extends AppController {
         $this->paginate = ['contain' => ['Conventions','Students'],'conditions' => $condition, 'limit' => 30, 'order' => ['Conventionregistrationstudents.season_year' => 'DESC']];
         $this->set('conventionregistrationstudents', $this->paginate($this->Conventionregistrationstudents));
         if ($this->request->is("ajax")) {
-            $this->viewBuilder()->layout(($this->request->is("ajax")) ? "" : "default");
+            $this->viewBuilder()->setLayout(($this->request->is("ajax")) ? "" : "default");
             $this->viewBuilder()->templatePath('Element' . DS . 'Conventionregistrations');
             $this->render('studentevents');
         }
@@ -896,22 +895,22 @@ class ConventionregistrationsController extends AppController {
 		$this->multiLoginCheck(array("School","Teacher_Parent"));
 		
 		// to check if registration is still open
-		$this->checkRegistrationStillOpen($this->request->session()->read("sess_selected_convention_registration_id"));
+		$this->checkRegistrationStillOpen($this->request->getSession()->read("sess_selected_convention_registration_id"));
 		
 		//echo ' fsdf sdf sdf d';exit;
-		$this->viewbuilder()->layout("home");
+		$this->viewBuilder()->setLayout("home");
         $this->set("title_for_layout", "Convention Registration - Add Student Event " . TITLE_FOR_PAGES);
 		
 		$this->set('active_cr_studentevents','active');
 		
-        $user_id 	= $this->request->session()->read("user_id");
-        $user_type 	= $this->request->session()->read("user_type");
+        $user_id 	= $this->request->getSession()->read("user_id");
+        $user_type 	= $this->request->getSession()->read("user_type");
 		$userDetails = $this->Users->find()->where(['Users.id' => $user_id])->first();
         $this->set('userDetails', $userDetails);
 		
-		if($this->request->session()->read("sess_selected_convention_registration_id")>0)
+		if($this->request->getSession()->read("sess_selected_convention_registration_id")>0)
 		{
-			$sess_selected_convention_registration_id = $this->request->session()->read("sess_selected_convention_registration_id");
+			$sess_selected_convention_registration_id = $this->request->getSession()->read("sess_selected_convention_registration_id");
 			
 			// to get convention registration details
 			$conventionRegD = $this->Conventionregistrations->find()->where(['Conventionregistrations.id' => $sess_selected_convention_registration_id])->first();
@@ -993,13 +992,13 @@ class ConventionregistrationsController extends AppController {
 		
 		if ($this->request->is('post'))
 		{
-			//$this->prx($this->request->data['Conventionregistrationstudents']);
+			//$this->prx($this->request->getData()['Conventionregistrationstudents']);
 			
 			$finalEventIDS = array();
 			$invalidEvents = array();
 			
-			$student_id = $this->request->data['Conventionregistrationstudents']['student_id'];
-			$event_ids 	= $this->request->data['Conventionregistrationstudents']['event_ids'];
+			$student_id = $this->request->getData()['Conventionregistrationstudents']['student_id'];
+			$event_ids 	= $this->request->getData()['Conventionregistrationstudents']['event_ids'];
 			
 			// to get the age of student
 			$studentD = $this->Users->find()->where(['Users.id' => $student_id])->first();
@@ -1024,7 +1023,7 @@ class ConventionregistrationsController extends AppController {
 				if($checkValidEvent && $checkValidEventGender && $studentAge<21)
 				{
 					$crstudentevents = $this->Crstudentevents->newEntity();
-					$dataCRSE = $this->Crstudentevents->patchEntity($crstudentevents, $this->request->data);
+					$dataCRSE = $this->Crstudentevents->patchEntity($crstudentevents, $this->request->getData());
 
 					$dataCRSE->slug								= "conv-student-event-".$event_id.'-'.$student_id.'-'.time();
 					$dataCRSE->conventionregistration_id		= $conventionRegD->id;
@@ -1078,21 +1077,21 @@ class ConventionregistrationsController extends AppController {
 		$this->multiLoginCheck(array("School","Teacher_Parent"));
 		
 		// to check if registration is still open
-		$this->checkRegistrationStillOpen($this->request->session()->read("sess_selected_convention_registration_id"));
+		$this->checkRegistrationStillOpen($this->request->getSession()->read("sess_selected_convention_registration_id"));
 		
 		//echo ' fsdf sdf sdf d';exit;
-		$this->viewbuilder()->layout("home");
+		$this->viewBuilder()->setLayout("home");
         $this->set("title_for_layout", "Convention Registration - Add Student Event " . TITLE_FOR_PAGES);
 		
 		$this->set('active_cr_studentevents','active');
 		
-        $user_id = $this->request->session()->read("user_id");
+        $user_id = $this->request->getSession()->read("user_id");
 		$userDetails = $this->Users->find()->where(['Users.id' => $user_id])->first();
         $this->set('userDetails', $userDetails);
 		
-		if($this->request->session()->read("sess_selected_convention_registration_id")>0)
+		if($this->request->getSession()->read("sess_selected_convention_registration_id")>0)
 		{
-			$sess_selected_convention_registration_id = $this->request->session()->read("sess_selected_convention_registration_id");
+			$sess_selected_convention_registration_id = $this->request->getSession()->read("sess_selected_convention_registration_id");
 			
 			// to get convention registration details
 			$conventionRegD = $this->Conventionregistrations->find()->where(['Conventionregistrations.id' => $sess_selected_convention_registration_id])->first();
@@ -1137,13 +1136,13 @@ class ConventionregistrationsController extends AppController {
 		
 		if ($this->request->is('post'))
 		{
-			//$this->prx($this->request->data['Conventionregistrationstudents']);
+			//$this->prx($this->request->getData()['Conventionregistrationstudents']);
 			
 			$finalEventIDS = array();
 			$invalidEvents = array();
 			
-			$student_id = $this->request->data['Conventionregistrationstudents']['student_id'];
-			$event_ids 	= $this->request->data['Conventionregistrationstudents']['event_ids'];
+			$student_id = $this->request->getData()['Conventionregistrationstudents']['student_id'];
+			$event_ids 	= $this->request->getData()['Conventionregistrationstudents']['event_ids'];
 			
 			// now remove existing events list from crstudentevents
 			$this->Crstudentevents->deleteAll(["conventionregistration_id" => $sess_selected_convention_registration_id,"student_id" => $checkCRS->student_id]);
@@ -1168,7 +1167,7 @@ class ConventionregistrationsController extends AppController {
 				if($checkValidEvent && $checkValidEventGender && $studentAge<21)
 				{
 					$crstudentevents = $this->Crstudentevents->newEntity();
-					$dataCRSE = $this->Crstudentevents->patchEntity($crstudentevents, $this->request->data);
+					$dataCRSE = $this->Crstudentevents->patchEntity($crstudentevents, $this->request->getData());
 
 					$dataCRSE->slug								= "conv-student-event-".$event_id.'-'.$student_id.'-'.time();
 					$dataCRSE->conventionregistration_id		= $conventionRegD->id;
@@ -1229,13 +1228,13 @@ class ConventionregistrationsController extends AppController {
 		$this->userLoginCheck();
 		$this->schoolAdminLoginCheck();
 		
-        $user_id = $this->request->session()->read("user_id");
+        $user_id = $this->request->getSession()->read("user_id");
 		$userDetails = $this->Users->find()->where(['Users.id' => $user_id])->first();
         $this->set('userDetails', $userDetails);
 		
-		if($this->request->session()->read("sess_selected_convention_registration_id")>0)
+		if($this->request->getSession()->read("sess_selected_convention_registration_id")>0)
 		{
-			$sess_selected_convention_registration_id = $this->request->session()->read("sess_selected_convention_registration_id");
+			$sess_selected_convention_registration_id = $this->request->getSession()->read("sess_selected_convention_registration_id");
 			
 			// to check if slug exists
 			$checkCRS = $this->Conventionregistrationstudents->find()->where(['Conventionregistrationstudents.slug' => $crs_slug,'Conventionregistrationstudents.conventionregistration_id' => $sess_selected_convention_registration_id])->first();
@@ -1269,12 +1268,12 @@ class ConventionregistrationsController extends AppController {
 		$this->multiLoginCheck(['Teacher_Parent','Judge']);
 		
 		//echo ' fsdf sdf sdf d';exit;
-		$this->viewbuilder()->layout("home");
+		$this->viewBuilder()->setLayout("home");
         $this->set("title_for_layout", "Convention Registration " . TITLE_FOR_PAGES);
 		
 		$this->set('active_convention_registrations','active');
 		
-		$user_id = $this->request->session()->read("user_id");
+		$user_id = $this->request->getSession()->read("user_id");
 		$userDetails = $this->Users->find()->where(['Users.id' => $user_id])->first();
 		$this->set('userDetails', $userDetails);
 		
@@ -1318,7 +1317,7 @@ class ConventionregistrationsController extends AppController {
 				
 				if ($this->request->is('post'))
 				{
-					//$this->prx($this->request->data);
+					//$this->prx($this->request->getData());
 					// to check if this record already exists
 					$checkRegExists = $this->Conventionregistrations->find()->where(['Conventionregistrations.convention_id' => $convention_id,'Conventionregistrations.user_id' => $user_id,'Conventionregistrations.season_id' => $season_id])->first();
 					if($checkRegExists)
@@ -1344,9 +1343,9 @@ class ConventionregistrationsController extends AppController {
 						$dataCR->created 				= date('Y-m-d H:i:s');
 						$dataCR->modified 				= NULL;
 						
-						if($this->request->data['Conventionregistrations']['judges_event_ids'])
+						if($this->request->getData()['Conventionregistrations']['judges_event_ids'])
 						{
-							$dataCR->judges_event_ids 			= implode(",",$this->request->data['Conventionregistrations']['judges_event_ids']);
+							$dataCR->judges_event_ids 			= implode(",",$this->request->getData()['Conventionregistrations']['judges_event_ids']);
 						}
 
 						$resultCR 		= $this->Conventionregistrations->save($dataCR);
@@ -1368,15 +1367,7 @@ class ConventionregistrationsController extends AppController {
 						
 						//echo $messageToSend; exit;
 						
-						$email = new Email();
-						$email->template('default', 'admintemplate')
-							->emailFormat('html')
-							->to($emailId)
-							->cc(ACCOUNTS_TEAM_ANOTHER_EMAIL)
-							->from([HEADERS_FROM_EMAIL => HEADERS_FROM_NAME])
-							->subject($subjectToSend)
-							->viewVars(['content_for_layout' => $messageToSend])
-							->send();
+						$this->sendLegacyHtmlEmail($emailId, $subjectToSend, $messageToSend, [HEADERS_FROM_EMAIL => HEADERS_FROM_NAME], ACCOUNTS_TEAM_ANOTHER_EMAIL);
 						
 					}
 						
@@ -1399,14 +1390,14 @@ class ConventionregistrationsController extends AppController {
         $this->multiLoginCheck(['Teacher_Parent','Judge']);
 		
         $this->set("title_for_layout", "Events" . TITLE_FOR_PAGES);
-        $this->viewbuilder()->layout('home');
+        $this->viewBuilder()->setLayout('home');
         
 		//$this->set('active_convention_registrations','active');
 		
         $msgString = '';
 
-		$user_id = $this->request->session()->read("user_id");
-		$user_type 	= $this->request->session()->read("user_type");
+		$user_id = $this->request->getSession()->read("user_id");
+		$user_type 	= $this->request->getSession()->read("user_type");
 		$userDetails = $this->Users->find()->where(['Users.id' => $user_id])->first();
         $this->set('userDetails', $userDetails);
 
@@ -1435,13 +1426,13 @@ class ConventionregistrationsController extends AppController {
 			
 		}
 		else
-		if($this->request->session()->read("sess_selected_convention_registration_id")>0)
+		if($this->request->getSession()->read("sess_selected_convention_registration_id")>0)
 		{
 			$this->set('active_cr_judgeevents','active');
 			
-			$conventionRegD = $this->Conventionregistrations->find()->where(['Conventionregistrations.id' => $this->request->session()->read("sess_selected_convention_registration_id")])->contain(['Conventions'])->first();
+			$conventionRegD = $this->Conventionregistrations->find()->where(['Conventionregistrations.id' => $this->request->getSession()->read("sess_selected_convention_registration_id")])->contain(['Conventions'])->first();
 			$this->set('conventionRegD', $conventionRegD);
-			//echo $this->request->session()->read("sess_selected_convention_registration_id");exit;
+			//echo $this->request->getSession()->read("sess_selected_convention_registration_id");exit;
 			
 			//To list all events that selecyed for this conv season
 			if(!empty($conventionRegD->judges_event_ids))
@@ -1468,9 +1459,9 @@ class ConventionregistrationsController extends AppController {
         $this->multiLoginCheck(['Teacher_Parent','Judge']);
 		
         $this->set("title_for_layout", "Event Entries" . TITLE_FOR_PAGES);
-        $this->viewbuilder()->layout('home');
+        $this->viewBuilder()->setLayout('home');
 		
-		if($this->request->session()->read("sess_selected_convention_registration_id")>0)
+		if($this->request->getSession()->read("sess_selected_convention_registration_id")>0)
 		{
 			$this->set('active_cr_judgeevents','active');
 		}
@@ -1483,8 +1474,8 @@ class ConventionregistrationsController extends AppController {
 		
         $msgString = '';
 
-		$user_id = $this->request->session()->read("user_id");
-		$user_type 	= $this->request->session()->read("user_type");
+		$user_id = $this->request->getSession()->read("user_id");
+		$user_type 	= $this->request->getSession()->read("user_type");
 		$userDetails = $this->Users->find()->where(['Users.id' => $user_id])->first();
         $this->set('userDetails', $userDetails);
 		
@@ -1525,22 +1516,22 @@ class ConventionregistrationsController extends AppController {
         $this->multiLoginCheck(array("School","Teacher_Parent"));
 		
         $this->set("title_for_layout", "Registration Checklist" . TITLE_FOR_PAGES);
-        $this->viewbuilder()->layout('home');
+        $this->viewBuilder()->setLayout('home');
         
 		$this->set('active_cr_packageregistration','active');
 		
         $msgString = '';
 
-		$user_id 	= $this->request->session()->read("user_id");
-		$user_type 	= $this->request->session()->read("user_type");
+		$user_id 	= $this->request->getSession()->read("user_id");
+		$user_type 	= $this->request->getSession()->read("user_type");
 		$userDetails = $this->Users->find()->where(['Users.id' => $user_id])->first();
         $this->set('userDetails', $userDetails);
 
         $condition = array();
 		
-		if($this->request->session()->read("sess_selected_convention_registration_id")>0)
+		if($this->request->getSession()->read("sess_selected_convention_registration_id")>0)
 		{
-			$condition[] = "(Conventionregistrationstudents.conventionregistration_id = '".$this->request->session()->read("sess_selected_convention_registration_id")."')";
+			$condition[] = "(Conventionregistrationstudents.conventionregistration_id = '".$this->request->getSession()->read("sess_selected_convention_registration_id")."')";
 
 			// if teacher/supervisor logged in, then only show students assigned to him
 			if($user_type == "Teacher_Parent")
@@ -1565,18 +1556,18 @@ class ConventionregistrationsController extends AppController {
         $this->multiLoginCheck(array("School","Teacher_Parent"));
 		
         $this->set("title_for_layout", "Package Registration" . TITLE_FOR_PAGES);
-        $this->viewbuilder()->layout('print_reports');
+        $this->viewBuilder()->setLayout('print_reports');
 
-		$user_id 	= $this->request->session()->read("user_id");
-		$user_type 	= $this->request->session()->read("user_type");
+		$user_id 	= $this->request->getSession()->read("user_id");
+		$user_type 	= $this->request->getSession()->read("user_type");
 		$userDetails = $this->Users->find()->where(['Users.id' => $user_id])->first();
         $this->set('userDetails', $userDetails);
 		
         $condition = array();
 		
-		if($this->request->session()->read("sess_selected_convention_registration_id")>0)
+		if($this->request->getSession()->read("sess_selected_convention_registration_id")>0)
 		{
-			$condition[] = "(Conventionregistrationstudents.conventionregistration_id = '".$this->request->session()->read("sess_selected_convention_registration_id")."')";
+			$condition[] = "(Conventionregistrationstudents.conventionregistration_id = '".$this->request->getSession()->read("sess_selected_convention_registration_id")."')";
 			
 			// if teacher/supervisor logged in, then only show students assigned to him
 			if($user_type == "Teacher_Parent")
@@ -1584,7 +1575,7 @@ class ConventionregistrationsController extends AppController {
 				$condition[] = "(Conventionregistrationstudents.teacher_parent_id = '".$user_id."')";
 			}
 			
-			$conventionRegD = $this->Conventionregistrations->find()->where(['Conventionregistrations.id' => $this->request->session()->read("sess_selected_convention_registration_id")])->contain(['Conventions'])->first();
+			$conventionRegD = $this->Conventionregistrations->find()->where(['Conventionregistrations.id' => $this->request->getSession()->read("sess_selected_convention_registration_id")])->contain(['Conventions'])->first();
 			$this->set('conventionRegD', $conventionRegD);
 			//$this->prx($conventionRegD);
 		}
@@ -1594,7 +1585,7 @@ class ConventionregistrationsController extends AppController {
 			$this->redirect(['controller' => 'users', 'action' => 'dashboard']);
 		}
 		
-		//echo $this->request->session()->read("sess_selected_convention_registration_id");
+		//echo $this->request->getSession()->read("sess_selected_convention_registration_id");
 		
 		//$this->prx($condition);
 		
@@ -1609,22 +1600,22 @@ class ConventionregistrationsController extends AppController {
         $this->multiLoginCheck(array("School"));
 		
         $this->set("title_for_layout", "Result Package" . TITLE_FOR_PAGES);
-        $this->viewbuilder()->layout('home');
+        $this->viewBuilder()->setLayout('home');
         
 		$this->set('active_cr_resultpackage','active');
 		
         $msgString = '';
 
-		$user_id 	= $this->request->session()->read("user_id");
-		$user_type 	= $this->request->session()->read("user_type");
+		$user_id 	= $this->request->getSession()->read("user_id");
+		$user_type 	= $this->request->getSession()->read("user_type");
 		$userDetails = $this->Users->find()->where(['Users.id' => $user_id])->first();
         $this->set('userDetails', $userDetails);
 
         $condition = array();
 		
-		if($this->request->session()->read("sess_selected_convention_registration_id")>0)
+		if($this->request->getSession()->read("sess_selected_convention_registration_id")>0)
 		{
-			$conventionRegD = $this->Conventionregistrations->find()->where(['Conventionregistrations.id' => $this->request->session()->read("sess_selected_convention_registration_id")])->contain(['Conventions','Conventionseasons'])->first();
+			$conventionRegD = $this->Conventionregistrations->find()->where(['Conventionregistrations.id' => $this->request->getSession()->read("sess_selected_convention_registration_id")])->contain(['Conventions','Conventionseasons'])->first();
 			$this->set('conventionRegD', $conventionRegD);
 
 			
@@ -1664,22 +1655,22 @@ class ConventionregistrationsController extends AppController {
         $this->multiLoginCheck(array("School"));
 		
         $this->set("title_for_layout", "Result Package" . TITLE_FOR_PAGES);
-        $this->viewbuilder()->layout('print_reports');
+        $this->viewBuilder()->setLayout('print_reports');
         
 		$this->set('active_cr_resultpackage','active');
 		
         $msgString = '';
 
-		$user_id 	= $this->request->session()->read("user_id");
-		$user_type 	= $this->request->session()->read("user_type");
+		$user_id 	= $this->request->getSession()->read("user_id");
+		$user_type 	= $this->request->getSession()->read("user_type");
 		$userDetails = $this->Users->find()->where(['Users.id' => $user_id])->first();
         $this->set('userDetails', $userDetails);
 
         $condition = array();
 		
-		if($this->request->session()->read("sess_selected_convention_registration_id")>0)
+		if($this->request->getSession()->read("sess_selected_convention_registration_id")>0)
 		{
-			$conventionRegD = $this->Conventionregistrations->find()->where(['Conventionregistrations.id' => $this->request->session()->read("sess_selected_convention_registration_id")])->contain(['Conventions'])->first();
+			$conventionRegD = $this->Conventionregistrations->find()->where(['Conventionregistrations.id' => $this->request->getSession()->read("sess_selected_convention_registration_id")])->contain(['Conventions'])->first();
 			$this->set('conventionRegD', $conventionRegD);
 		}
 		else
@@ -1713,22 +1704,22 @@ class ConventionregistrationsController extends AppController {
         $this->multiLoginCheck(array("School"));
 		
         $this->set("title_for_layout", "Result Package Individual Student" . TITLE_FOR_PAGES);
-        $this->viewbuilder()->layout('home');
+        $this->viewBuilder()->setLayout('home');
         
 		$this->set('active_cr_resultpackage','active');
 		
         $msgString = '';
 
-		$user_id 	= $this->request->session()->read("user_id");
-		$user_type 	= $this->request->session()->read("user_type");
+		$user_id 	= $this->request->getSession()->read("user_id");
+		$user_type 	= $this->request->getSession()->read("user_type");
 		$userDetails = $this->Users->find()->where(['Users.id' => $user_id])->first();
         $this->set('userDetails', $userDetails);
 
         $condition = array();
 		
-		if($this->request->session()->read("sess_selected_convention_registration_id")>0)
+		if($this->request->getSession()->read("sess_selected_convention_registration_id")>0)
 		{
-			$conventionRegD = $this->Conventionregistrations->find()->where(['Conventionregistrations.id' => $this->request->session()->read("sess_selected_convention_registration_id")])->contain(['Conventions','Conventionseasons'])->first();
+			$conventionRegD = $this->Conventionregistrations->find()->where(['Conventionregistrations.id' => $this->request->getSession()->read("sess_selected_convention_registration_id")])->contain(['Conventions','Conventionseasons'])->first();
 			$this->set('conventionRegD', $conventionRegD);
 			
 			// to check if results released
@@ -1767,23 +1758,23 @@ class ConventionregistrationsController extends AppController {
         $this->multiLoginCheck(array("School"));
 		
         $this->set("title_for_layout", "Result Package Individual Student" . TITLE_FOR_PAGES);
-        $this->viewbuilder()->layout('print_reports');
+        $this->viewBuilder()->setLayout('print_reports');
         
 		$this->set('active_cr_resultpackage','active');
 		$this->set('show_header_each_page',1);
 		
         $msgString = '';
 
-		$user_id 	= $this->request->session()->read("user_id");
-		$user_type 	= $this->request->session()->read("user_type");
+		$user_id 	= $this->request->getSession()->read("user_id");
+		$user_type 	= $this->request->getSession()->read("user_type");
 		$userDetails = $this->Users->find()->where(['Users.id' => $user_id])->first();
         $this->set('userDetails', $userDetails);
 
         $condition = array();
 		
-		if($this->request->session()->read("sess_selected_convention_registration_id")>0)
+		if($this->request->getSession()->read("sess_selected_convention_registration_id")>0)
 		{
-			$conventionRegD = $this->Conventionregistrations->find()->where(['Conventionregistrations.id' => $this->request->session()->read("sess_selected_convention_registration_id")])->contain(['Conventions','Conventionseasons'])->first();
+			$conventionRegD = $this->Conventionregistrations->find()->where(['Conventionregistrations.id' => $this->request->getSession()->read("sess_selected_convention_registration_id")])->contain(['Conventions','Conventionseasons'])->first();
 			$this->set('conventionRegD', $conventionRegD);
 			
 			// to check if results released
@@ -1823,7 +1814,7 @@ class ConventionregistrationsController extends AppController {
 		
 		//$this->helpers[] = 'Pdf';
 		
-		$this->viewbuilder()->layout('');
+		$this->viewBuilder()->setLayout('');
 		
 		$convRegStudentD = $this->Conventionregistrationstudents->find()->where(['Conventionregistrationstudents.slug' => $conv_reg_student_slug])->contain(['Students','Users','Conventions'])->first();
 		
@@ -1949,7 +1940,7 @@ class ConventionregistrationsController extends AppController {
 		
 		//$this->helpers[] = 'Pdf';
 		
-		$this->viewbuilder()->layout('');
+		$this->viewBuilder()->setLayout('');
 		
 		$resultPositionD = $this->Resultpositions->find()->where(['Resultpositions.slug' => $resultpositions_slug])->contain(['Students','Users','Conventions'])->first();
 		

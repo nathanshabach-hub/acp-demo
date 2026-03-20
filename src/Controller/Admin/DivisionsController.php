@@ -9,7 +9,7 @@ use Cake\Core\Configure\Engine\PhpConfig;
 class DivisionsController extends AppController {
 
     public $paginate = ['limit' => 50, 'order' => ['Divisions.name' => 'asc']];
-    var $components = array('RequestHandler', 'PImage', 'PImageTest');
+    public $components = ['RequestHandler', 'PImage', 'PImageTest'];
 
     //public $helpers = array('Javascript', 'Ajax');
 
@@ -17,8 +17,8 @@ class DivisionsController extends AppController {
         parent::initialize();
         $this->loadComponent('Paginator');
         $this->loadComponent('Flash');
-        $action = $this->request->params['action'];
-        $loggedAdminId = $this->request->session()->read('admin_id');
+        $action = $this->request->getParam('action');
+        $loggedAdminId = $this->request->getSession()->read('admin_id');
         if ($action != 'forgotPassword' && $action != 'logout') {
             if (!$loggedAdminId && $action != "login" && $action != 'captcha') {
                 $this->redirect(['controller' => 'admins', 'action' => 'login']);
@@ -33,7 +33,7 @@ class DivisionsController extends AppController {
     public function index() {
 
         $this->set('title', ADMIN_TITLE . 'Manage Divisions');
-        $this->viewBuilder()->layout('admin');
+        $this->viewBuilder()->setLayout('admin');
         $this->set('manageEvents', '1');
         $this->set('manageDivisions', '1');
 
@@ -42,9 +42,9 @@ class DivisionsController extends AppController {
         //$condition = array('Divisions.parent_division_id' => 0);
 
         if ($this->request->is('post')) {
-            if (isset($this->request->data['action'])) {
-                $idList = implode(',', $this->request->data['chkRecordId']);
-                $action = $this->request->data['action'];
+            if (isset($this->request->getData()['action'])) {
+                $idList = implode(',', $this->request->getData()['chkRecordId']);
+                $action = $this->request->getData()['action'];
                 if ($idList) {
                     if ($action == "Activate") {
                         $this->Divisions->updateAll(['status' => '1'], ["id IN ($idList)"]);
@@ -59,12 +59,12 @@ class DivisionsController extends AppController {
                 }
             }
 
-            if (isset($this->request->data['Divisions']['keyword']) && $this->request->data['Divisions']['keyword'] != '') {
-                $keyword = trim($this->request->data['Divisions']['keyword']);
+            if (isset($this->request->getData()['Divisions']['keyword']) && $this->request->getData()['Divisions']['keyword'] != '') {
+                $keyword = trim($this->request->getData()['Divisions']['keyword']);
             }
-        } elseif ($this->request->params) {
-            if (isset($this->request->params['pass'][0]) && $this->request->params['pass'][0] != '') {
-                $searchArr = $this->request->params['pass'];
+        } elseif ($this->request->getParam('pass')) {
+            if (isset($this->request->getParam('pass')[0]) && $this->request->getParam('pass')[0] != '') {
+                $searchArr = $this->request->getParam('pass');
                 foreach ($searchArr as $val) {
                     if (strpos($val, ":") !== false) {
                         $vars = explode(":", $val);
@@ -85,7 +85,7 @@ class DivisionsController extends AppController {
         $this->paginate = ['conditions' => $condition, 'contain' => ['Eventcategories'], 'limit' => 20, 'order' => ['Divisions.eventcategory_id' => 'ASC']];
         $this->set('divisions', $this->paginate($this->Divisions));
         if ($this->request->is("ajax")) {
-            $this->viewBuilder()->layout(($this->request->is("ajax")) ? "" : "default");
+            $this->viewBuilder()->setLayout(($this->request->is("ajax")) ? "" : "default");
             $this->viewBuilder()->templatePath('Element' . DS . 'Admin/Divisions');
             $this->render('index');
         }
@@ -129,7 +129,7 @@ class DivisionsController extends AppController {
 
     public function add() {
         $this->set('title', ADMIN_TITLE . 'Add Division');
-        $this->viewBuilder()->layout('admin');
+        $this->viewBuilder()->setLayout('admin');
 		
         $this->set('manageEvents', '1');
         $this->set('manageDivisions', '1');
@@ -141,15 +141,15 @@ class DivisionsController extends AppController {
         $divisions = $this->Divisions->newEntity();
         if ($this->request->is('post')) {
 			
-			//$this->prx($this->request->data);
+			//$this->prx($this->request->getData());
 			
-            $data = $this->Divisions->patchEntity($divisions, $this->request->data, ['validate' => 'add']);
-            if (count($data->errors()) == 0) {
+            $data = $this->Divisions->patchEntity($divisions, $this->request->getData(), ['validate' => 'add']);
+            if (count($data->getErrors()) == 0) {
 
-				$slug = $this->getSlug($this->request->data['Divisions']['name'] . ' ' . time(), 'Divisions');
-                $data->name 					= trim($this->request->data['Divisions']['name']);
+				$slug = $this->getSlug($this->request->getData()['Divisions']['name'] . ' ' . time(), 'Divisions');
+                $data->name 					= trim($this->request->getData()['Divisions']['name']);
                 $data->slug 					= $slug;
-				$data->eventcategory_id 		= trim($this->request->data['Divisions']['eventcategory_id']);
+				$data->eventcategory_id 		= trim($this->request->getData()['Divisions']['eventcategory_id']);
                 $data->status 					= 1;
                 $data->created 					= date('Y-m-d H:i:s');
                 $data->modified 				= NULL;
@@ -166,7 +166,7 @@ class DivisionsController extends AppController {
 
     public function edit($slug = null) {
         $this->set('title', ADMIN_TITLE . 'Edit Division');
-        $this->viewBuilder()->layout('admin');
+        $this->viewBuilder()->setLayout('admin');
         
 		$this->set('manageEvents', '1');
         $this->set('manageDivisions', '1');
@@ -182,11 +182,11 @@ class DivisionsController extends AppController {
 		
         $divisions = $this->Divisions->get($uid);
         if ($this->request->is(['post', 'put'])) {
-            $data = $this->Divisions->patchEntity($divisions, $this->request->data, ['validate' => 'edit']);
+            $data = $this->Divisions->patchEntity($divisions, $this->request->getData(), ['validate' => 'edit']);
 			
-            if (count($data->errors()) == 0) {
-                $data->name 			= trim($this->request->data['Divisions']['name']);
-                $data->eventcategory_id = trim($this->request->data['Divisions']['eventcategory_id']);
+            if (count($data->getErrors()) == 0) {
+                $data->name 			= trim($this->request->getData()['Divisions']['name']);
+                $data->eventcategory_id = trim($this->request->getData()['Divisions']['eventcategory_id']);
 				$data->modified = date("Y-m-d H:i:s");
 				//$this->prx($data);
                 if ($this->Divisions->save($data)) {

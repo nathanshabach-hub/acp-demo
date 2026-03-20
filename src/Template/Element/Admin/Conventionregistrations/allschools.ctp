@@ -11,9 +11,9 @@
 </script>
 <?php
 use Cake\ORM\TableRegistry;
-$this->Conventionregistrations = TableRegistry::get('Conventionregistrations');
-$this->Conventionregistrationstudents = TableRegistry::get('Conventionregistrationstudents');
-$this->Conventionregistrationteachers = TableRegistry::get('Conventionregistrationteachers');
+$this->Conventionregistrations = TableRegistry::getTableLocator()->get('Conventionregistrations');
+$this->Conventionregistrationstudents = TableRegistry::getTableLocator()->get('Conventionregistrationstudents');
+$this->Conventionregistrationteachers = TableRegistry::getTableLocator()->get('Conventionregistrationteachers');
 ?>
 <div class="admin_loader" id="loaderID"><?php echo $this->Html->image('loader_large_blue.gif');?></div>
 <?php if (!$conventionregistrations->isEmpty()) { ?> 
@@ -81,7 +81,7 @@ $this->Conventionregistrationteachers = TableRegistry::get('Conventionregistrati
         
         <?php 
         if (isset($keyword) && $keyword != '') {
-            echo $this->Form->input('Conventionregistrations.keyword', ['label'=>false, 'type'=>'hidden', 'value'=>$keyword]);
+            echo $this->Form->control('Conventionregistrations.keyword', ['label'=>false, 'type'=>'hidden', 'value'=>$keyword]);
         }?>
         <?php echo $this->Form->end(); ?>
     

@@ -20,7 +20,7 @@
                     <div class="form-group align_box dtpickr_inputs">
                        <span class="hints" style="display:none;">Search by Season Name or Year</span>
                        <span class="hint">
-                           <?php //echo $this->Form->input('Seasons.keyword', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control', 'placeholder'=>'Search by Season Name or Year']); ?>
+                           <?php //echo $this->Form->control('Seasons.keyword', ['label'=>false, 'type'=>'text',  'div'=>false, 'class'=>'form-control', 'placeholder'=>'Search by Season Name or Year']); ?>
                        </span>
                       
                        <div class="admin_asearch">

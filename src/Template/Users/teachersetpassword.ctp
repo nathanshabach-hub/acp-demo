@@ -26,13 +26,13 @@ $(document).ready(function () {
 								<div class="lables d-flex align-items-center mb-3
 									justify-content-between">
 									<span class="mb-0 me-1 col-4">New Password</span>
-									<?php echo $this->Form->input('Users.password', ['minlength' => '6', 'type' => 'password', 'maxlength' => '40', 'label' => false, 'div' => false, 'id' => 'password', 'class' => "form-control required w-75", 'placeholder' => 'New Password']); ?>
+									<?php echo $this->Form->control('Users.password', ['minlength' => '6', 'type' => 'password', 'maxlength' => '40', 'label' => false, 'div' => false, 'id' => 'password', 'class' => "form-control required w-75", 'placeholder' => 'New Password']); ?>
 								</div>
 								
 								<div class="lables d-flex align-items-center mb-3
 									justify-content-between">
 									<span class="mb-0 me-1 col-4">Confirm Password</span>
-									<?php echo $this->Form->input('Users.confirm_password', ['label' => '', 'type' => 'password', 'label' => false, 'div' => false, 'equalTo' => '#password', 'class' => "form-control required w-75", 'placeholder' => 'Confirm Password']); ?> 
+									<?php echo $this->Form->control('Users.confirm_password', ['label' => '', 'type' => 'password', 'label' => false, 'div' => false, 'equalTo' => '#password', 'class' => "form-control required w-75", 'placeholder' => 'Confirm Password']); ?> 
 								</div>
 								
 								<div class="btns col-8 float-end">

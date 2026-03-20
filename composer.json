@@ -1,23 +1,22 @@
 {
     "name": "cakephp/app",
-    "description": "CakePHP skeleton app",
+    "description": "ACP portal on PHP 8.2+ and CakePHP 5",
     "homepage": "http://cakephp.org",
     "type": "project",
     "license": "MIT",
     "require": {
-        "php": ">=5.5.9",
-        "cakephp/cakephp": "~3.2",
-        "mobiledetect/mobiledetectlib": "2.*",
-        "cakephp/migrations": "~1.0",
-        "cakephp/plugin-installer": "*"
+        "php": "^8.2",
+        "cakephp/cakephp": "^5.3",
+        "mobiledetect/mobiledetectlib": "^4.8",
+        "cakephp/migrations": "^4.9"
     },
     "require-dev": {
-        "psy/psysh": "@stable",
-        "cakephp/debug_kit": "~3.2",
-        "cakephp/bake": "~1.1"
+        "psy/psysh": "^0.12",
+        "cakephp/debug_kit": "^5.2",
+        "cakephp/bake": "^3.6",
+        "phpunit/phpunit": "^10.5"
     },
     "suggest": {
-        "phpunit/phpunit": "Allows automated tests to be run without system-wide install.",
         "cakephp/cakephp-codesniffer": "Allows to check the code against the coding standards used in CakePHP."
     },
     "autoload": {
@@ -28,15 +27,12 @@
     },
     "autoload-dev": {
         "psr-4": {
-            "App\\Test\\": "tests",
-            "Cake\\Test\\": "./vendor/cakephp/cakephp/tests"
+            "App\\Test\\": "tests"
         }
     },
     "scripts": {
         "post-install-cmd": "App\\Console\\Installer::postInstall",
-        "post-create-project-cmd": "App\\Console\\Installer::postInstall",
-        "post-autoload-dump": "Cake\\Composer\\Installer\\PluginInstaller::postAutoloadDump"
+        "post-create-project-cmd": "App\\Console\\Installer::postInstall"
     },
-    "minimum-stability": "stable",
     "prefer-stable": true
 }

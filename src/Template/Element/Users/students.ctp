@@ -64,7 +64,7 @@
 										echo $this->Html->link('<i class="fa fa-pencil"></i>', ['controller' => 'users', 'action' => 'editstudent',$datarecord->slug], [ 'escape' => false, 'title' => 'Edit', 'class'=>'']);
 									}
 									// to show only to school admin only
-									if($this->request->session()->read("user_id") >0 && ($this->request->session()->read("user_type") == "School"))
+                                        if($this->request->getSession()->read("user_id") >0 && ($this->request->getSession()->read("user_type") == "School"))
 									{
 										if($datarecord->status == 2)
 										{

@@ -1,7 +1,7 @@
 <?php
 use Cake\ORM\TableRegistry;
-$this->Crstudentevents = TableRegistry::get('Crstudentevents');
-$this->Judgeevaluations = TableRegistry::get('Judgeevaluations');
+$this->Crstudentevents = TableRegistry::getTableLocator()->get('Crstudentevents');
+$this->Judgeevaluations = TableRegistry::getTableLocator()->get('Judgeevaluations');
 ?>
 <div class="admin_loader" id="loaderID"><?php echo $this->Html->image('loader_large_blue.gif');?></div>
 <?php if (!$judgeevaluations->isEmpty()) { ?> 
