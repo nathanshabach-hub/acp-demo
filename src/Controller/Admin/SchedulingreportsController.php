@@ -887,6 +887,10 @@ class SchedulingreportsController extends AppController {
 		$this->set('convention_season_slug', $convention_season_slug);
 
 		$conventionSD = $this->Conventionseasons->find()->where(['Conventionseasons.slug' => $convention_season_slug])->contain(["Conventions"])->first();
+		if (!$conventionSD) {
+			$this->Flash->error('Convention season not found.');
+			return $this->redirect(['controller' => 'conventions', 'action' => 'index']);
+		}
 		$this->set('conventionSD', $conventionSD);
 		$this->set('convention_slug', $conventionSD->Conventions['slug']);
 
@@ -901,6 +905,10 @@ class SchedulingreportsController extends AppController {
 		$this->set('convention_season_slug', $convention_season_slug);
 
 		$conventionSD = $this->Conventionseasons->find()->where(['Conventionseasons.slug' => $convention_season_slug])->contain(["Conventions"])->first();
+		if (!$conventionSD) {
+			$this->Flash->error('Convention season not found.');
+			return $this->redirect(['controller' => 'conventions', 'action' => 'index']);
+		}
 		$this->set('conventionSD', $conventionSD);
 		$this->set('convention_slug', $conventionSD->Conventions['slug']);
 
@@ -1387,6 +1395,10 @@ $this->set('dayDates', $dayDates);
 public function exportcsv($convention_season_slug=null, $report_type=null) {
 $this->autoRender = false;
 $conventionSD = $this->Conventionseasons->find()->where(['Conventionseasons.slug' => $convention_season_slug])->contain(["Conventions"])->first();
+if (!$conventionSD) {
+    echo 'Convention season not found.';
+    return;
+}
 $schedulingD = $this->Schedulings->find()->where(['Schedulings.conventionseasons_id' => $conventionSD->id])->first();
 $filename = 'schedule_'.$report_type.'_'.date('Ymd').'.csv';
 header('Content-Type: text/csv; charset=utf-8');

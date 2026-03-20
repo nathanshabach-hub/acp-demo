@@ -142,18 +142,16 @@ $this->Crstudentevents = TableRegistry::getTableLocator()->get('Crstudentevents'
 					// Now show events of student
 					foreach($arrStudentSchedule as $studentsch)
 					{
-						if($studentsch['is_bye'] != 1)
-						{
+						$byeLabel = ((int)$studentsch['is_bye'] === 1) ? ' <span class="label label-warning">BYE</span>' : '';
 					?>
 						<tr>
 							<td data-title="Day" width="15%"><?php echo $studentsch['day'];?> <?php //echo $studentsch['db_id'];?></td>
 							<td data-title="Start" width="15%"><?php echo $studentsch['start_time'];?></td>
-							<td data-title="Event" width="35%"><?php echo $studentsch['event_name'];?></td>
+							<td data-title="Event" width="35%"><?php echo $studentsch['event_name']; ?><?php echo $byeLabel; ?></td>
 							<td data-title="Location" width="35%"><?php echo $studentsch['room_name'];?></td>
 							</td>
 						</tr>
 					<?php
-						}
 					}
 					
 					?>

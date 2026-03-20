@@ -73,7 +73,7 @@ $this->Schedulingtimings = TableRegistry::getTableLocator()->get('Schedulingtimi
 								{
 									if($datarecord->user_id>0 && ($datarecord->user_id_opponent == 0 || $datarecord->user_id_opponent == NULL))
 									{
-										echo $datarecord->Users['first_name'].' '.$datarecord->Users['middle_name'].' '.$datarecord->Users['last_name'].' (<b>BYE</b>)';
+										echo $datarecord->Users['first_name'].' '.$datarecord->Users['middle_name'].' '.$datarecord->Users['last_name'];
 									}
 									else
 									{

@@ -18,3 +18,8 @@ RUN a2enmod rewrite
 # but CakePHP docs usually say to point it to the app's webroot.
 RUN sed -ri -e 's!/var/www/html!/var/www/html/acp_demo/webroot!g' /etc/apache2/sites-available/*.conf
 RUN sed -ri -e 's!/var/www/!/var/www/html/acp_demo/webroot!g' /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf
+
+# Suppress E_DEPRECATED notices from legacy CakePHP 3 / Chronos code running on PHP 8.2.
+# These are cosmetic warnings (${var} interpolation, return type declarations) that
+# do not affect behaviour but would pollute HTTP output if display_errors=On.
+RUN echo "error_reporting = E_ALL & ~E_DEPRECATED & ~E_STRICT" > /usr/local/etc/php/conf.d/suppress-deprecated.ini

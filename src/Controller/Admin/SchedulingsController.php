@@ -242,7 +242,14 @@ class SchedulingsController extends AppController {
 				   AND a.start_time IS NOT NULL
 				   AND a.finish_time IS NOT NULL
 				   AND b.start_time IS NOT NULL
-				   AND b.finish_time IS NOT NULL",
+				   AND b.finish_time IS NOT NULL
+				   AND IFNULL(a.is_bye,0) <> 1
+				   AND IFNULL(b.is_bye,0) <> 1
+				   AND NOT (
+				     a.event_id = b.event_id
+				     AND a.start_time = b.start_time
+				     AND a.finish_time = b.finish_time
+				   )",
 				['csid' => (int)$conventionSeasonId],
 				['csid' => 'integer']
 			)->fetch('assoc');
@@ -253,20 +260,20 @@ class SchedulingsController extends AppController {
 				 FROM (
 				   SELECT id AS timing_id, schedule_category, day, start_time, finish_time, event_id_number, user_id AS participant_id
 				   FROM schedulingtimings
-				   WHERE conventionseasons_id = :csid AND user_id IS NOT NULL AND day IS NOT NULL AND start_time IS NOT NULL AND finish_time IS NOT NULL
+				   WHERE conventionseasons_id = :csid AND user_id IS NOT NULL AND day IS NOT NULL AND start_time IS NOT NULL AND finish_time IS NOT NULL AND IFNULL(is_bye,0) <> 1 AND IFNULL(user_type,'') <> 'School'
 				   UNION ALL
 				   SELECT id AS timing_id, schedule_category, day, start_time, finish_time, event_id_number, user_id_opponent AS participant_id
 				   FROM schedulingtimings
-				   WHERE conventionseasons_id = :csid AND user_id_opponent IS NOT NULL AND day IS NOT NULL AND start_time IS NOT NULL AND finish_time IS NOT NULL
+				   WHERE conventionseasons_id = :csid AND user_id_opponent IS NOT NULL AND day IS NOT NULL AND start_time IS NOT NULL AND finish_time IS NOT NULL AND IFNULL(is_bye,0) <> 1 AND IFNULL(user_type,'') <> 'School'
 				 ) a
 				 JOIN (
 				   SELECT id AS timing_id, schedule_category, day, start_time, finish_time, event_id_number, user_id AS participant_id
 				   FROM schedulingtimings
-				   WHERE conventionseasons_id = :csid AND user_id IS NOT NULL AND day IS NOT NULL AND start_time IS NOT NULL AND finish_time IS NOT NULL
+				   WHERE conventionseasons_id = :csid AND user_id IS NOT NULL AND day IS NOT NULL AND start_time IS NOT NULL AND finish_time IS NOT NULL AND IFNULL(is_bye,0) <> 1 AND IFNULL(user_type,'') <> 'School'
 				   UNION ALL
 				   SELECT id AS timing_id, schedule_category, day, start_time, finish_time, event_id_number, user_id_opponent AS participant_id
 				   FROM schedulingtimings
-				   WHERE conventionseasons_id = :csid AND user_id_opponent IS NOT NULL AND day IS NOT NULL AND start_time IS NOT NULL AND finish_time IS NOT NULL
+				   WHERE conventionseasons_id = :csid AND user_id_opponent IS NOT NULL AND day IS NOT NULL AND start_time IS NOT NULL AND finish_time IS NOT NULL AND IFNULL(is_bye,0) <> 1 AND IFNULL(user_type,'') <> 'School'
 				 ) b
 				   ON a.timing_id < b.timing_id
 				  AND a.participant_id = b.participant_id
@@ -286,20 +293,20 @@ class SchedulingsController extends AppController {
 				 FROM (
 				   SELECT id AS timing_id, schedule_category, day, start_time, finish_time, event_id_number, user_id AS participant_id
 				   FROM schedulingtimings
-				   WHERE conventionseasons_id = :csid AND user_id IS NOT NULL AND day IS NOT NULL AND start_time IS NOT NULL AND finish_time IS NOT NULL
+				   WHERE conventionseasons_id = :csid AND user_id IS NOT NULL AND day IS NOT NULL AND start_time IS NOT NULL AND finish_time IS NOT NULL AND IFNULL(is_bye,0) <> 1 AND IFNULL(user_type,'') <> 'School'
 				   UNION ALL
 				   SELECT id AS timing_id, schedule_category, day, start_time, finish_time, event_id_number, user_id_opponent AS participant_id
 				   FROM schedulingtimings
-				   WHERE conventionseasons_id = :csid AND user_id_opponent IS NOT NULL AND day IS NOT NULL AND start_time IS NOT NULL AND finish_time IS NOT NULL
+				   WHERE conventionseasons_id = :csid AND user_id_opponent IS NOT NULL AND day IS NOT NULL AND start_time IS NOT NULL AND finish_time IS NOT NULL AND IFNULL(is_bye,0) <> 1 AND IFNULL(user_type,'') <> 'School'
 				 ) a
 				 JOIN (
 				   SELECT id AS timing_id, schedule_category, day, start_time, finish_time, event_id_number, user_id AS participant_id
 				   FROM schedulingtimings
-				   WHERE conventionseasons_id = :csid AND user_id IS NOT NULL AND day IS NOT NULL AND start_time IS NOT NULL AND finish_time IS NOT NULL
+				   WHERE conventionseasons_id = :csid AND user_id IS NOT NULL AND day IS NOT NULL AND start_time IS NOT NULL AND finish_time IS NOT NULL AND IFNULL(is_bye,0) <> 1 AND IFNULL(user_type,'') <> 'School'
 				   UNION ALL
 				   SELECT id AS timing_id, schedule_category, day, start_time, finish_time, event_id_number, user_id_opponent AS participant_id
 				   FROM schedulingtimings
-				   WHERE conventionseasons_id = :csid AND user_id_opponent IS NOT NULL AND day IS NOT NULL AND start_time IS NOT NULL AND finish_time IS NOT NULL
+				   WHERE conventionseasons_id = :csid AND user_id_opponent IS NOT NULL AND day IS NOT NULL AND start_time IS NOT NULL AND finish_time IS NOT NULL AND IFNULL(is_bye,0) <> 1 AND IFNULL(user_type,'') <> 'School'
 				 ) b
 				   ON a.timing_id < b.timing_id
 				  AND a.participant_id = b.participant_id

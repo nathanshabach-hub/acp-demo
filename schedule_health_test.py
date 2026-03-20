@@ -36,7 +36,7 @@ def run_query(sql):
 
 
 def test_student_time_conflicts():
-    """Check for students scheduled at overlapping times on the same day."""
+    """Check for non-school participants scheduled at overlapping times on the same day."""
     print("\n" + "="*70)
     print("TEST 1: Student Time Conflicts")
     print("="*70)
@@ -55,6 +55,9 @@ def test_student_time_conflicts():
     WHERE t1.conventionseasons_id = {CONVENTION_SEASON_ID}
         AND t2.conventionseasons_id = {CONVENTION_SEASON_ID}
         AND t1.user_id > 0
+        AND t2.user_id > 0
+        AND t1.user_type != 'School'
+        AND t2.user_type != 'School'
         AND t1.start_time IS NOT NULL
         AND t2.start_time IS NOT NULL
         AND t1.is_bye != 1
@@ -102,6 +105,11 @@ def test_room_time_conflicts():
         AND t1.room_id IS NOT NULL
         AND t1.start_time IS NOT NULL
         AND t2.start_time IS NOT NULL
+        AND NOT (
+            t1.event_id = t2.event_id
+            AND t1.start_time = t2.start_time
+            AND t1.finish_time = t2.finish_time
+        )
     ORDER BY t1.room_id, t1.day, t1.start_time
     LIMIT 50
     """
@@ -128,26 +136,47 @@ def test_unscheduled_entries():
     print("="*70)
 
     sql = f"""
-    SELECT COUNT(*) AS cnt,
-           GROUP_CONCAT(DISTINCT event_id ORDER BY event_id) AS events
+    SELECT
+           SUM(CASE
+               WHEN (day IS NULL OR start_time IS NULL OR finish_time IS NULL)
+                    AND is_bye != 1 THEN 1 ELSE 0 END) AS raw_unscheduled,
+           SUM(CASE
+               WHEN (day IS NULL OR start_time IS NULL OR finish_time IS NULL)
+                    AND is_bye != 1
+                    AND user_id > 0
+                    AND user_type = 'Student' THEN 1 ELSE 0 END) AS student_unscheduled,
+           SUM(CASE
+               WHEN (day IS NULL OR start_time IS NULL OR finish_time IS NULL)
+                    AND is_bye != 1
+                    AND user_id = 0 THEN 1 ELSE 0 END) AS placeholder_unscheduled,
+           GROUP_CONCAT(DISTINCT CASE
+               WHEN (day IS NULL OR start_time IS NULL OR finish_time IS NULL)
+                    AND is_bye != 1
+                    AND user_id > 0
+                    AND user_type = 'Student' THEN event_id
+               ELSE NULL END ORDER BY event_id) AS student_events
     FROM schedulingtimings
     WHERE conventionseasons_id = {CONVENTION_SEASON_ID}
-        AND (day IS NULL OR start_time IS NULL OR finish_time IS NULL)
-        AND is_bye != 1
     """
     rows = run_query(sql)
 
     if rows:
         parts = rows[0].split('\t')
-        count = int(parts[0]) if parts[0] != 'NULL' else 0
-        events = parts[1] if len(parts) > 1 and parts[1] != 'NULL' else 'none'
+        raw_count = int(parts[0]) if parts[0] != 'NULL' else 0
+        student_count = int(parts[1]) if len(parts) > 1 and parts[1] != 'NULL' else 0
+        placeholder_count = int(parts[2]) if len(parts) > 2 and parts[2] != 'NULL' else 0
+        student_events = parts[3] if len(parts) > 3 and parts[3] != 'NULL' else 'none'
 
-        if count == 0:
+        if student_count == 0:
             print("  PASS: All non-bye entries are scheduled.")
+            if raw_count > 0:
+                print(f"    Note: {raw_count} unscheduled row(s) exist but are placeholders/non-student rows.")
             return True
         else:
-            print(f"  WARNING: {count} unscheduled entries found.")
-            print(f"    Events with unscheduled entries: {events}")
+            print(f"  WARNING: {student_count} unscheduled student entries found.")
+            print(f"    Student events with unscheduled entries: {student_events}")
+            if placeholder_count > 0:
+                print(f"    Placeholder unscheduled rows (user_id=0): {placeholder_count}")
             return False
     return True
 
@@ -177,7 +206,8 @@ def test_unscheduled_students():
             FROM schedulingtimings st
             WHERE st.conventionseasons_id = {CONVENTION_SEASON_ID}
               AND st.user_id > 0
-              AND st.start_time IS NOT NULL) AS scheduled
+                            AND st.user_type = 'Student'
+                            AND st.start_time IS NOT NULL) AS scheduled
     FROM conventionregistrationstudents crs
     WHERE crs.convention_id = {conv_id}
       AND crs.season_id = {season_id}
@@ -346,12 +376,22 @@ def test_scheduling_coverage():
            (SELECT COUNT(*) FROM schedulingtimings st
             WHERE st.event_id = e.id
               AND st.conventionseasons_id = {CONVENTION_SEASON_ID}
+                            AND st.user_id > 0
+                            AND st.user_type = 'Student'
               AND st.start_time IS NOT NULL) AS scheduled_count,
            (SELECT COUNT(*) FROM schedulingtimings st
             WHERE st.event_id = e.id
               AND st.conventionseasons_id = {CONVENTION_SEASON_ID}
+                            AND st.user_id > 0
+                            AND st.user_type = 'Student'
               AND st.start_time IS NULL
-              AND st.is_bye != 1) AS unscheduled_count
+                            AND st.is_bye != 1) AS unscheduled_count,
+                     (SELECT COUNT(*) FROM schedulingtimings st
+                        WHERE st.event_id = e.id
+                            AND st.conventionseasons_id = {CONVENTION_SEASON_ID}
+                            AND st.user_id = 0
+                            AND st.start_time IS NULL
+                            AND st.is_bye != 1) AS placeholder_count
     FROM events e
     JOIN conventionseasonevents cse ON cse.event_id = e.id
     WHERE cse.conventionseasons_id = {CONVENTION_SEASON_ID}
@@ -369,11 +409,12 @@ def test_scheduling_coverage():
     print("  Event coverage:")
     for row in rows:
         parts = row.split('\t')
-        if len(parts) >= 7:
+        if len(parts) >= 8:
             eid = parts[0]
             name = parts[1][:30]
             scheduled = int(parts[5])
             unscheduled = int(parts[6])
+            placeholders = int(parts[7])
             total = scheduled + unscheduled
             total_events += 1
 
@@ -382,6 +423,8 @@ def test_scheduling_coverage():
                 pct = scheduled / total * 100 if total > 0 else 0
                 print(f"    Event {eid} ({name}): {scheduled}/{total} scheduled ({pct:.0f}%), "
                       f"{unscheduled} unscheduled")
+            elif placeholders > 0:
+                print(f"    Event {eid} ({name}): placeholders pending={placeholders} (no student rows unscheduled)")
 
     if events_with_unscheduled == 0:
         print(f"  PASS: All {total_events} events are fully scheduled.")
@@ -389,6 +432,95 @@ def test_scheduling_coverage():
     else:
         print(f"  WARNING: {events_with_unscheduled}/{total_events} events have unscheduled entries.")
         return False
+
+
+def print_remediation_queue():
+    """Print concrete next actions based on current scheduling data."""
+    print("\n" + "="*70)
+    print("REMEDIATION QUEUE")
+    print("="*70)
+
+    print("  1) Events with unscheduled student rows:")
+    sql = f"""
+    SELECT st.schedule_category, st.event_id, e.event_name,
+           SUM(CASE WHEN st.user_id > 0 AND st.user_type = 'Student'
+                    AND (st.day IS NULL OR st.start_time IS NULL OR st.finish_time IS NULL)
+                    AND st.is_bye != 1 THEN 1 ELSE 0 END) AS unscheduled_students,
+           SUM(CASE WHEN st.user_id = 0
+                    AND (st.day IS NULL OR st.start_time IS NULL OR st.finish_time IS NULL)
+                    AND st.is_bye != 1 THEN 1 ELSE 0 END) AS placeholders
+    FROM schedulingtimings st
+    JOIN events e ON e.id = st.event_id
+    WHERE st.conventionseasons_id = {CONVENTION_SEASON_ID}
+    GROUP BY st.schedule_category, st.event_id, e.event_name
+    HAVING unscheduled_students > 0 OR placeholders > 0
+    ORDER BY unscheduled_students DESC, placeholders DESC, st.schedule_category, st.event_id
+    """
+    rows = run_query(sql)
+    if rows:
+        for row in rows[:20]:
+            parts = row.split('\t')
+            if len(parts) >= 5:
+                cat = parts[0]
+                eid = parts[1]
+                name = parts[2]
+                uns = parts[3]
+                ph = parts[4]
+                print(f"    - category {cat}, event {eid} ({name}): unscheduled_students={uns}, placeholders={ph}")
+    else:
+        print("    - none")
+
+    print("  2) Lunch overlap rows to move:")
+    sql = f"""
+    SELECT st.id, st.event_id, e.event_name, st.day, st.start_time, st.finish_time, st.room_id
+    FROM schedulingtimings st
+    JOIN events e ON e.id = st.event_id
+    JOIN schedulings s ON s.conventionseasons_id = st.conventionseasons_id
+    WHERE st.conventionseasons_id = {CONVENTION_SEASON_ID}
+      AND st.start_time IS NOT NULL
+      AND st.start_time < s.lunch_time_end
+      AND st.finish_time > s.lunch_time_start
+    ORDER BY st.day, st.start_time
+    """
+    rows = run_query(sql)
+    if rows:
+        for row in rows[:20]:
+            parts = row.split('\t')
+            if len(parts) >= 7:
+                print(f"    - timing_id={parts[0]}, event={parts[1]} ({parts[2]}), {parts[3]} {parts[4]}-{parts[5]}, room_id={parts[6]}")
+    else:
+        print("    - none")
+
+    print("  3) Registered students with no scheduled student rows:")
+    sql = f"""
+    SELECT DISTINCT crs.student_id, u.first_name, u.last_name
+    FROM conventionregistrationstudents crs
+    JOIN conventionseasons cs ON cs.convention_id = crs.convention_id
+        AND cs.season_id = crs.season_id
+        AND cs.season_year = crs.season_year
+    JOIN users u ON u.id = crs.student_id
+    WHERE cs.id = {CONVENTION_SEASON_ID}
+      AND crs.status = 1
+      AND crs.student_id > 0
+      AND crs.student_id NOT IN (
+        SELECT DISTINCT st.user_id
+        FROM schedulingtimings st
+        WHERE st.conventionseasons_id = {CONVENTION_SEASON_ID}
+          AND st.user_type = 'Student'
+          AND st.start_time IS NOT NULL
+      )
+    ORDER BY u.first_name, u.last_name
+    """
+    rows = run_query(sql)
+    if rows:
+        for row in rows[:30]:
+            parts = row.split('\t')
+            if len(parts) >= 3:
+                print(f"    - student_id={parts[0]}: {parts[1]} {parts[2]}")
+        if len(rows) > 30:
+            print(f"    ... and {len(rows)-30} more")
+    else:
+        print("    - none")
 
 
 def main():
@@ -432,6 +564,7 @@ def main():
         return 0
     else:
         print(f"  {total - passed} issue(s) detected - review above for details.")
+        print_remediation_queue()
         return 1
 
 

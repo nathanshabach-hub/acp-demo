@@ -19,8 +19,6 @@
                 <div class="add_new_record">
                 <?php
                 echo $this->Html->link('<< Back To Schedule Categories', ['controller'=>'schedulings', 'action'=>'schedulecategory', $convention_season_slug], ['escape'=>false, 'class'=>'btn btn-default']);
-                echo '&nbsp;&nbsp;';
-                echo $this->Html->link('Export Auto-Assign Runs (CSV)', ['controller'=>'schedulingtimings', 'action'=>'exportautoassignruns', $convention_season_slug], ['escape'=>false, 'class'=>'btn btn-primary']);
                 ?>
                 </div>
             </div>
@@ -28,55 +26,6 @@
             <div class="m_content" id="listID">
                 <div class="panel-body">
 
-                    <?php if (!empty($scheduleHealth)) { ?>
-                    <div class="panel panel-default" style="margin-bottom:15px;">
-                        <div class="panel-heading"><strong>Schedule Health</strong></div>
-                        <div class="panel-body">
-                            <div class="row">
-                                <div class="col-md-4">
-                                    <div class="alert alert-info" style="margin-bottom:10px;">
-                                        <strong>Conflicts by Type</strong><br>
-                                        Room conflicts: <?php echo (int)$scheduleHealth['room_conflicts']; ?><br>
-                                        Participant conflicts (same category): <?php echo (int)$scheduleHealth['same_category_participant_conflicts']; ?><br>
-                                        Participant conflicts (cross category): <?php echo (int)$scheduleHealth['cross_category_participant_conflicts']; ?>
-                                    </div>
-                                </div>
-                                <div class="col-md-8">
-                                    <div class="alert alert-info" style="margin-bottom:10px;">
-                                        <strong>Mon-Thu Room Utilization</strong><br>
-                                        Average utilization: <?php echo number_format((float)$scheduleHealth['average_room_utilization_pct'], 1); ?>%
-                                    </div>
-                                    <?php if (!empty($scheduleHealth['room_utilization'])) { ?>
-                                    <div class="table-responsive">
-                                        <table class="table table-bordered table-condensed" style="margin-bottom:0;">
-                                            <thead>
-                                                <tr>
-                                                    <th>Room</th>
-                                                    <th>Used (mins)</th>
-                                                    <th>Capacity (mins)</th>
-                                                    <th>Utilization</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                            <?php foreach ($scheduleHealth['room_utilization'] as $uRow) { ?>
-                                                <tr>
-                                                    <td><?php echo h($uRow['room_name']); ?></td>
-                                                    <td><?php echo (int)$uRow['minutes_used']; ?></td>
-                                                    <td><?php echo (int)$uRow['capacity_minutes']; ?></td>
-                                                    <td><?php echo number_format((float)$uRow['utilization_pct'], 1); ?>%</td>
-                                                </tr>
-                                            <?php } ?>
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                    <?php } else { ?>
-                                    <p class="text-muted" style="margin:0;">No Mon-Thu room usage found yet.</p>
-                                    <?php } ?>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <?php } ?>
 
                     <?php if (!empty($overflowTrendRows)) { ?>
                     <div class="panel panel-default" style="margin-bottom:15px;">
@@ -160,40 +109,6 @@
                             </tbody>
                         </table>
 
-                        <!-- Overflow Event Detail -->
-                        <h4>Overflow Events Detail</h4>
-                        <?php if (!empty($overflowByEvent)) { ?>
-                            <div class="table-responsive">
-                            <table class="table table-bordered table-striped">
-                                <thead>
-                                    <tr>
-                                        <th>Event Code</th>
-                                        <th>Event Name</th>
-                                        <th>Category</th>
-                                        <th># Overflow</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                <?php foreach ($overflowByEvent as $key => $evData) { ?>
-                                    <tr>
-                                        <td><?php echo h($evData['event_code']); ?></td>
-                                        <td><?php echo h($evData['event_name']); ?></td>
-                                        <td><?php echo isset($categoryLabels[$evData['category']]) ? h($categoryLabels[$evData['category']]) : $evData['category']; ?></td>
-                                        <td><strong><?php echo (int)$evData['count']; ?></strong></td>
-                                    </tr>
-                                <?php } ?>
-                                </tbody>
-                            </table>
-                            </div>
-                        <?php } ?>
-
-                        <hr>
-
-                        <!-- Quick Room Creation + Re-Schedule -->
-                        <div class="box box-success">
-                            <div class="box-header with-border">
-                                <h3 class="box-title">Quick Fix: Create a New Room &amp; Auto-Assign Overflow</h3>
-                            </div>
                             <div class="box-body">
                                 <p>Create a new room below and the system will immediately try to fit all overflow events into available slots (including the new room).</p>
 

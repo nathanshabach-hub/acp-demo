@@ -125,86 +125,9 @@ $this->Schedulingtimings = TableRegistry::getTableLocator()->get('Schedulingtimi
 				?>
 				&nbsp;&nbsp;
 				<?php echo $this->Html->link('Post-Schedule Overview', ['controller'=>'schedulingtimings', 'action'=>'postscheduleoverview', $convention_season_slug], ['escape'=>false, 'class'=>'btn btn-info']); ?>
-				&nbsp;&nbsp;
-				<?php echo $this->Html->link('Export Auto-Assign Runs (CSV)', ['controller'=>'schedulingtimings', 'action'=>'exportautoassignruns', $convention_season_slug], ['escape'=>false, 'class'=>'btn btn-primary']); ?>
 				</h2> 
 
-				<?php if (!empty($scheduleHealth)) { ?>
-				<div class="panel panel-default" style="margin-bottom:15px;">
-					<div class="panel-heading"><strong>Schedule Health</strong></div>
-					<div class="panel-body">
-						<div class="row">
-							<div class="col-md-4">
-								<div class="alert alert-info" style="margin-bottom:10px;">
-									<strong>Conflicts by Type</strong><br>
-									Room conflicts: <?php echo (int)$scheduleHealth['room_conflicts']; ?><br>
-									Participant conflicts (same category): <?php echo (int)$scheduleHealth['same_category_participant_conflicts']; ?><br>
-									Participant conflicts (cross category): <?php echo (int)$scheduleHealth['cross_category_participant_conflicts']; ?>
-								</div>
-							</div>
-							<div class="col-md-8">
-								<div class="alert alert-info" style="margin-bottom:10px;">
-									<strong>Mon-Thu Room Utilization</strong><br>
-									Average utilization: <?php echo number_format((float)$scheduleHealth['average_room_utilization_pct'], 1); ?>%
-								</div>
-								<?php if (!empty($scheduleHealth['room_utilization'])) { ?>
-								<div class="table-responsive">
-									<table class="table table-bordered table-condensed" style="margin-bottom:0;">
-										<thead>
-											<tr>
-												<th>Room</th>
-												<th>Used (mins)</th>
-												<th>Capacity (mins)</th>
-												<th>Utilization</th>
-											</tr>
-										</thead>
-										<tbody>
-										<?php foreach ($scheduleHealth['room_utilization'] as $uRow) { ?>
-											<tr>
-												<td><?php echo h($uRow['room_name']); ?></td>
-												<td><?php echo (int)$uRow['minutes_used']; ?></td>
-												<td><?php echo (int)$uRow['capacity_minutes']; ?></td>
-												<td><?php echo number_format((float)$uRow['utilization_pct'], 1); ?>%</td>
-											</tr>
-										<?php } ?>
-										</tbody>
-									</table>
-								</div>
-								<?php } ?>
-							</div>
-						</div>
 
-						<?php if (!empty($overflowTrendRows)) { ?>
-						<div class="table-responsive" style="margin-top:12px;">
-							<table class="table table-bordered table-condensed" style="margin-bottom:0;">
-								<thead>
-									<tr>
-										<th>Recent Auto-Assign Trend</th>
-										<th>Category</th>
-										<th>Before</th>
-										<th>Assigned</th>
-										<th>After</th>
-										<th>When</th>
-									</tr>
-								</thead>
-								<tbody>
-								<?php foreach ($overflowTrendRows as $trendRow) { ?>
-									<tr>
-										<td><?php echo h($trendRow['trigger_source']); ?></td>
-										<td><?php echo $trendRow['schedule_category'] === null ? 'All' : (int)$trendRow['schedule_category']; ?></td>
-										<td><?php echo (int)$trendRow['overflow_before']; ?></td>
-										<td><?php echo (int)$trendRow['assigned_count']; ?></td>
-										<td><?php echo (int)$trendRow['overflow_after']; ?></td>
-										<td><?php echo h($trendRow['created']); ?></td>
-									</tr>
-								<?php } ?>
-								</tbody>
-							</table>
-						</div>
-						<?php } ?>
-					</div>
-				</div>
-				<?php } ?>
 
 				<?php if (!empty($dayLoadRows)) { ?>
 				<div class="panel panel-default" style="margin-bottom:15px;">

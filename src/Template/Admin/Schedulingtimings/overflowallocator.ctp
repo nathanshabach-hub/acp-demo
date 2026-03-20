@@ -15,7 +15,7 @@
     <section class="content">
         <div class="box box-info">
             <div class="ersu_message"> <?php echo $this->Flash->render() ?></div>
-            <div class="admin_search" style="display:nones;">
+            <div class="admin_search" style="display:block; margin-bottom:10px;">
                 <div class="add_new_record">
                 <?php
                 echo $this->Html->link('<< Back To Schedule View', ['controller'=>'schedulingtimings', 'action'=>'viewscheduling', $convention_season_slug, $scheduling_category], ['escape'=>false, 'class'=>'btn btn-default']);
@@ -25,19 +25,12 @@
                 echo $this->Html->link('Auto-Assign Top Fit', ['controller'=>'schedulingtimings', 'action'=>'autoassignoverflow', $convention_season_slug, $scheduling_category, '?' => ['days' => $selectedDays, 'rooms' => $selectedRoomIds]], ['escape'=>false, 'class'=>'btn btn-warning', 'confirm' => 'Auto-assign will place Friday/Saturday/Sunday overflow events into the first valid Monday-Thursday slots. Continue?']);
                 ?>
                 </div>
+                <div style="clear:both;"></div>
             </div>
 
             <div class="m_content" id="listID">
                 <div class="panel-body">
-                    <?php if (!empty($scheduleHealth)) { ?>
-                        <div class="alert alert-info" style="margin-bottom:12px;">
-                            <strong>Schedule Health</strong>
-                            <br>Room conflicts: <?php echo (int)$scheduleHealth['room_conflicts']; ?>
-                            | Participant conflicts (same category): <?php echo (int)$scheduleHealth['same_category_participant_conflicts']; ?>
-                            | Participant conflicts (cross category): <?php echo (int)$scheduleHealth['cross_category_participant_conflicts']; ?>
-                            | Avg room utilization (Mon-Thu): <?php echo number_format((float)$scheduleHealth['average_room_utilization_pct'], 1); ?>%
-                        </div>
-                    <?php } ?>
+
 
                     <?php if (!empty($overflowTrendRows)) { ?>
                         <div class="table-responsive" style="margin-bottom:12px;">
@@ -66,9 +59,6 @@
                                 </tbody>
                             </table>
                         </div>
-                        <p style="margin-top:6px;">
-                            <?php echo $this->Html->link('Export Auto-Assign Runs (CSV)', ['controller'=>'schedulingtimings', 'action'=>'exportautoassignruns', $convention_season_slug], ['escape'=>false, 'class'=>'btn btn-xs btn-primary']); ?>
-                        </p>
                     <?php } ?>
 
                     <div class="alert alert-info" style="margin-bottom:12px;">
