@@ -125,6 +125,8 @@ $this->Schedulingtimings = TableRegistry::getTableLocator()->get('Schedulingtimi
 				?>
 				&nbsp;&nbsp;
 				<?php echo $this->Html->link('Post-Schedule Overview', ['controller'=>'schedulingtimings', 'action'=>'postscheduleoverview', $convention_season_slug], ['escape'=>false, 'class'=>'btn btn-info']); ?>
+				&nbsp;&nbsp;
+				<?php echo $this->Html->link('Conflict Audit Trail', ['controller'=>'schedulingtimings', 'action'=>'conflictaudits', $convention_season_slug], ['escape'=>false, 'class'=>'btn btn-default']); ?>
 				</h2> 
 
 

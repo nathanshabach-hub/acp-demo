@@ -31,7 +31,7 @@ use Cake\Datasource\ConnectionManager;
  * @link http://book.cakephp.org/3.0/en/controllers.html#the-app-controller
  */
 class AppController extends Controller{
-    
+
     public function initialize(){
     parent::initialize();
 		$this->loadModel('Timezones');
@@ -40,7 +40,7 @@ class AppController extends Controller{
 		$this->loadModel('Users');
 		$this->loadModel('Admins');
 		$this->loadModel('Settings');
-		
+
 		$this->loadModel("Emailtemplates");
 		$this->loadModel("Conventions");
 		$this->loadModel("Conventionseasons");
@@ -53,7 +53,108 @@ class AppController extends Controller{
 		$this->loadModel("Eventsubmissions");
 		$this->loadModel("Schedulingtimings");
     }
-	
+
+	protected function timeRangesOverlap($startA, $finishA, $startB, $finishB)
+	{
+		if (empty($startA) || empty($finishA) || empty($startB) || empty($finishB)) {
+			return false;
+		}
+
+		return strtotime($startA) < strtotime($finishB) && strtotime($finishA) > strtotime($startB);
+	}
+
+	protected function getSchedulingAllowedWindow($schedulingD, $day)
+	{
+		$dayStart = !empty($schedulingD->normal_starting_time)
+			? date('H:i:s', strtotime($schedulingD->normal_starting_time))
+			: '08:00:00';
+		$dayFinish = !empty($schedulingD->normal_finish_time)
+			? date('H:i:s', strtotime($schedulingD->normal_finish_time))
+			: '17:00:00';
+
+		if (!empty($schedulingD->starting_different_time_first_day_yes_no)
+			&& !empty($schedulingD->first_day)
+			&& $day === $schedulingD->first_day) {
+			if (!empty($schedulingD->different_first_day_start_time)) {
+				$dayStart = date('H:i:s', strtotime($schedulingD->different_first_day_start_time));
+			}
+			if (!empty($schedulingD->different_first_day_end_time)) {
+				$dayFinish = date('H:i:s', strtotime($schedulingD->different_first_day_end_time));
+			}
+		}
+
+		if (!empty($schedulingD->sports_day_yes_no)
+			&& !empty($schedulingD->sports_day_having_events_after_sport_yes_no)
+			&& !empty($schedulingD->sports_day)
+			&& $day === $schedulingD->sports_day
+			&& !empty($schedulingD->sports_day_other_starting_time)
+			&& !empty($schedulingD->sports_day_other_finish_time)) {
+			$dayStart = date('H:i:s', strtotime($schedulingD->sports_day_other_starting_time));
+			$dayFinish = date('H:i:s', strtotime($schedulingD->sports_day_other_finish_time));
+		}
+
+		return ['start' => $dayStart, 'finish' => $dayFinish];
+	}
+
+	protected function getSchedulingSlotRuleViolation($schedulingD, $day, $startTime, $finishTime)
+	{
+		if (empty($day) || empty($startTime) || empty($finishTime)) {
+			return null;
+		}
+
+		$allowedWindow = $this->getSchedulingAllowedWindow($schedulingD, $day);
+		if (strtotime($startTime) < strtotime($allowedWindow['start']) || strtotime($finishTime) > strtotime($allowedWindow['finish'])) {
+			if (!empty($schedulingD->sports_day_yes_no)
+				&& !empty($schedulingD->sports_day_having_events_after_sport_yes_no)
+				&& !empty($schedulingD->sports_day)
+				&& $day === $schedulingD->sports_day) {
+				return 'outside the allowed post-sport scheduling window';
+			}
+
+			return 'outside allowed day timings';
+		}
+
+		if (!empty($schedulingD->lunch_time_start) && !empty($schedulingD->lunch_time_end)) {
+			$lunchStart = date('H:i:s', strtotime($schedulingD->lunch_time_start));
+			$lunchEnd = date('H:i:s', strtotime($schedulingD->lunch_time_end));
+			if ($this->timeRangesOverlap($startTime, $finishTime, $lunchStart, $lunchEnd)) {
+				return 'lunch break';
+			}
+		}
+
+		if (!empty($schedulingD->judging_breaks_yes_no)) {
+			if (!empty($schedulingD->judging_breaks_morning_break_starting_time) && !empty($schedulingD->judging_breaks_morning_break_finish_time)) {
+				$breakStart = date('H:i:s', strtotime($schedulingD->judging_breaks_morning_break_starting_time));
+				$breakFinish = date('H:i:s', strtotime($schedulingD->judging_breaks_morning_break_finish_time));
+				if ($this->timeRangesOverlap($startTime, $finishTime, $breakStart, $breakFinish)) {
+					return 'judges morning break';
+				}
+			}
+
+			if (!empty($schedulingD->judging_breaks_afternoon_break_start_time) && !empty($schedulingD->judging_breaks_afternoon_break_finish_time)) {
+				$breakStart = date('H:i:s', strtotime($schedulingD->judging_breaks_afternoon_break_start_time));
+				$breakFinish = date('H:i:s', strtotime($schedulingD->judging_breaks_afternoon_break_finish_time));
+				if ($this->timeRangesOverlap($startTime, $finishTime, $breakStart, $breakFinish)) {
+					return 'judges afternoon break';
+				}
+			}
+		}
+
+		if (!empty($schedulingD->sports_day_yes_no)
+			&& empty($schedulingD->sports_day_having_events_after_sport_yes_no)
+			&& !empty($schedulingD->sports_day)
+			&& $day === $schedulingD->sports_day
+			&& !empty($schedulingD->sports_day_starting_time)
+			&& !empty($schedulingD->sports_day_finish_time)) {
+			$sportsStart = date('H:i:s', strtotime($schedulingD->sports_day_starting_time));
+			$sportsFinish = date('H:i:s', strtotime($schedulingD->sports_day_finish_time));
+			if ($this->timeRangesOverlap($startTime, $finishTime, $sportsStart, $sportsFinish)) {
+				return 'sports day timings';
+			}
+		}
+
+		return null;
+	}
 
 	public function beforeFilter(EventInterface $event) {
 		parent::beforeFilter($event);
@@ -76,13 +177,13 @@ class AppController extends Controller{
 
 	public function beforeRender(EventInterface $event) {
         parent::beforeRender($event);
-		
+
 		$adminInfo = $this->Admins->find()->where(['Admins.id' => 1])->first();
         $this->set('adminInfo', $adminInfo);
 		//$this->prx($adminInfo);
-		
-        
-		
+
+
+
 		// to check if school admin is logged in, then show header dropdown
 		$user_id 	= $this->request->getSession()->read("user_id");
 		$user_type 	= $this->request->getSession()->read("user_type");
@@ -95,7 +196,7 @@ class AppController extends Controller{
 		$this->set('currentSessionProfileType', $currentSessionProfileType);
 		$this->set('sessSelectedConventionRegistrationId', $sessSelectedConventionRegistrationId);
 		$this->set('sessSelectedConventionId', $sessSelectedConventionId);
-		
+
 		if($user_id>0)
 		{
 			// to get lists of registered conventions for this season
@@ -103,12 +204,12 @@ class AppController extends Controller{
 			$seasonD = $this->Seasons->find()->where(['Seasons.id' => $season_id])->first();
 			//$this->prx($seasonD);
 			$userD = $this->Users->find()->where(['Users.id' => $user_id])->first();
-			
+
 			$conventionIDSHeader = array();
 			$conventionIDSHeader[] 	= 0;
-			
+
 			$userConvHeaderDD = array();
-			
+
 			// now get convention id for school admin
 			if($user_type == "School")
 			{
@@ -121,7 +222,7 @@ class AppController extends Controller{
 					}
 				}
 			}
-			
+
 			// now get convention id for teacher
 			if($user_type == "Teacher_Parent")
 			{
@@ -134,7 +235,7 @@ class AppController extends Controller{
 					}
 				}
 			}
-			
+
 			// now get convention id for judge + supervisor as a judge
 			if($user_type == "Judge" || $currentSessionProfileType  == "Judge")
 			{
@@ -147,46 +248,46 @@ class AppController extends Controller{
 					}
 				}
 			}
-			
-			
+
+
 			//$this->prx($conventionIDSHeader);
-			
+
 			$conventionIDSHeaderImploded = implode(",",$conventionIDSHeader);
-			
+
 			// to get conventions
 			$condConventionH = array();
 			$condConventionH[] = "(Conventions.id IN ($conventionIDSHeaderImploded))";
 			//$condConventionH[] = "(Conventions.status  = '1')";
 			$userConvHeaderDD = $this->Conventions->find()->where($condConventionH)->order(['Conventions.name' => 'ASC'])->combine('id', 'name')->toArray();
 			$this->set('userConvHeaderDD', $userConvHeaderDD);
-			
+
 		}
 
 	}
-    
+
     public function getAdminInfo() {
-		
+
 		$adminInfo = $this->Admins->find()->where(['Admins.id' => 1])->first();
         return $adminInfo;
 	}
-	
+
 	public function fetchUserType($user_id=NULL) {
-		
+
 		$userInfo = $this->Users->find()->select(['user_type'])->where(['Users.id' => $user_id])->first();
         return $userInfo->user_type;
 	}
-	
+
 	public function autoSubmitEvent($arrAutoSubmit=NULL) {
-		
+
 		if($arrAutoSubmit['event_id']>0)
 		{
 			$event_id 						= $arrAutoSubmit['event_id'];
 			$conventionregistration_id 		= $arrAutoSubmit['conventionregistration_id'];
 			$student_id 					= $arrAutoSubmit['student_id'];
-			
+
 			$eventD 		= $this->Events->find()->where(['Events.id' => $event_id])->first();
 			$conventionRegD = $this->Conventionregistrations->find()->where(['Conventionregistrations.id' => $conventionregistration_id])->first();
-			
+
 			// to check if event submission done for this event, student, convention reg
 			$checkSubmission = $this->Eventsubmissions->find()->where(['Eventsubmissions.event_id' => $event_id,'Eventsubmissions.conventionregistration_id' => $conventionregistration_id, 'Eventsubmissions.conventionseason_id' => $conventionRegD->conventionseason_id,'Eventsubmissions.student_id' => $student_id])->first();
 			if(!$checkSubmission)
@@ -205,7 +306,7 @@ class AppController extends Controller{
 				$dataES->event_id 					= $eventD->id;
 				$dataES->event_id_number 			= $eventD->event_id_number;
 				$dataES->student_id 				= $student_id;
-				
+
 				if($eventD->group_event_yes_no == 1)
 				{
 					$dataES->student_id 			= 0;
@@ -214,25 +315,25 @@ class AppController extends Controller{
 				{
 					$dataES->group_name 			= NULL;
 				}
-				
-				
+
+
 				$dataES->uploaded_by_user_id 			= $conventionRegD->user_id;
-				
+
 				//$data->book_ids 					= '';
 				$dataES->created = date('Y-m-d H:i:s');
 				$dataES->modified = date('Y-m-d H:i:s');
 
 				$resultES = $this->Eventsubmissions->save($dataES);
 			}
-			
+
 			return true;
 		}
-		
+
 		return false;
 	}
-	
+
 	public function getNextWeekDay($schDay=null) {//echo 'here'; exit;
-		
+
 		$weekArr = array(
 			0 => "Monday",
 			1 => "Tuesday",
@@ -242,7 +343,7 @@ class AppController extends Controller{
 			5 => "Saturday",
 			6 => "Sunday",
 		);
-		
+
 		if($schDay == "Sunday")
 		{
 			$schNextDay = 'Monday';
@@ -252,26 +353,26 @@ class AppController extends Controller{
 			$keyWeek 		= array_search ($schDay, $weekArr);
 			$schNextDay 	= $weekArr[$keyWeek+1];
 		}
-		
+
 		//echo $schNextDay;exit;
-		
+
 		return $schNextDay;
 	}
-	
+
 	public function sortAssocArr($assocArr=array()) {
-		
+
 		$values = array_values($assocArr);
 		$keys 	= array_keys($assocArr);
 
 		array_multisort($values, SORT_ASC, $keys);
 
 		$assocArr = array_combine($keys, $values);
-		
+
 		return $assocArr;
-		
+
 	}
 	public function getAgeFromBirthYear($birth_year=NULL) {
-		
+
 		if($birth_year)
 		{
 			return date("Y") - $birth_year;
@@ -281,13 +382,13 @@ class AppController extends Controller{
 			return 0;
 		}
 	}
-	
+
 	public function checkAgeWithGroup($studentAge=NULL,$event_grp_name=NULL) {
-		
+
 		$returnVal = 0;
-		
+
 		//echo $studentAge;echo '--'.$event_grp_name;exit;
-		
+
 		if($studentAge>0 && $event_grp_name>0)
 		{;
 			//compare age based on event group
@@ -296,13 +397,13 @@ class AppController extends Controller{
 				// 1. U14
 				$returnVal = 1;
 			}
-			else 
+			else
 			if($event_grp_name == 2 && $studentAge<16)
 			{
 				// 2. U16
 				$returnVal = 1;
 			}
-			else 
+			else
 			if($event_grp_name == 3 && $studentAge<17)
 			{
 				// 3. U17
@@ -315,14 +416,14 @@ class AppController extends Controller{
 				$returnVal = 1;
 			}
 		}
-		
+
 		return $returnVal;
 	}
-	
+
 	public function checkGenderWithEvent($studentGender=NULL,$event_gender=NULL) {
-		
+
 		$returnVal = 0;
-		
+
 		if($studentGender == 'F' || $studentGender == 'M')
 		{
 			//compare age based on event gender
@@ -331,25 +432,25 @@ class AppController extends Controller{
 				// 1. No restriction
 				$returnVal = 1;
 			}
-			else 
+			else
 			if($event_gender == 'F' && $studentGender == 'F')
 			{
 				// 2. Gender match
 				$returnVal = 1;
 			}
-			else 
+			else
 			if($event_gender == 'M' && $studentGender == 'M')
 			{
 				// 3. Gender match
 				$returnVal = 1;;
 			}
 		}
-		
+
 		return $returnVal;
 	}
-	
+
 	public function changeToMysqlTimeFormat($time_data=NULL) {
-		
+
 		if($time_data)
 		{
 			$timestamp_data = strtotime($time_data);
@@ -362,9 +463,9 @@ class AppController extends Controller{
 			return 0;
 		}
 	}
-	
+
 	public function getSettingsInfo() {
-		
+
 		$settingsInfo = $this->Settings->find()->where(['Settings.id' => 1])->first();
         return $settingsInfo;
 	}
@@ -395,19 +496,19 @@ class AppController extends Controller{
 
 		return $mailer->send($message);
 	}
-	
+
 	public function getMinMaxEvents($conv_reg_id = 0) {
-		
+
 		$min_events_student = 0;
 		$max_events_student = 0;
-		
+
 		// first to get from convention season
 		if($conv_reg_id)
 		{
 			// to get conv reg details
 			$conventionRegD = $this->Conventionregistrations->find()->where(['Conventionregistrations.id' => $conv_reg_id])->contain(['Conventionseasons'])->first();
 			//$this->prx($conventionRegD);
-			
+
 			if($conventionRegD->Conventionseasons['min_events_student']>0 && $conventionRegD->Conventionseasons['max_events_student']>0)
 			{
 				$min_events_student = $conventionRegD->Conventionseasons['min_events_student'];
@@ -421,11 +522,11 @@ class AppController extends Controller{
 				$max_events_student = $getSettingsInfo->max_events_student;
 			}
 		}
-		
+
 		return array('min_events_student' => $min_events_student,'max_events_student' => $max_events_student);
-		
+
 	}
-	
+
 	public function getCurrentSeason(){
 		$currYear = date("Y");
 
@@ -463,7 +564,7 @@ class AppController extends Controller{
 
 		return 0;
     }
-	
+
 	/////////////////////////////////
 	public function nextBookings($convention_season_slug, $conflict, $base_start_time, $base_finish_time, $base_sch_date_time,$recordId, $depth = 0)
 	{
@@ -477,11 +578,11 @@ class AppController extends Controller{
 		$schedulingD 	= $this->Schedulings->find()->where(['Schedulings.conventionseasons_id' => $conventionSD->id])->first();
 		$bufferMinutes = isset($schedulingD->buffer_minutes) && $schedulingD->buffer_minutes !== null ? (int)$schedulingD->buffer_minutes : 5;
 		$bufferSeconds = $bufferMinutes * 60;
-		
+
 		// To get schedulingtiming record details via auto id
 		$schedulingTimingsD 	= $this->Schedulingtimings->find()->where(['Schedulingtimings.id' => $recordId])->first();
-		
-		
+
+
 		$schDateTime	= date('Y-m-d', strtotime($base_sch_date_time));
 		$starTime		= $base_start_time;
 		$finishTime		= $base_finish_time;
@@ -513,10 +614,10 @@ class AppController extends Controller{
 			LIMIT 1
 			";
 
-		$stmt = $pdo->query($sql); 
+		$stmt = $pdo->query($sql);
 		$nextBooking = $stmt->fetch(PDO::FETCH_ASSOC);
 		*/
-		
+
 		///////////////
 		// To get list of all conflict
 		$cond = [
@@ -535,7 +636,7 @@ class AppController extends Controller{
 			->first();
 		///////////////
 
-		
+
 		if (!empty($nextBooking)) {
 			if (strtotime($nextFinishTime) > (strtotime($nextBooking->start_time) - $bufferSeconds)) {
 				return $this->nextBookings($convention_season_slug, $conflict, $base_start_time, $base_finish_time, $base_sch_date_time, $recordId, $depth + 1);
@@ -548,7 +649,7 @@ class AppController extends Controller{
 				return $this->nextBookings($convention_season_slug, $conflict, $base_start_time, $base_finish_time, $base_sch_date_time, $recordId, $depth + 1);
 			}
 		}
-		
+
 		/* New check for lunch timings and judging breaks - Starts */
 		$lunch_time_start 	= date("H:i:s", strtotime($schedulingD->lunch_time_start));
 		$lunch_time_end 	= date("H:i:s", strtotime($schedulingD->lunch_time_end));
@@ -591,8 +692,8 @@ class AppController extends Controller{
 			}
 		}
 		/* New check for lunch timings and judging breaks - Ends */
-		
-		
+
+
 
 		/* To check here if sports day is there, then exclude that time - starts */
 		if($schedulingD->sports_day_yes_no == 1)
@@ -600,7 +701,7 @@ class AppController extends Controller{
 			$sports_day					= $schedulingD->sports_day;
 			$sports_day_starting_time	= date("H:i:s",strtotime($schedulingD->sports_day_starting_time));
 			$sports_day_finish_time		= date("H:i:s",strtotime($schedulingD->sports_day_finish_time));
-			
+
 			// to check if day match
 			if($sports_day == $schedulingTimingsD->day)
 			{
@@ -615,19 +716,19 @@ class AppController extends Controller{
 
 					return $this->nextBookings($convention_season_slug, $conflict, $base_start_time, $base_finish_time, $base_sch_date_time, $recordId, $depth + 1);
 				}
-				
+
 			}
 		}
 		/* To check here if sports day is there, then exclude that time - ends */
-		
-		
+
+
 		/* To check here if they are having more events after sport - starts */
 		if($schedulingD->sports_day_having_events_after_sport_yes_no == 1)
 		{
 			$sports_day					= $schedulingD->sports_day;
 			$sports_day_other_starting_time	= date("H:i:s",strtotime($schedulingD->sports_day_other_starting_time));
 			$sports_day_other_finish_time		= date("H:i:s",strtotime($schedulingD->sports_day_other_finish_time));
-			
+
 			// to check if day match
 			if($sports_day == $schedulingTimingsD->day)
 			{
@@ -642,11 +743,11 @@ class AppController extends Controller{
 
 					return $this->nextBookings($convention_season_slug, $conflict, $base_start_time, $base_finish_time, $base_sch_date_time, $recordId, $depth + 1);
 				}
-				
+
 			}
 		}
 		/* To check here if they are having more events after sport - ends */
-		
+
 
 		return $conflict;
 	}
@@ -656,7 +757,7 @@ class AppController extends Controller{
 	{
 		// First we need to collect all students list of all schools
 		$conventionSD = $this->Conventionseasons->find()->where(['Conventionseasons.slug' => $convention_season_slug])->contain(["Conventions"])->first();
-		
+
 		$schDateTime		= date('Y-m-d', strtotime($base_sch_date_time));
 		$starTime			= $base_start_time;
 		$finishTime			= $base_finish_time;
@@ -666,7 +767,7 @@ class AppController extends Controller{
 		if (empty($userIdOpponent)) {
 			return[];
 		}
-		
+
 		///////////////
 		// To get list of all conflict
 		$cond = [
@@ -684,7 +785,7 @@ class AppController extends Controller{
 			->order(["Schedulingtimings.sch_date_time" => "ASC"])
 			->first();
 		///////////////
-		
+
 		return $stmt;
 
 		/* $sql = "SELECT *
@@ -716,30 +817,30 @@ class AppController extends Controller{
 		$stmt = $pdo->query($sql);
 
 		$userConflictRecords = $stmt->fetchAll(PDO::FETCH_ASSOC); */
-		
+
 		// First we need to collect all students list of all schools
 		$conventionSD = $this->Conventionseasons->find()->where(['Conventionseasons.slug' => $convention_season_slug])->contain(["Conventions"])->first();
 		$schedulingD = $this->Schedulings->find()->where(['Schedulings.conventionseasons_id' => $conventionSD->id])->first();
 		$bufferMinutes = isset($schedulingD->buffer_minutes) && $schedulingD->buffer_minutes !== null ? (int)$schedulingD->buffer_minutes : 5;
 		$bufferSeconds = $bufferMinutes * 60;
-		
+
 		$condSchList = array();
 		$condSchList[] = "(
-			Schedulingtimings.conventionseasons_id = '".$conventionSD->id."' AND 
-			Schedulingtimings.convention_id = '".$conventionSD->convention_id."' AND 
-			Schedulingtimings.season_id = '".$conventionSD->season_id."' AND 
-			Schedulingtimings.season_year = '".$conventionSD->season_year."' AND 
-			Schedulingtimings.user_type = 'Student' AND 
-			Schedulingtimings.is_bye = 0 AND 
+			Schedulingtimings.conventionseasons_id = '".$conventionSD->id."' AND
+			Schedulingtimings.convention_id = '".$conventionSD->convention_id."' AND
+			Schedulingtimings.season_id = '".$conventionSD->season_id."' AND
+			Schedulingtimings.season_year = '".$conventionSD->season_year."' AND
+			Schedulingtimings.user_type = 'Student' AND
+			Schedulingtimings.is_bye = 0 AND
 			(Schedulingtimings.user_id ='".$userId."' OR Schedulingtimings.user_id_opponent ='".$userId."')
-			
+
 		)";
 		$userConflictRecords = $this->Schedulingtimings
 			->find()
 			->where($condSchList)
 			->order(["Schedulingtimings.sch_date_time" => "ASC"])
 			->all();
-		
+
 		$data		= [];
 		$userData	= [];
 		foreach ($userConflictRecords as $userConflictRecord) {
@@ -766,7 +867,7 @@ class AppController extends Controller{
 				$aEnd   = strtotime($data[$i]['finish_time_with_date']);
 				$bStart = strtotime($data[$j]['start_time_with_date']);
 				$bEnd   = strtotime($data[$j]['finish_time_with_date']);
-				
+
 				if ($aStart < ($bEnd + $bufferSeconds) && $aEnd > ($bStart - $bufferSeconds)) {
 					$userConflictRecordId = $data[$i]['id'];
 					$conflict = [
@@ -798,8 +899,8 @@ class AppController extends Controller{
 		return $conflictsById;
 	}
 	/////////////////////////////////
-	
-	
+
+
 	/////////////////////////////////
 	/* Group conflict resolve process */
 	public function findNextTime($conflict, $base_start_time, $base_finish_time, $base_sch_date_time, $allUserIds, $depth = 0)
@@ -828,7 +929,7 @@ class AppController extends Controller{
 		$base_finish_time 			= $nextFinishTime;
 		$base_sch_date_time 		= $schDateTime;
 		//$this->prx($allUserIds);
-		
+
 		foreach ($allUserIds as $userId)
 		{
 			$checkGBusy = $this->Schedulingtimings->find()
@@ -857,98 +958,31 @@ class AppController extends Controller{
 				})
 				->count();
 				//echo $checkGBusy;exit;
-				
+
 				if ($checkGBusy>0) {
 					return $this->findNextTime($conflict, $base_start_time, $base_finish_time, $base_sch_date_time, $allUserIds, $depth + 1);
 				}
 		}
 
-		
+
 
 		$conventionSeasonsId = $conflict->conventionseasons_id;
 		$schedulingD = $this->Schedulings->find()->where(['Schedulings.conventionseasons_id' => $conventionSeasonsId])->first();
-		
-		
-		//$scheduling = findScheduling($pdo, $conventionSeasonsId);
-		$lunch_time_start = date("H:i:s", strtotime($schedulingD->lunch_time_start));
-		$lunch_time_end = date("H:i:s", strtotime($schedulingD->lunch_time_end));
-		if (
-			(strtotime($base_start_time)>=strtotime($lunch_time_start) &&  strtotime($base_start_time)<=strtotime($lunch_time_end))
-			||
-			(strtotime($base_finish_time)>=strtotime($lunch_time_start) &&  strtotime($base_finish_time)<=strtotime($lunch_time_end))
-		) {
+
+		$slotViolation = $this->getSchedulingSlotRuleViolation($schedulingD, $conflict->day, $base_start_time, $base_finish_time);
+		if ($slotViolation !== null) {
 			return $this->findNextTime($conflict, $base_start_time, $base_finish_time, $base_sch_date_time, $allUserIds, $depth + 1);
 		}
 
-		if ($schedulingD->judging_breaks_yes_no == 1) {
-			$judging_breaks_morning_break_starting_time = date("H:i:s", strtotime($schedulingD->judging_breaks_morning_break_starting_time));
-			$judging_breaks_morning_break_finish_time 	= date("H:i:s", strtotime($schedulingD->judging_breaks_morning_break_finish_time));
-			if (
-				(strtotime($base_start_time)>=strtotime($judging_breaks_morning_break_starting_time) &&  strtotime($base_start_time)<=strtotime($judging_breaks_morning_break_finish_time))
-				||
-				(strtotime($base_finish_time)>=strtotime($judging_breaks_morning_break_starting_time) &&  strtotime($base_finish_time)<=strtotime($judging_breaks_morning_break_finish_time))
-			) {
-			   return $this->findNextTime($conflict, $base_start_time, $base_finish_time, $base_sch_date_time, $allUserIds, $depth + 1);
-			}
 
-			$judging_breaks_afternoon_break_start_time = date("H:i:s", strtotime($schedulingD->judging_breaks_afternoon_break_start_time));
-			$judging_breaks_afternoon_break_finish_time = date("H:i:s", strtotime($schedulingD->judging_breaks_afternoon_break_finish_time));
-			if(
-				(strtotime($base_start_time)>=strtotime($judging_breaks_afternoon_break_start_time) &&  strtotime($base_start_time)<=strtotime($judging_breaks_afternoon_break_finish_time))
-				||
-				(strtotime($base_finish_time)>=strtotime($judging_breaks_afternoon_break_start_time) &&  strtotime($base_finish_time)<=strtotime($judging_breaks_afternoon_break_finish_time))
-			) {
-			   return $this->findNextTime($conflict, $base_start_time, $base_finish_time, $base_sch_date_time, $allUserIds, $depth + 1);
-			}
-		}
-		
-		// To check for sports day
-		if ($schedulingD->sports_day_yes_no == 1)
-		{
-			$sports_day					= $schedulingD->sports_day;
-			$sports_day_starting_time 	= date("H:i:s", strtotime($schedulingD->sports_day_starting_time));
-			$sports_day_finish_time 	= date("H:i:s", strtotime($schedulingD->sports_day_finish_time));
-			
-			if($sports_day == $conflict->day)
-			{
-				if (
-					(strtotime($base_start_time)>=strtotime($sports_day_starting_time) &&  strtotime($base_start_time)<=strtotime($sports_day_finish_time))
-					||
-					(strtotime($base_finish_time)>=strtotime($sports_day_starting_time) &&  strtotime($base_finish_time)<=strtotime($sports_day_finish_time))
-				) {
-				   return $this->findNextTime($conflict, $base_start_time, $base_finish_time, $base_sch_date_time, $allUserIds, $depth + 1);
-				}
-			}
-		}
-		
-		// To check events after sports day
-		if ($schedulingD->sports_day_having_events_after_sport_yes_no == 1)
-		{
-			$sports_day					= $schedulingD->sports_day;
-			$sports_day_other_starting_time 	= date("H:i:s", strtotime($schedulingD->sports_day_other_starting_time));
-			$sports_day_other_finish_time 	= date("H:i:s", strtotime($schedulingD->sports_day_other_finish_time));
-			
-			if($sports_day == $conflict->day)
-			{
-				if (
-					(strtotime($base_start_time)>=strtotime($sports_day_other_starting_time) &&  strtotime($base_start_time)<=strtotime($sports_day_other_finish_time))
-					||
-					(strtotime($base_finish_time)>=strtotime($sports_day_other_starting_time) &&  strtotime($base_finish_time)<=strtotime($sports_day_other_finish_time))
-				) {
-				   return $this->findNextTime($conflict, $base_start_time, $base_finish_time, $base_sch_date_time, $allUserIds, $depth + 1);
-				}
-			}
-		}
-		
-		
-		
+
 		//$this->prx($conflict);
 
 		return $conflict;
 	}
-	
+
 	/////////////////////////////////
-	
+
 	public function isAuthorized($user){
         // Admin can access every action
         if (isset($user['role']) && $user['role'] === 'admin') {
@@ -956,19 +990,19 @@ class AppController extends Controller{
         }
         return false;
     }
-	
+
 	public function verifyRecatpcha($aData)
 	{
 		//echo 'ddddddddd<pre>';pr($aData);exit;
 		if(!$aData)
 		{
 			return false;
-		} 
+		}
 		if(isset($aData['g-recaptcha-response']) && !empty($aData['g-recaptcha-response']))
 		{
 			$recaptcha_secret = SECRETKEY;
-			$url = "https://www.google.com/recaptcha/api/siteverify?secret=".$recaptcha_secret."&response=".$aData['g-recaptcha-response']; 
-			$response = json_decode(@file_get_contents($url));   
+			$url = "https://www.google.com/recaptcha/api/siteverify?secret=".$recaptcha_secret."&response=".$aData['g-recaptcha-response'];
+			$response = json_decode(@file_get_contents($url));
 
 			if($response->success == true)
 			{
@@ -976,8 +1010,8 @@ class AppController extends Controller{
 			}
 			else
 			{
-				return false; 
-			} 
+				return false;
+			}
 		}
 		else
 		{
@@ -1029,8 +1063,8 @@ class AppController extends Controller{
 
 		return null;
 	}
-    
-    
+
+
 	// general login check for user
 	function userLoginCheck() {
 		$returnUrl = $this->request->getRequestTarget();
@@ -1038,20 +1072,20 @@ class AppController extends Controller{
         $this->loadModel("Users");
         $isExists = $this->Users->find()->where(['Users.id' => $userid, 'Users.activation_status' => 1, 'Users.status' => 1])->select(['id'])->first();
         if (empty($isExists)) {
-            $msgString = "Please Login"; 
+            $msgString = "Please Login";
             $this->request->getSession()->delete('user_id');
             $this->request->getSession()->delete('email_address');
             $this->request->getSession()->delete('user_type');
             $this->request->getSession()->delete('last_login');
-			
+
             $this->Flash->error($msgString);
             $this->request->getSession()->write("returnUrl", $returnUrl);
             $this->redirect('/users/login');
         }
     }
-	
+
 	// to check subscribers type login
-	function schoolAdminLoginCheck() {  
+	function schoolAdminLoginCheck() {
 		if($this->getLoggedUserType() != "School")
 		{
 			$msgString = "Un-authorize access.";
@@ -1059,9 +1093,9 @@ class AppController extends Controller{
 			$this->redirect(['controller' => 'users', 'action' => 'dashboard']);
 		}
     }
-	
+
 	// to check individuals user type login
-	function teacherLoginCheck() {  
+	function teacherLoginCheck() {
 		if($this->getLoggedUserType() != "Teacher_Parent")
 		{
 			$msgString = "Un-authorize access.";
@@ -1069,9 +1103,9 @@ class AppController extends Controller{
 			$this->redirect(['controller' => 'users', 'action' => 'dashboard']);
 		}
     }
-	
+
 	// to check individuals user type login
-	function judgeLoginCheck() {  
+	function judgeLoginCheck() {
 		if($this->getLoggedUserType() != "Judge")
 		{
 			$msgString = "Un-authorize access.";
@@ -1079,12 +1113,12 @@ class AppController extends Controller{
 			$this->redirect(['controller' => 'users', 'action' => 'dashboard']);
 		}
     }
-	
-	function multiLoginCheck($usersTypesList=null) { 
+
+	function multiLoginCheck($usersTypesList=null) {
 		$user_type = $this->getLoggedUserType();
 		//echo $user_type;exit;
         if (!in_array($user_type,(array)$usersTypesList)) {
-            $msgString = "Unauthorize access !!!"; 
+            $msgString = "Unauthorize access !!!";
             $this->Flash->error($msgString);
             $this->redirect(['controller' => 'users', 'action' => 'dashboard']);
         }
@@ -1142,12 +1176,12 @@ class AppController extends Controller{
 
 		return true;
 	}
-	
+
 	function checkRegistrationStillOpen($convention_registration_id=NULL) {
-        
+
 		$regAccepted = 0;
         $this->loadModel("Conventionregistrations");
-		
+
 		// to get conv reg details
         $convRegD = $this->Conventionregistrations->find()->where(['Conventionregistrations.id' => $convention_registration_id])->contain(['Conventionseasons'])->first();
 		//$this->prx($convRegD);
@@ -1157,30 +1191,30 @@ class AppController extends Controller{
 			$currDateTime = time();
 			$regStartDateTime = strtotime(date('Y-m-d 00:00:00', strtotime($convRegD->Conventionseasons['registration_start_date'])));
 			$regEndDateTime = strtotime(date('Y-m-d 23:59:59', strtotime($convRegD->Conventionseasons['registration_end_date'])));
-			
+
 			if($currDateTime>=$regStartDateTime && $currDateTime<=$regEndDateTime)
 			{
 				// registration accepted
 				$regAccepted = 1;
 			}
         }
-		
+
 		if($regAccepted == 0)
 		{
 			$this->Flash->error('Sorry, registration has been closed.');
             $this->redirect('/users/dashboard');
 		}
     }
-	
+
 	public function getByePlayerScheduling($total_students) {
-		
+
 		$byeTeamCount = 0;
-		
+
 		// based on call with karl in Aug 2024, he defined a range
 		$byeArray = array(2,4,8,16,32,64,128,256,512,1024,2048);
-		
+
 		$teamDivBy2 = ($total_students/2);
-		
+
 		if(in_array($teamDivBy2,$byeArray))
 		{
 			// exact match
@@ -1189,7 +1223,7 @@ class AppController extends Controller{
 		else
 		{
 			$teamDivBy2 = ceil($total_students/2);
-			
+
 			// to check if ceil value exact match in array
 			if(in_array($teamDivBy2,$byeArray))
 			{
@@ -1203,9 +1237,9 @@ class AppController extends Controller{
 					if($teamDivBy2 > $byeArray[$cntrB] && $teamDivBy2 < $byeArray[$cntrB+1])
 					{
 						$byeArrV = $byeArray[$cntrB+1];
-						
+
 						$byeTeamCount = $total_students - $byeArrV;
-						
+
 						break;
 					}
 				}
@@ -1213,29 +1247,29 @@ class AppController extends Controller{
 		}
 		return $byeTeamCount;
 	}
-	
+
 	public function clearSchedulingtimings($convention_season_slug=NULL)
 	{
 		if($convention_season_slug)
 		{
 			$conventionSD = $this->Conventionseasons->find()->where(['Conventionseasons.slug' => $convention_season_slug])->contain(["Conventions"])->first();
 			//$this->prx($conventionSD);
-			
+
 			$this->Schedulingtimings->deleteAll(["conventionseasons_id" => $conventionSD->id, "convention_id" => $conventionSD->convention_id, "season_id" => $conventionSD->season_id, "season_year" => $conventionSD->season_year]);
-			
+
 			// Clear conflicts
 			$this->Schedulings->updateAll(['conflict_user_ids' => NULL], ["conventionseasons_id" => $conventionSD->id]);
 		}
-		
+
 		return true;
 	}
-    
+
     public function getSlug($str, $table='Admins'){
         $slug = Inflector::slug($str);
         $slug = strtolower($slug);
         //$slug = 'dinesh-dhaker';
         $isRecord =  $this->$table->find()->where([$table . '.slug like' => $slug . '%'])->order([$table.'.id'=>'DESC'])->first();
-        
+
         if($isRecord){
             $oldslug = explode('-', $isRecord->slug);
             $last = array_pop($oldslug);
@@ -1244,20 +1278,20 @@ class AppController extends Controller{
                 $last = $last + 1;
                 $slug = $slug.'-'.$last;
             }else{
-               $slug = $slug.'-'.$last.'-1'; 
+               $slug = $slug.'-'.$last.'-1';
             }
-            
+
             return $slug.time();
         }else{
             return $slug;
         }
     }
-	
+
 	function valid_email($str)
 	{
         return (!preg_match("/^([a-z0-9\+_\-]+)(\.[a-z0-9\+_\-]+)*@([a-z0-9\-]+\.)+[a-z]{2,6}$/ix", $str)) ? FALSE : TRUE;
 	}
-	
+
 	function prx($arrV = NULL)
 	{
 		echo '<pre>';
@@ -1265,7 +1299,7 @@ class AppController extends Controller{
 		echo '</pre>';
 		exit;
 	}
-	
+
 	function pr($arrV = NULL)
 	{
 		echo '<pre>';
@@ -1274,9 +1308,9 @@ class AppController extends Controller{
 		return;
 		//exit;
 	}
-    
-    
-            
-    
+
+
+
+
 }
 ?>

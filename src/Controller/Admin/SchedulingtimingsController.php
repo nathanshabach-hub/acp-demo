@@ -12,13 +12,16 @@ class SchedulingtimingsController extends AppController {
 
     public $paginate = ['limit' => 50, 'order' => ['Schedulings.name' => 'asc']];
     public $components = ['RequestHandler', 'PImage', 'PImageTest'];
+	private $groupParticipantCache = [];
+	private $timingByIdCache = [];
 
     //public $helpers = array('Javascript', 'Ajax');
 
     public function initialize() {
         parent::initialize();
         $this->loadComponent('Paginator');
-        $this->loadComponent('Flash');		
+        $this->loadComponent('Flash');
+
 		$this->loadModel("Conventionseasons");
 		$this->loadModel("Conventionseasonevents");
 		$this->loadModel("Events");
@@ -93,7 +96,7 @@ class SchedulingtimingsController extends AppController {
 	private function isRoomTimeAllowed($room_id, $day, $start_time, $finish_time) {
 		$room = $this->Conventionrooms->find()->where(['id' => $room_id])->first();
 		if (!$room) return true;
-		
+
 		// Check restricted days
 		if (!empty($room->restricted_days)) {
 			$allowedDays = explode(',', $room->restricted_days);
@@ -101,19 +104,19 @@ class SchedulingtimingsController extends AppController {
 				return false;
 			}
 		}
-		
+
 		// Check restricted times
 		if (!empty($room->restricted_start_time) && !empty($room->restricted_finish_time)) {
 			$r_start = strtotime($room->restricted_start_time);
 			$r_finish = strtotime($room->restricted_finish_time);
 			$t_start = strtotime($start_time);
 			$t_finish = strtotime($finish_time);
-			
+
 			if ($t_start < $r_start || $t_finish > $r_finish) {
 				return false;
 			}
 		}
-		
+
 		return true;
 	}
 
@@ -236,7 +239,7 @@ class SchedulingtimingsController extends AppController {
 			'finish_time' => date("H:i:s", strtotime('+ '.$eventDuration.' minutes', strtotime($normalStartingTime))),
 		];
 	}
-	
+
 	/**
 	 * Advance to the next scheduling day, optionally using load balancing.
 	 * Pass $conventionSeasonId, $firstDay, $startDate for balanced day picking.
@@ -265,7 +268,7 @@ class SchedulingtimingsController extends AppController {
 			'normalFinish' => date("H:i:s", strtotime($schedulingsD->normal_finish_time))
 		];
 	}
-	
+
 	/**
 	 * Apply all time constraints: lunch, judging breaks, sports day, after-sport events, room restrictions.
 	 * Loops until a valid slot is found or safety limit reached.
@@ -274,17 +277,17 @@ class SchedulingtimingsController extends AppController {
 	private function applyTimeConstraints($schedulingsD, $eventDuration, $roomID,
 		$startTime, $finishTime, $day, $dateStr, $cntrDays,
 		$conventionSeasonId = null, $firstDay = null, $startDate = null) {
-		
+
 		$normalStart = date("H:i:s", strtotime($schedulingsD->normal_starting_time));
 		$normalFinish = date("H:i:s", strtotime($schedulingsD->normal_finish_time));
 		$lunchStart = date("H:i:s", strtotime($schedulingsD->lunch_time_start));
 		$lunchEnd = date("H:i:s", strtotime($schedulingsD->lunch_time_end));
-		
+
 		$roomAllowed = false;
 		$safetyCounter = 0;
 		while (!$roomAllowed && $safetyCounter < 100) {
 			$safetyCounter++;
-			
+
 			// Lunch check
 			if ((strtotime($startTime) >= strtotime($lunchStart) && strtotime($startTime) <= strtotime($lunchEnd)) ||
 				(strtotime($finishTime) >= strtotime($lunchStart) && strtotime($finishTime) <= strtotime($lunchEnd))) {
@@ -298,7 +301,7 @@ class SchedulingtimingsController extends AppController {
 					$finishTime = date("H:i:s", strtotime('+ '.$eventDuration.' minutes', strtotime($normalStart)));
 				}
 			}
-			
+
 			// Judging breaks
 			if ($schedulingsD->judging_breaks_yes_no == 1) {
 				// Morning break
@@ -316,7 +319,7 @@ class SchedulingtimingsController extends AppController {
 					$startTime = $normalStart;
 					$finishTime = date("H:i:s", strtotime('+ '.$eventDuration.' minutes', strtotime($normalStart)));
 				}
-				
+
 				// Afternoon break
 				$abStart = date("H:i:s", strtotime($schedulingsD->judging_breaks_afternoon_break_start_time));
 				$abFinish = date("H:i:s", strtotime($schedulingsD->judging_breaks_afternoon_break_finish_time));
@@ -333,7 +336,7 @@ class SchedulingtimingsController extends AppController {
 					$finishTime = date("H:i:s", strtotime('+ '.$eventDuration.' minutes', strtotime($normalStart)));
 				}
 			}
-			
+
 			// Sports day
 			if ($schedulingsD->sports_day_yes_no == 1) {
 				$sportsDay = $schedulingsD->sports_day;
@@ -353,7 +356,7 @@ class SchedulingtimingsController extends AppController {
 					}
 				}
 			}
-			
+
 			// After-sport events window
 			if ($schedulingsD->sports_day_having_events_after_sport_yes_no == 1) {
 				$sportsDay = $schedulingsD->sports_day;
@@ -373,7 +376,7 @@ class SchedulingtimingsController extends AppController {
 					}
 				}
 			}
-			
+
 			// Room restriction check
 			if ($this->isRoomTimeAllowed($roomID, $day, $startTime, $finishTime)) {
 				$roomAllowed = true;
@@ -389,7 +392,7 @@ class SchedulingtimingsController extends AppController {
 				}
 			}
 		}
-		
+
 		return [
 			'start_time' => $startTime,
 			'finish_time' => $finishTime,
@@ -398,7 +401,7 @@ class SchedulingtimingsController extends AppController {
 			'cntrDays' => $cntrDays
 		];
 	}
-	
+
 	/**
 	 * Find rooms assigned to an event for a convention season.
 	 * Returns ['rooms' => [room_id, ...], 'spb' => students_per_block_value]
@@ -406,9 +409,9 @@ class SchedulingtimingsController extends AppController {
 	private function findRoomsForEvent($conventionSD, $eventId) {
 		$condRoomCS = array();
 		$condRoomCS[] = "(Conventionseasonroomevents.conventionseasons_id = '".(int)$conventionSD->id."' AND Conventionseasonroomevents.convention_id = '".(int)$conventionSD->convention_id."' AND Conventionseasonroomevents.season_id = '".(int)$conventionSD->season_id."' AND Conventionseasonroomevents.season_year = '".(int)$conventionSD->season_year."')";
-		$condRoomCS[] = "(Conventionseasonroomevents.event_ids = '".(int)$eventId."' OR 
-						Conventionseasonroomevents.event_ids LIKE '".(int)$eventId.",%' OR 
-						Conventionseasonroomevents.event_ids LIKE '%,".(int)$eventId.",%' OR 
+		$condRoomCS[] = "(Conventionseasonroomevents.event_ids = '".(int)$eventId."' OR
+						Conventionseasonroomevents.event_ids LIKE '".(int)$eventId.",%' OR
+						Conventionseasonroomevents.event_ids LIKE '%,".(int)$eventId.",%' OR
 						Conventionseasonroomevents.event_ids LIKE '%,".(int)$eventId."')";
 		$roomCSEvent = $this->Conventionseasonroomevents->find()->select(['room_id', 'students_per_block'])->where($condRoomCS)->all();
 		$roomIds = array();
@@ -438,7 +441,7 @@ class SchedulingtimingsController extends AppController {
 		$roomIds = $this->sortRoomsByAllocation($roomIds, (int)$conventionSD->id);
 		return ['rooms' => $roomIds, 'spb' => $spbValue];
 	}
-	
+
 	/**
 	 * Load scheduling configuration for a convention season.
 	 * Returns associative array with all timing settings.
@@ -475,7 +478,7 @@ class SchedulingtimingsController extends AppController {
 		$lunchTimeEnd = !empty($schedulingsD->lunch_time_end)
 			? date("H:i:s", strtotime($schedulingsD->lunch_time_end))
 			: '13:00:00';
-		
+
 		$cfg = [];
 		$cfg['schedulingsD'] = $schedulingsD;
 		$cfg['start_date'] = $startDate;
@@ -484,7 +487,7 @@ class SchedulingtimingsController extends AppController {
 		$cfg['normal_finish_time'] = $normalFinishTime;
 		$cfg['lunch_time_start'] = $lunchTimeStart;
 		$cfg['lunch_time_end'] = $lunchTimeEnd;
-		
+
 		if ($schedulingsD->starting_different_time_first_day_yes_no == 1) {
 			$cfg['different_first_day_start_time'] = !empty($schedulingsD->different_first_day_start_time)
 				? date("H:i:s", strtotime($schedulingsD->different_first_day_start_time))
@@ -497,10 +500,10 @@ class SchedulingtimingsController extends AppController {
 			$cfg['different_first_day_end_time'] = $cfg['normal_finish_time'];
 		}
 		$cfg['starting_different_time_first_day_yes_no'] = $schedulingsD->starting_different_time_first_day_yes_no;
-		
+
 		return $cfg;
 	}
-	
+
 	/**
 	 * Get event IDs matching scheduling criteria for a convention season.
 	 */
@@ -511,16 +514,16 @@ class SchedulingtimingsController extends AppController {
 		$allCSEvents = $this->Conventionseasonevents->find()->where($condCSE)->all();
 		foreach ($allCSEvents as $csevent) {
 			$eventD = $this->Events->find()->where(['Events.id' => $csevent->event_id])->first();
-			if ($eventD && $eventD->needs_schedule == '1' 
-				&& $eventD->group_event_yes_no == ($isGroup ? '1' : '0') 
-				&& $eventD->event_kind_id == $eventKind 
+			if ($eventD && $eventD->needs_schedule == '1'
+				&& $eventD->group_event_yes_no == ($isGroup ? '1' : '0')
+				&& $eventD->event_kind_id == $eventKind
 				&& $eventD->has_to_be_consecutive == ($isConsecutive ? '1' : '0')) {
 				$arrEvents[] = $eventD->id;
 			}
 		}
 		return $arrEvents;
 	}
-	
+
 	/**
 	 * Get students registered for an event (for individual categories: C2, C4).
 	 */
@@ -538,7 +541,7 @@ class SchedulingtimingsController extends AppController {
 		}
 		return $students;
 	}
-	
+
 	/**
 	 * Get groups registered for an event (for group categories: C1, C3).
 	 * Returns array of "csid==convid==seasonid==year==crid==eventid==eventidnum==userid==groupname" strings.
@@ -547,7 +550,7 @@ class SchedulingtimingsController extends AppController {
 		$mainArr = array();
 		$eventD = $this->Events->find()->where(['Events.id' => $eventId])->first();
 		if (!$eventD) return $mainArr;
-		
+
 		$condCR = array();
 		$condCR[] = "(Conventionregistrations.conventionseason_id = '".$conventionSD->id."' AND Conventionregistrations.convention_id = '".$conventionSD->convention_id."')";
 		$conventionRegistrations = $this->Conventionregistrations->find()->where($condCR)->all();
@@ -576,45 +579,45 @@ class SchedulingtimingsController extends AppController {
 		}
 		return $mainArr;
 	}
-	
+
 	/* public function viewscheduling($convention_season_slug=null) {
         $this->set('title', ADMIN_TITLE . 'Scheduling Pre-check');
         $this->viewBuilder()->setLayout('admin');
-		
+
         $this->set('manageConventions', '1');
         $this->set('conventionList', '1');
-		
+
         $this->set('convention_season_slug', $convention_season_slug);
-		
+
 		$conventionSD = $this->Conventionseasons->find()->where(['Conventionseasons.slug' => $convention_season_slug])->contain(["Conventions"])->first();
 		//$this->prx($conventionSD);
-		
+
 		$this->set('conventionSD', $conventionSD);
-		
+
 		$this->set('convention_slug', $conventionSD->Conventions['slug']);
-		
+
 		// to list all schedulings
 		$schedulingTimingsList = $this->Schedulingtimings->find()->where(['Schedulingtimings.conventionseasons_id' => $conventionSD->id,'Schedulingtimings.convention_id' => $conventionSD->convention_id,'Schedulingtimings.season_id' => $conventionSD->season_id,'Schedulingtimings.season_year' => $conventionSD->season_year])->contain(["Events","Users","Conventionrooms","Opponentuser"])->order(["Schedulingtimings.id" => "ASC"])->all();
 		$this->set('schedulingTimingsList', $schedulingTimingsList);
     } */
-	
+
 	public function viewscheduling($convention_season_slug=null,$scheduling_category=null) {
         $this->set('title', ADMIN_TITLE . 'Scheduling Pre-check');
         $this->viewBuilder()->setLayout('admin');
-		
+
         $this->set('manageConventions', '1');
         $this->set('conventionList', '1');
-		
+
         $this->set('convention_season_slug', $convention_season_slug);
         $this->set('scheduling_category', $scheduling_category);
-		
+
 		$conventionSD = $this->Conventionseasons->find()->where(['Conventionseasons.slug' => $convention_season_slug])->contain(["Conventions"])->first();
 		//$this->prx($conventionSD);
-		
+
 		$this->set('conventionSD', $conventionSD);
-		
+
 		$this->set('convention_slug', $conventionSD->Conventions['slug']);
-		
+
 		// to list all schedulings
 		$schedulingTimingsList = $this->Schedulingtimings->find()->where(['Schedulingtimings.conventionseasons_id' => $conventionSD->id,'Schedulingtimings.convention_id' => $conventionSD->convention_id,'Schedulingtimings.season_id' => $conventionSD->season_id,'Schedulingtimings.season_year' => $conventionSD->season_year,'Schedulingtimings.schedule_category' => $scheduling_category])->contain(["Events","Users","Conventionrooms","Opponentuser"])->order(["Schedulingtimings.id" => "ASC"])->all();
 		$this->set('schedulingTimingsList', $schedulingTimingsList);
@@ -716,9 +719,14 @@ class SchedulingtimingsController extends AppController {
 		$userId = (int)$userId;
 		$eventId = (int)$eventId;
 		$groupName = trim((string)$groupName);
+		$cacheKey = $conventionSeasonId.'|'.$userId.'|'.$eventId.'|'.$groupName;
 
 		if ($userId <= 0 || $eventId <= 0 || $groupName === '') {
 			return [];
+		}
+
+		if (array_key_exists($cacheKey, $this->groupParticipantCache)) {
+			return $this->groupParticipantCache[$cacheKey];
 		}
 
 		$groupUsers = $this->Crstudentevents->find()
@@ -732,7 +740,14 @@ class SchedulingtimingsController extends AppController {
 			->order(['Crstudentevents.id' => 'ASC'])
 			->all();
 
-		return array_values(array_unique(array_filter(array_map('intval', $groupUsers->extract('student_id')->toArray()))));
+		$participantIds = array_values(array_unique(array_filter(array_map('intval', $groupUsers->extract('student_id')->toArray()))));
+		$this->groupParticipantCache[$cacheKey] = $participantIds;
+		return $participantIds;
+	}
+
+	private function getGroupParticipantCsv($conventionSeasonId, $userId, $eventId, $groupName) {
+		$participantIds = $this->getGroupParticipantIds($conventionSeasonId, $userId, $eventId, $groupName);
+		return !empty($participantIds) ? implode(',', $participantIds) : null;
 	}
 
 	private function getTimingParticipantIds($timingRecord, $conventionSeasonId, &$visitedTimingIds = []) {
@@ -777,9 +792,14 @@ class SchedulingtimingsController extends AppController {
 				continue;
 			}
 
-			$sourceTiming = $this->Schedulingtimings->find()
-				->where(['Schedulingtimings.id' => $sourceTimingId])
-				->first();
+			if (array_key_exists($sourceTimingId, $this->timingByIdCache)) {
+				$sourceTiming = $this->timingByIdCache[$sourceTimingId];
+			} else {
+				$sourceTiming = $this->Schedulingtimings->find()
+					->where(['Schedulingtimings.id' => $sourceTimingId])
+					->first();
+				$this->timingByIdCache[$sourceTimingId] = $sourceTiming ?: null;
+			}
 			if ($sourceTiming) {
 				$participants = array_merge($participants, $this->getTimingParticipantIds($sourceTiming, $conventionSeasonId, $visitedTimingIds));
 			}
@@ -1075,20 +1095,105 @@ class SchedulingtimingsController extends AppController {
 		$this->ensureSchedulingAutoassignRunsTable();
 		try {
 			$conn = ConnectionManager::get('default');
-			$conn->insert('scheduling_autoassign_runs', [
-				'conventionseason_id' => (int)$conventionSeasonId,
-				'schedule_category' => $scheduleCategory === null ? null : (int)$scheduleCategory,
-				'assigned_count' => (int)$assignedCount,
-				'remaining_count' => (int)$remainingCount,
-				'overflow_before' => (int)$overflowBefore,
-				'overflow_after' => (int)$overflowAfter,
-				'filter_days' => !empty($days) ? implode(',', $days) : null,
-				'filter_rooms' => !empty($rooms) ? implode(',', array_map('intval', (array)$rooms)) : null,
-				'trigger_source' => (string)$source,
-				'created' => date('Y-m-d H:i:s'),
-			]);
+			$conn->execute(
+				"INSERT INTO scheduling_autoassign_runs
+				(conventionseason_id, schedule_category, assigned_count, remaining_count, overflow_before, overflow_after, filter_days, filter_rooms, trigger_source, created)
+				VALUES
+				(:conventionseason_id, :schedule_category, :assigned_count, :remaining_count, :overflow_before, :overflow_after, :filter_days, :filter_rooms, :trigger_source, :created)",
+				[
+					'conventionseason_id' => (int)$conventionSeasonId,
+					'schedule_category' => $scheduleCategory === null ? null : (int)$scheduleCategory,
+					'assigned_count' => (int)$assignedCount,
+					'remaining_count' => (int)$remainingCount,
+					'overflow_before' => (int)$overflowBefore,
+					'overflow_after' => (int)$overflowAfter,
+					'filter_days' => !empty($days) ? implode(',', $days) : null,
+					'filter_rooms' => !empty($rooms) ? implode(',', array_map('intval', (array)$rooms)) : null,
+					'trigger_source' => (string)$source,
+					'created' => date('Y-m-d H:i:s'),
+				],
+				[
+					'conventionseason_id' => 'integer',
+					'schedule_category' => 'integer',
+					'assigned_count' => 'integer',
+					'remaining_count' => 'integer',
+					'overflow_before' => 'integer',
+					'overflow_after' => 'integer',
+					'filter_days' => 'string',
+					'filter_rooms' => 'string',
+					'trigger_source' => 'string',
+					'created' => 'string',
+				]
+			);
 		} catch (\Exception $e) {
 			// Keep flow resilient if persistence fails.
+		}
+	}
+
+	private function ensureSchedulingConflictAuditsTable() {
+		try {
+			$conn = ConnectionManager::get('default');
+			$conn->execute(
+				"CREATE TABLE IF NOT EXISTS scheduling_conflict_audits (
+					id INT AUTO_INCREMENT PRIMARY KEY,
+					conventionseason_id INT NOT NULL,
+					convention_id INT NULL,
+					season_id INT NULL,
+					season_year VARCHAR(16) NULL,
+					conflict_user_count INT NOT NULL DEFAULT 0,
+					conflict_group_row_count INT NOT NULL DEFAULT 0,
+					conflict_timing_row_count INT NOT NULL DEFAULT 0,
+					trigger_source VARCHAR(64) NOT NULL DEFAULT 'listconflicts',
+					notes VARCHAR(255) NULL,
+					created DATETIME NOT NULL,
+					INDEX idx_sca_csid_created (conventionseason_id, created)
+				) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
+			);
+		} catch (\Exception $e) {
+			// Keep scheduling flow resilient if table creation fails.
+		}
+	}
+
+	private function saveConflictAuditRun($conventionSD, $conflictUserCount, $conflictGroupRowCount, $conflictTimingRowCount, $notes = '') {
+		if (empty($conventionSD) || empty($conventionSD->id)) {
+			return;
+		}
+
+		$this->ensureSchedulingConflictAuditsTable();
+		try {
+			$conn = ConnectionManager::get('default');
+			$conn->execute(
+				"INSERT INTO scheduling_conflict_audits
+				(conventionseason_id, convention_id, season_id, season_year, conflict_user_count, conflict_group_row_count, conflict_timing_row_count, trigger_source, notes, created)
+				VALUES
+				(:conventionseason_id, :convention_id, :season_id, :season_year, :conflict_user_count, :conflict_group_row_count, :conflict_timing_row_count, :trigger_source, :notes, :created)",
+				[
+					'conventionseason_id' => (int)$conventionSD->id,
+					'convention_id' => (int)$conventionSD->convention_id,
+					'season_id' => (int)$conventionSD->season_id,
+					'season_year' => (string)$conventionSD->season_year,
+					'conflict_user_count' => (int)$conflictUserCount,
+					'conflict_group_row_count' => (int)$conflictGroupRowCount,
+					'conflict_timing_row_count' => (int)$conflictTimingRowCount,
+					'trigger_source' => 'listconflicts',
+					'notes' => (string)$notes,
+					'created' => date('Y-m-d H:i:s'),
+				],
+				[
+					'conventionseason_id' => 'integer',
+					'convention_id' => 'integer',
+					'season_id' => 'integer',
+					'season_year' => 'string',
+					'conflict_user_count' => 'integer',
+					'conflict_group_row_count' => 'integer',
+					'conflict_timing_row_count' => 'integer',
+					'trigger_source' => 'string',
+					'notes' => 'string',
+					'created' => 'string',
+				]
+			);
+		} catch (\Exception $e) {
+			// Keep scheduling flow resilient if audit insert fails.
 		}
 	}
 
@@ -1140,6 +1245,88 @@ class SchedulingtimingsController extends AppController {
 				isset($row['remaining_count']) ? (int)$row['remaining_count'] : 0,
 				isset($row['filter_days']) ? $row['filter_days'] : '',
 				isset($row['filter_rooms']) ? $row['filter_rooms'] : '',
+			]);
+		}
+		rewind($stream);
+		$csv = stream_get_contents($stream);
+		fclose($stream);
+
+		$this->autoRender = false;
+		return $this->response
+			->withType('csv')
+			->withDownload($filename)
+			->withStringBody($csv === false ? '' : $csv);
+	}
+
+	private function getConflictAuditRows($conventionSeasonId, $limit = 100) {
+		$this->ensureSchedulingConflictAuditsTable();
+		try {
+			$conn = ConnectionManager::get('default');
+			$rows = $conn->execute(
+				"SELECT id, conventionseason_id, convention_id, season_id, season_year, conflict_user_count, conflict_group_row_count, conflict_timing_row_count, trigger_source, notes, created
+				 FROM scheduling_conflict_audits
+				 WHERE conventionseason_id = :csid
+				 ORDER BY id DESC
+				 LIMIT :row_limit",
+				['csid' => (int)$conventionSeasonId, 'row_limit' => (int)$limit],
+				['csid' => 'integer', 'row_limit' => 'integer']
+			)->fetchAll('assoc');
+
+			return is_array($rows) ? $rows : [];
+		} catch (\Exception $e) {
+			return [];
+		}
+	}
+
+	public function conflictaudits($convention_season_slug = null) {
+		$conventionSD = $this->Conventionseasons->find()
+			->where(['Conventionseasons.slug' => $convention_season_slug])
+			->contain(['Conventions'])
+			->first();
+
+		if (!$conventionSD) {
+			$this->Flash->error('Convention season not found.');
+			return $this->redirect(['controller' => 'schedulings', 'action' => 'precheck', $convention_season_slug]);
+		}
+
+		$rows = $this->getConflictAuditRows((int)$conventionSD->id, 300);
+
+		$this->set('title', ADMIN_TITLE . 'Conflict Audit Trail');
+		$this->set('conventionSD', $conventionSD);
+		$this->set('convention_slug', $conventionSD->convention->slug);
+		$this->set('convention_season_slug', $convention_season_slug);
+		$this->set('conflictAuditRows', $rows);
+	}
+
+	public function exportconflictaudits($convention_season_slug = null) {
+		$conventionSD = $this->Conventionseasons->find()
+			->where(['Conventionseasons.slug' => $convention_season_slug])
+			->contain(['Conventions'])
+			->first();
+
+		if (!$conventionSD) {
+			$this->Flash->error('Convention season not found.');
+			return $this->redirect(['controller' => 'schedulings', 'action' => 'precheck', $convention_season_slug]);
+		}
+
+		$rows = $this->getConflictAuditRows((int)$conventionSD->id, 2000);
+		$filename = 'conflict-audits-' . $convention_season_slug . '-' . date('Ymd-His') . '.csv';
+
+		$stream = fopen('php://temp', 'w+');
+		fputcsv($stream, ['run_id', 'created', 'trigger_source', 'conventionseason_id', 'convention_id', 'season_id', 'season_year', 'conflict_user_count', 'conflict_group_row_count', 'conflict_timing_row_count', 'notes']);
+		foreach ($rows as $row) {
+			fputcsv($stream, [
+				isset($row['id']) ? (int)$row['id'] : '',
+				isset($row['created']) ? $row['created'] : '',
+				isset($row['trigger_source']) ? $row['trigger_source'] : '',
+				isset($row['conventionseason_id']) ? (int)$row['conventionseason_id'] : '',
+				isset($row['convention_id']) ? (int)$row['convention_id'] : '',
+				isset($row['season_id']) ? (int)$row['season_id'] : '',
+				isset($row['season_year']) ? $row['season_year'] : '',
+				isset($row['conflict_user_count']) ? (int)$row['conflict_user_count'] : 0,
+				isset($row['conflict_group_row_count']) ? (int)$row['conflict_group_row_count'] : 0,
+				isset($row['conflict_timing_row_count']) ? (int)$row['conflict_timing_row_count'] : 0,
+				isset($row['notes']) ? $row['notes'] : '',
 			]);
 		}
 		rewind($stream);
@@ -1757,19 +1944,19 @@ class SchedulingtimingsController extends AppController {
 	}
 
     public function startschedulec1($convention_season_slug=null) {
-        
-		
+
+
         $this->set('convention_season_slug', $convention_season_slug);
-		
+
 		$conventionSD = $this->Conventionseasons->find()->where(['Conventionseasons.slug' => $convention_season_slug])->contain(["Conventions"])->first();
-		
+
 		// first of all clear all scheduling for this category & convention, season
 		/* $this->Schedulingtimings->deleteAll(["schedule_category" => 1, "conventionseasons_id" => $conventionSD->id, "convention_id" => $conventionSD->convention_id, "season_id" => $conventionSD->season_id, "season_year" => $conventionSD->season_year]); */
-		
+
 		/* We need to clear all scheduling for this convention season + clear conflicts */
 		$this->clearSchedulingtimings($convention_season_slug);
-		
-		
+
+
 		// to get details of schedule timings
 		$cfg = $this->loadSchedulingConfig($conventionSD);
 		$schedulingsD = $cfg['schedulingsD'];
@@ -1782,8 +1969,8 @@ class SchedulingtimingsController extends AppController {
 		$starting_different_time_first_day_yes_no = $cfg['starting_different_time_first_day_yes_no'];
 		$different_first_day_start_time = $cfg['different_first_day_start_time'];
 		$different_first_day_end_time = $cfg['different_first_day_end_time'];
-		
-		
+
+
 		/* TO GET ALL THE EVENTS WITH FOLLOWING CONDITIONS */
 		// group_event = yes || event_kind_id = sequential || needs_schedule = 1 || has_to_be_consecutive = yes
 		$allEventsCS = $this->getEventsForCategory($conventionSD, true, 'Sequential', true);
@@ -1791,18 +1978,18 @@ class SchedulingtimingsController extends AppController {
 		{
 			$mainArrForEvent = array();
 			// to check if this event require schedule
-			
+
 			$eventD = $this->Events->find()->where(['Events.id' => $eventIDCS])->first();
-			
+
 			// to calculate event execution time
 			$eventSetupRoundJudTime 	= $eventD->setup_time+$eventD->round_time+$eventD->judging_time;
-			
+
 			// now check that if any room is allocated for this event
 			$roomResult = $this->findRoomsForEvent($conventionSD, $eventIDCS);
 			$roomArrCSEvent = $roomResult['rooms'];
 			$eventSpbValue = $roomResult['spb'];
 			//$this->prx($roomArrCSEvent);
-			
+
 			// Check if there's only one room, then duplicate
 			/* if (count($roomArrCSEvent) === 1) {
 				// Duplicate the same record up to 4 times
@@ -1810,20 +1997,20 @@ class SchedulingtimingsController extends AppController {
 					$roomArrCSEvent[] = $roomArrCSEvent[0];
 				}
 			} */
-			
-			
-			
+
+
+
 			// check if there is rooms assigned for this event
 			if(count((array)$roomArrCSEvent)>0)
-			{	
+			{
 				$mainArrForEvent = $this->getGroupsForEvent($conventionSD, $eventIDCS);
-			
-			
+
+
 				// now define timings for schedule for this event
-			
+
 				//echo 'eeee';
 				//$this->prx($mainArrForEvent);
-			
+
 				if(count((array)$mainArrForEvent))
 				{
 					$cntrDays = 1;
@@ -1832,11 +2019,11 @@ class SchedulingtimingsController extends AppController {
 					// Initial day assignment
 					$schDay = $first_day;
 					$schStartDate = $this->getDateForDayFromStart($start_date, $first_day, $schDay);
-					
+
 					$totalRoomsForThisEvent = count((array)$roomArrCSEvent);
 					// now firstly choose first room
 					$cntrRoomCSEvent = 0;
-					
+
 					shuffle($mainArrForEvent);
 					//$this->prx($mainArrForEvent);
 					// get each record and enter in database
@@ -1849,10 +2036,10 @@ class SchedulingtimingsController extends AppController {
 						// data combination is
 						// conventionseasons_id==convention_id==season_id==season_year==conventionregistration_id==event_id==event_id_number==user_id==group_name
 						$stData = explode("==",$mainArrForEvent[$cntrEVSCH]);
-						
+
 						// now calculate timings
 						//echo 'resetTime--upper--'.$resetTime;
-						
+
 						if($totalRoomsForThisEvent == 1)
 						{
 							$roomID = $roomArrCSEvent[0];
@@ -1861,8 +2048,8 @@ class SchedulingtimingsController extends AppController {
 						{
 							$roomID = $roomArrCSEvent[$cntrRoomCSEvent];
 						}
-						
-						
+
+
 						// calculate start time
 						if($resetTime == 1)
 						{
@@ -1875,7 +2062,7 @@ class SchedulingtimingsController extends AppController {
 									$normal_finish_time 	= $different_first_day_end_time;
 								}
 							}
-							
+
 							$start_time 	= $normal_starting_time;
 							$finish_time 	= date("H:i:s", strtotime('+ '.$eventSetupRoundJudTime.' minutes', strtotime($start_time)));
 						}
@@ -1887,12 +2074,12 @@ class SchedulingtimingsController extends AppController {
 							$finish_time 	= date("H:i:s", strtotime('+ '.$eventSetupRoundJudTime.' minutes', strtotime($start_time)));
 						}
 						//exit;
-						
+
 						/* now check if finish time of this schedule is before day finish time or later */
 						if(strtotime($finish_time)<=strtotime($normal_finish_time))
 						{
 							$resetTime = 0;
-						}	
+						}
 						else
 						{
 							$slotShift = $this->moveToNextRoomOrDay(
@@ -1916,9 +2103,9 @@ class SchedulingtimingsController extends AppController {
 							$start_time = $slotShift['start_time'];
 							$finish_time = $slotShift['finish_time'];
 						}
-						
-						
-						
+
+
+
 						/* HERE WE NEED TO CHECK IF THIS ROOM ALREADY HAVING AN EVENT
 						THEN WE NEED TO CHANGE START/FINISH TIMINGS ON THAT BASIS
 						NOTE: We check ALL rooms in the same Room Allocation so that
@@ -1932,37 +2119,37 @@ class SchedulingtimingsController extends AppController {
 						$checkRoomAvailability = $this->Schedulingtimings->find()->where($condRAvail)->order(["Schedulingtimings.sch_date_time" => "DESC","Schedulingtimings.finish_time" => "DESC"])->first();
 						if($checkRoomAvailability)
 						{
-							 
+
 							$room_finish_time 	= date("H:i:s",strtotime($checkRoomAvailability->finish_time));
-							
+
 							$bufferMin = isset($schedulingsD->buffer_minutes) && $schedulingsD->buffer_minutes !== null ? (int)$schedulingsD->buffer_minutes : 5;
 							$start_time 	= date("H:i:s", strtotime('+'.$bufferMin.' minutes', strtotime($room_finish_time)));
 							$finish_time 	= date("H:i:s", strtotime('+ '.$eventSetupRoundJudTime.' minutes', strtotime($start_time)));
-							
+
 							$schStartDate 	= date('Y-m-d', strtotime($checkRoomAvailability->sch_date_time));
 							$schDay 		= $checkRoomAvailability->day;
-							
-							
+
+
 							// suppose in this case, finish time reach to day end time, then shift to next day
 							if(strtotime($finish_time)>=strtotime($normal_finish_time))
 							{
 								$schDay = $this->getNextWeekDay($schDay);
 								//echo $schDay;exit;
-								
+
 								// change to next date
 								$schStartDate = date('Y-m-d', strtotime($schStartDate . ' +1 day'));
 								//echo 'here2';exit;
 								$cntrDays++;
-								
+
 								$normal_starting_time 	= date("H:i:s",strtotime($schedulingsD->normal_starting_time));
 								$normal_finish_time 	= date("H:i:s",strtotime($schedulingsD->normal_finish_time));
-								
+
 								$start_time 	= $normal_starting_time;
 								$finish_time 	= date("H:i:s", strtotime('+ '.$eventSetupRoundJudTime.' minutes', strtotime($normal_starting_time)));
 							}
 						}
-						
-						
+
+
 						/* echo 'start_time->'.$start_time.'--';
 						echo 'finish_time->'.$finish_time.'--';
 						echo 'day->'.$schDay.'--';
@@ -1970,11 +2157,11 @@ class SchedulingtimingsController extends AppController {
 						echo 'normal_finish_time->'.$normal_finish_time.'--';
 						echo 'resetTime->'.$resetTime.'--';
 						echo '<hr>'; */
-						
-						
-						
+
+
+
 						/* To check here if they are having more events after sport - ends */
-						
+
 						/* Apply time constraints (lunch, breaks, sports, room restrictions) — with load balancing */
 						$tc = $this->applyTimeConstraints($schedulingsD, $eventSetupRoundJudTime, $roomID,
 							$start_time, $finish_time, $schDay, $schStartDate, $cntrDays,
@@ -1986,34 +2173,37 @@ class SchedulingtimingsController extends AppController {
 						$cntrDays = $tc['cntrDays'];
 						$normal_starting_time = date("H:i:s", strtotime($schedulingsD->normal_starting_time));
 						$normal_finish_time = date("H:i:s", strtotime($schedulingsD->normal_finish_time));
-						
-						
-						
-						
-						
-						/* Here we will check that this user_id is School Or student 
+
+
+
+
+
+						/* Here we will check that this user_id is School Or student
 						School means its a group event
 						Student means it's an individual event
 						*/
 						$fetchUserType = $this->fetchUserType($stData[7]);
-						
+						$participantIds = $this->getGroupParticipantIds($stData[0], $stData[7], $stData[5], $stData[8]);
+
 						/* USER CONFLICT CHECK: Before saving, verify the user_id
 						   is not already scheduled at the same day/time */
-						$userConflictSlot = $this->findUserConflictFreeSlot(
-							$stData[0], // conventionseasons_id
-							[$stData[7]], // user_id
-							$schDay,
-							$start_time,
-							$finish_time,
-							$eventSetupRoundJudTime,
-							$normal_finish_time,
-							$schedulingsD,
-							$cntrDays
-						);
-						$start_time = $userConflictSlot['start_time'];
-						$finish_time = $userConflictSlot['finish_time'];
-						$schDay = $userConflictSlot['day'];
-						
+						if (!empty($participantIds)) {
+							$userConflictSlot = $this->findUserConflictFreeSlot(
+								$stData[0],
+								$participantIds,
+								$schDay,
+								$start_time,
+								$finish_time,
+								$eventSetupRoundJudTime,
+								$normal_finish_time,
+								$schedulingsD,
+								$cntrDays
+							);
+							$start_time = $userConflictSlot['start_time'];
+							$finish_time = $userConflictSlot['finish_time'];
+							$schDay = $userConflictSlot['day'];
+						}
+
 						//now enter schedule timings
 						$schedulingtimings = $this->Schedulingtimings->newEntity();
 						$dataST = $this->Schedulingtimings->patchEntity($schedulingtimings, array());
@@ -2028,48 +2218,49 @@ class SchedulingtimingsController extends AppController {
 						$dataST->event_id_number 				= $stData[6];
 						$dataST->user_id 						= $stData[7];
 						$dataST->group_name 					= $stData[8];
-						
+						$dataST->group_name_user_ids 			= $this->getGroupParticipantCsv($stData[0], $stData[7], $stData[5], $stData[8]);
+
 						$dataST->room_id 						= $roomID;
 						$dataST->day 							= $schDay;
 						$dataST->start_time 					= $start_time;
 						$dataST->finish_time 					= $finish_time;
-						
+
 						$dataST->created 						= date('Y-m-d H:i:s');
 						$dataST->modified 						= date('Y-m-d H:i:s');
-						
+
 						$dataST->user_type 						= $fetchUserType;
-						
+
 						//echo $start_time;exit;
-						
+
 						$dataST->sch_date_time 					= $schStartDate.' '.date("H:i:s", strtotime($start_time));
-						
+
 						//$this->prx($dataST);
 
 						$resultST = $this->Schedulingtimings->save($dataST);
 					}
 				}
-			
+
 			}
 			else
 			{
 				echo '<hr>no room found. <hr>';
 			}
 		}
-		
+
 		//exit;
-		
+
 		//$this->Flash->success($msgSuccess);
 		$this->redirect(['controller' => 'schedulingtimings', 'action' => 'startschedulec2', $convention_season_slug]);
-		
+
     }
-	
-	
+
+
 	public function startschedulec2($convention_season_slug=null) {
-		
+
 		$conventionSD = $this->Conventionseasons->find()->where(['Conventionseasons.slug' => $convention_season_slug])->contain(["Conventions"])->first();
-		
+
 		//$this->prx($conventionSD);
-		
+
 		// to get details of schedule timings
 		$cfg = $this->loadSchedulingConfig($conventionSD);
 		$schedulingsD = $cfg['schedulingsD'];
@@ -2082,11 +2273,11 @@ class SchedulingtimingsController extends AppController {
 		$starting_different_time_first_day_yes_no = $cfg['starting_different_time_first_day_yes_no'];
 		$different_first_day_start_time = $cfg['different_first_day_start_time'];
 		$different_first_day_end_time = $cfg['different_first_day_end_time'];
-		
+
 		/* TO GET ALL THE EVENTS WITH FOLLOWING CONDITIONS */
 		// group_event = no || event_kind_id = Elimination || needs_schedule = 1 || has_to_be_consecutive = no
 		$arrEventsC2 = $this->getEventsForCategory($conventionSD, false, 'Elimination', false);
-		
+
 		/* NOW GET STUDENTS FOR EACH EVENT */
 		$arrStudentsC2 = array();
 		foreach($arrEventsC2 as $event_id_c2)
@@ -2096,34 +2287,34 @@ class SchedulingtimingsController extends AppController {
 				$arrStudentsC2[$event_id_c2] = $students;
 			}
 		}
-		
+
 
 		/* NOW FETCH STUDENTS FOR EACH EVENT AND PERFORM SCHEDULING */
 		foreach($arrStudentsC2 as $event_id_c2 => $studentsListC2)
-		{	
+		{
 			// to get event details
 			$eventD = $this->Events->find()->where(['Events.id' => $event_id_c2])->first();
-			
+
 			// now check that if any room is allocated for this event
 			$roomResult = $this->findRoomsForEvent($conventionSD, $event_id_c2);
 			$roomArrCSEvent = $roomResult['rooms'];
 			//$this->prx($roomArrCSEvent);
-			
+
 			// shuffle array
 			shuffle($studentsListC2);
-			
+
 			$totalStudentsEV 			= count($studentsListC2);
 			$totalByePlayer 			= $this->getByePlayerScheduling($totalStudentsEV);
 			$arrStudentsForSplice 		= $studentsListC2;
-			
+
 			//echo $totalByePlayer;exit;
-			
+
 			$match_number = 1;
 			/* DEFINE SCHEDULING FOR BYE PLAYERS */
 			if($totalByePlayer>0)
 			{
 				$arrByePlayer 			= array();
-				
+
 				// pick number of random players for bye
 				for($cntrByeP=0;$cntrByeP<$totalByePlayer;$cntrByeP++)
 				{
@@ -2132,13 +2323,13 @@ class SchedulingtimingsController extends AppController {
 					$byeStudentID 		= $arrStudentsForSplice[$randByeNumber];
 					$arrByePlayer[] 	= $byeStudentID;
 					array_splice($arrStudentsForSplice, $randByeNumber, 1);
-					
-					/* Here we will check that this user_id is School Or student 
+
+					/* Here we will check that this user_id is School Or student
 					School means its a group event
 					Student means it's an individual event
 					*/
 					$fetchUserType = $this->fetchUserType($byeStudentID);
-					
+
 					//now save bye player in database, opponent of bye player id will be 0
 					$schedulingtimings = $this->Schedulingtimings->newEntity();
 					$dataBye = $this->Schedulingtimings->patchEntity($schedulingtimings, array());
@@ -2162,24 +2353,24 @@ class SchedulingtimingsController extends AppController {
 					$dataBye->match_number 					= $match_number;
 					$dataBye->is_bye 						= 1;
 					$dataBye->created 						= date('Y-m-d H:i:s');
-					
+
 					$dataBye->sch_date_time 				= NULL;
-					
+
 					$dataBye->user_type 					= $fetchUserType;
 
 					$resultBye = $this->Schedulingtimings->save($dataBye);
-					
+
 					$match_number++;
 				}
 			}
-			
+
 			$totalRoomsForThisEvent = count((array)$roomArrCSEvent);
 			// now firstly choose first room
 			$cntrRoomCSEvent = 0;
 			$cntrEVSCH = 0;
-			
+
 			//$this->prx($arrStudentsForSplice);
-			
+
 			/* DEFINE SCHEDULING FOR REMAINING PLAYERS AFTER BYE PLAYERS */
 			// To check how many matches are there
 			$totalMatches = ($totalStudentsEV-$totalByePlayer)/2;
@@ -2189,18 +2380,18 @@ class SchedulingtimingsController extends AppController {
 				$randFirstP 				= rand(0,count((array)$arrStudentsForSplice)-1);
 				$first_student_id 			= $arrStudentsForSplice[$randFirstP];
 				array_splice($arrStudentsForSplice, $randFirstP, 1);
-				
+
 				// to get opponent user id
 				$randSecondP 				= rand(0,count((array)$arrStudentsForSplice)-1);
 				$second_student_id 			= $arrStudentsForSplice[$randSecondP];
 				array_splice($arrStudentsForSplice, $randSecondP, 1);
-				
-				/* Here we will check that this user_id is School Or student 
+
+				/* Here we will check that this user_id is School Or student
 				School means its a group event
 				Student means it's an individual event
 				*/
 				$fetchUserType = $this->fetchUserType($first_student_id);
-				
+
 				//now save remaining player in database with opponent user id
 				$schedulingtimings = $this->Schedulingtimings->newEntity();
 				$dataBye = $this->Schedulingtimings->patchEntity($schedulingtimings, array());
@@ -2231,13 +2422,13 @@ class SchedulingtimingsController extends AppController {
 				$dataBye->match_number 					= $match_number;
 				$dataBye->is_bye 						= 0;
 				$dataBye->created 						= date('Y-m-d H:i:s');
-				
+
 				$dataBye->sch_date_time 				= $start_date.' 00:00:00';
-				
+
 				$dataBye->user_type 					= $fetchUserType;
 
 				$resultBye = $this->Schedulingtimings->save($dataBye);
-				
+
 				$match_number++;
 
 				if($totalRoomsForThisEvent>1)
@@ -2248,14 +2439,14 @@ class SchedulingtimingsController extends AppController {
 						$cntrRoomCSEvent = 0;
 					}
 				}
-				
+
 				$cntrEVSCH++;
 			}
 		}
-		
-		
-		
-		
+
+
+
+
 		/* After first round, we need to schedule next rounds till last round between 2 players */
 		// Get all matches for each event and perform scheduling 'Schedulingtimings.schedule_category' => 2
 		foreach(array_keys($arrStudentsC2) as $event_id_c2)
@@ -2267,25 +2458,25 @@ class SchedulingtimingsController extends AppController {
 			$roomResult = $this->findRoomsForEvent($conventionSD, $event_id_c2);
 			$roomArrCSEvent = $roomResult['rooms'];
 			$totalRoomsForThisEvent = count((array)$roomArrCSEvent);
-			
-			
+
+
 			// to get total matches played in first round for this event including byes if any
 			$countTotalMatR1Event = $this->Schedulingtimings->find()->where(['Schedulingtimings.schedule_category' => 2,'Schedulingtimings.conventionseasons_id' => $conventionSD->id,'Schedulingtimings.convention_id' => $conventionSD->convention_id,'Schedulingtimings.season_id' => $conventionSD->season_id,'Schedulingtimings.season_year' => $conventionSD->season_year,'Schedulingtimings.event_id' => $event_id_c2,'Schedulingtimings.round_number' => 1])->count();
-			
+
 			// to get the last match number for this event
 			$evLastMatch = $this->Schedulingtimings->find()->where(['Schedulingtimings.schedule_category' => 2,'Schedulingtimings.conventionseasons_id' => $conventionSD->id,'Schedulingtimings.convention_id' => $conventionSD->convention_id,'Schedulingtimings.season_id' => $conventionSD->season_id,'Schedulingtimings.season_year' => $conventionSD->season_year,'Schedulingtimings.event_id' => $event_id_c2,'Schedulingtimings.round_number' => 1])->order(['Schedulingtimings.match_number' => 'DESC'])->first();
 			$lastMatchNumber = $evLastMatch->match_number;
-			
+
 			$lastMatchNumber = $lastMatchNumber+1;
-			
+
 			$loopNumber = $countTotalMatR1Event/2;
 			$cntrRoomCSEvent = 0;
 			$cntrEVSCH = 0;
-			
+
 			for($cntrOR=0;$cntrOR<$loopNumber;$cntrOR++)
 			{
 				$roundNumber = $cntrOR+1;
-				
+
 				// fetch matches of this round and save schedule
 				$arrNR = array();
 				$nextRounds = $this->Schedulingtimings->find()->where(['Schedulingtimings.schedule_category' => 2,'Schedulingtimings.conventionseasons_id' => $conventionSD->id,'Schedulingtimings.convention_id' => $conventionSD->convention_id,'Schedulingtimings.season_id' => $conventionSD->season_id,'Schedulingtimings.season_year' => $conventionSD->season_year,'Schedulingtimings.event_id' => $event_id_c2,'Schedulingtimings.round_number' => $roundNumber])->all();
@@ -2293,11 +2484,11 @@ class SchedulingtimingsController extends AppController {
 				{
 					$arrNR[] = $nextRound->id;
 				}
-				
+
 				//$this->prx($arrNR);
-				
+
 				$inLoopR = floor(count($arrNR)/2);
-				
+
 				//now run loop on this array and schedule
 				for($cntrIn=0;$cntrIn<$inLoopR;$cntrIn++)
 				{
@@ -2305,13 +2496,13 @@ class SchedulingtimingsController extends AppController {
 					$randFirstID 				= rand(0,count($arrNR)-1);
 					$first_id 					= $arrNR[$randFirstID];
 					array_splice($arrNR, $randFirstID, 1);
-					
+
 					// to get opponent user id
 					$randSecondID 				= rand(0,count($arrNR)-1);
 					$second_id 			= $arrNR[$randSecondID];
 					array_splice($arrNR, $randSecondID, 1);
-					
-					
+
+
 					//now save remaining player in database with opponent user id
 					$schedulingtimings = $this->Schedulingtimings->newEntity();
 					$dataBye = $this->Schedulingtimings->patchEntity($schedulingtimings, array());
@@ -2344,11 +2535,11 @@ class SchedulingtimingsController extends AppController {
 					$dataBye->match_number 					= $lastMatchNumber;
 					$dataBye->is_bye 						= 0;
 					$dataBye->created 						= date('Y-m-d H:i:s');
-					
+
 					$dataBye->sch_date_time 				= $start_date.' 00:00:00';
 
 					$resultBye = $this->Schedulingtimings->save($dataBye);
-					
+
 					$lastMatchNumber++;
 
 					if($totalRoomsForThisEvent>1)
@@ -2359,40 +2550,40 @@ class SchedulingtimingsController extends AppController {
 							$cntrRoomCSEvent = 0;
 						}
 					}
-					
+
 					$cntrEVSCH++;
-					
+
 				}
-				
+
 			}
 		}
-		
+
 		//exit;
-		
-		
-		
+
+
+
 		/* IN ABOVE CODE, WE DEFINE SCHEDULING BUT NOT DEFINED DAY (EXCEPT BYE), START AND END TIME */
-		/* IN BELOW CODE WE WILL FETCH THIS SCHEDULING AGAIN FOR EACH EVENT ONE BY ONE AND DEFINE 
+		/* IN BELOW CODE WE WILL FETCH THIS SCHEDULING AGAIN FOR EACH EVENT ONE BY ONE AND DEFINE
 		DAY, START TIME AND END TIME */
-		
+
 		//exit;
-		
+
 		foreach($arrEventsC2 as $event_id)
 		{
 			// to get event details
 			$eventD = $this->Events->find()->where(['Events.id' => $event_id])->first();
-			
+
 			// to calculate event execution time
 			$eventSetupRoundJudTime 	= $eventD->setup_time+$eventD->round_time+$eventD->judging_time;
-			
+
 			// now check that if any room is allocated for this event
 			$roomResult = $this->findRoomsForEvent($conventionSD, $event_id);
 			$roomArrCSEvent = $roomResult['rooms'];
 			$eventSpbValue = $roomResult['spb'];
-			
+
 			//$this->prx($roomArrCSEvent);
-			
-			
+
+
 			// check if there is rooms assigned for this event
 			if(count((array)$roomArrCSEvent))
 			{
@@ -2402,14 +2593,14 @@ class SchedulingtimingsController extends AppController {
 				$condST[] = "(Schedulingtimings.schedule_category = '2' AND Schedulingtimings.is_bye = '0' AND Schedulingtimings.event_id = '".$event_id."')";
 				$schedulingT = $this->Schedulingtimings->find()->where($condST)->order(["Schedulingtimings.id" => "ASC"])->all();
 				//$this->prx($schedulingT);
-				
+
 				$cntrDays 		= 1;
 				$resetTime 		= 1;
 				$balancingDays = $this->getConventionBalancingDays($first_day, 4);
 				$balancedStartDay = $this->pickLeastLoadedStartDay($conventionSD->id, $balancingDays);
 				$schDay 		= !empty($balancedStartDay) ? $balancedStartDay : $first_day;
 				$schStartDate = $this->getDateForDayFromStart($start_date, $first_day, $schDay);
-				
+
 				$totalRoomsForThisEvent = count((array)$roomArrCSEvent);
 				// now firstly choose first room
 				$cntrRoomCSEvent 	= 0;
@@ -2417,7 +2608,7 @@ class SchedulingtimingsController extends AppController {
 				$blockCounter 		= 0;
 				$blockStartTime 	= null;
 				$blockFinishTime 	= null;
-				
+
 				foreach($schedulingT as $schdata)
 				{
 					if($totalRoomsForThisEvent == 1)
@@ -2428,7 +2619,7 @@ class SchedulingtimingsController extends AppController {
 					{
 						$roomID = $roomArrCSEvent[$cntrRoomCSEvent];
 					}
-					
+
 					/* HERE WE NEED TO CHECK IF THIS ROOM ALREADY HAVING AN EVENT
 					THEN WE NEED TO CHANGE START/FINISH TIMINGS ON THAT BASIS
 					NOTE: We check ALL rooms in the same Room Allocation so that
@@ -2438,10 +2629,10 @@ class SchedulingtimingsController extends AppController {
 					$_allocRoomIds = $this->getAllocationRoomIds($roomID);
 					$_allocRoomIdsStr = implode(',', $_allocRoomIds);
 					$condRAvail[] = "(Schedulingtimings.conventionseasons_id = '".$conventionSD->id."' AND Schedulingtimings.convention_id = '".$conventionSD->convention_id."' AND Schedulingtimings.room_id IN ($_allocRoomIdsStr) AND Schedulingtimings.start_time IS NOT NULL AND Schedulingtimings.finish_time IS NOT NULL)";
-					
+
 					$checkRoomAvailability = $this->Schedulingtimings->find()->where($condRAvail)->order(["Schedulingtimings.sch_date_time" => "DESC","Schedulingtimings.finish_time" => "DESC"])->first();
-					
-					
+
+
 					if($checkRoomAvailability)
 					{
 						//$this->prx($checkRoomAvailability);
@@ -2456,21 +2647,21 @@ class SchedulingtimingsController extends AppController {
 						echo $start_time; echo '<br>';
 						echo $finish_time; echo '<br>';
 						exit; */
-						
+
 						// suppose in this case, finish time reach to day end time, then shift to next day
 						if(strtotime($finish_time)>=strtotime($normal_finish_time))
 						{
 							$schDay = $this->getNextWeekDay($schDay);
 							//echo $schDay;exit;
-							
+
 							// change to next date
 							$schStartDate = date('Y-m-d', strtotime($schStartDate . ' +1 day'));
 							//echo 'here2';exit;
 							$cntrDays++;
-							
+
 							$normal_starting_time 	= date("H:i:s",strtotime($schedulingsD->normal_starting_time));
 							$normal_finish_time 	= date("H:i:s",strtotime($schedulingsD->normal_finish_time));
-							
+
 							$start_time 	= $normal_starting_time;
 							$finish_time 	= date("H:i:s", strtotime('+ '.$eventSetupRoundJudTime.' minutes', strtotime($normal_starting_time)));
 						}
@@ -2490,7 +2681,7 @@ class SchedulingtimingsController extends AppController {
 									$normal_finish_time 	= $different_first_day_end_time;
 								}
 							}
-							
+
 							$start_time 	= $normal_starting_time;
 							$finish_time 	= date("H:i:s", strtotime('+ '.$eventSetupRoundJudTime.' minutes', strtotime($start_time)));
 						}
@@ -2502,12 +2693,12 @@ class SchedulingtimingsController extends AppController {
 							$finish_time 	= date("H:i:s", strtotime('+ '.$eventSetupRoundJudTime.' minutes', strtotime($start_time)));
 						}
 						//exit;
-						
+
 						/* now check if finish time of this schedule is before day finish time or later */
 						if(strtotime($finish_time)<=strtotime($normal_finish_time))
 						{
 							$resetTime = 0;
-						}	
+						}
 						else
 						{
 							$slotShift = $this->moveToNextRoomOrDay(
@@ -2530,12 +2721,12 @@ class SchedulingtimingsController extends AppController {
 						}
 						///////////////////
 					}
-					
+
 					/* echo $start_time;echo '<br>'; */
-					
-					
-					
-					
+
+
+
+
 					/* echo $start_time;echo '<br>';
 					echo $finish_time;echo '<br>';
 					echo $schDay;echo '<br>';
@@ -2551,9 +2742,9 @@ class SchedulingtimingsController extends AppController {
 					$cntrDays = $tc['cntrDays'];
 					$normal_starting_time = date("H:i:s", strtotime($schedulingsD->normal_starting_time));
 					$normal_finish_time = date("H:i:s", strtotime($schedulingsD->normal_finish_time));
-					
+
 					/* here we calculate root, day, start time and end time - ends */
-					
+
 					if (!$this->isSchedulableConventionDay($schDay)) {
 						$this->Schedulingtimings->updateAll(
 						[
@@ -2619,23 +2810,23 @@ class SchedulingtimingsController extends AppController {
 							$blockFinishTime = $finish_time;
 						}
 					}
-					
-					
-					
+
+
+
 					$arrPP = [
 					'room_id' 		=> $roomID,
 					'day' 			=> $schDay,
 					'start_time' 	=> $start_time,
 					'finish_time' 	=> $finish_time,
-					
+
 					'sch_date_time' 	=> $schStartDate.' '.date("H:i:s", strtotime($start_time)),
-					
+
 					'modified' 		=> date("Y-m-d H:i:s")
 					];
-					
+
 					//$this->pr($arrPP);
 					//echo '<hr>';
-					
+
 					if (!$this->isSchedulableConventionDay($schDay)) {
 						$this->Schedulingtimings->updateAll(
 						[
@@ -2650,7 +2841,7 @@ class SchedulingtimingsController extends AppController {
 						);
 						continue;
 					}
-					
+
 					// update day, start time and end time
 					$this->Schedulingtimings->updateAll(
 					[
@@ -2658,37 +2849,37 @@ class SchedulingtimingsController extends AppController {
 					'day' 			=> $schDay,
 					'start_time' 	=> $start_time,
 					'finish_time' 	=> $finish_time,
-					
+
 					'sch_date_time' 	=> $schStartDate.' '.date("H:i:s", strtotime($start_time)),
-					
+
 					'modified' 		=> date("Y-m-d H:i:s")
 					],
 					["id" => $schdata->id]);
-					
+
 					$cntrEVSCH++;
-					
+
 				}
-			
+
 			}
-			
+
 			//exit;
-			
-			
+
+
 		}
-		
+
 		//exit;
-		
+
 		//$this->Flash->success('Scheduling completed successfully for category 2.');
 		$this->redirect(['controller' => 'schedulingtimings', 'action' => 'startschedulec3', $convention_season_slug]);
-		
+
 	}
-	
+
 	public function startschedulec3($convention_season_slug=null) {
-		
+
 		$conventionSD = $this->Conventionseasons->find()->where(['Conventionseasons.slug' => $convention_season_slug])->contain(["Conventions"])->first();
-		
+
 		//$this->prx($conventionSD);
-		
+
 		// to get details of schedule timings
 		$cfg = $this->loadSchedulingConfig($conventionSD);
 		$schedulingsD = $cfg['schedulingsD'];
@@ -2701,48 +2892,48 @@ class SchedulingtimingsController extends AppController {
 		$starting_different_time_first_day_yes_no = $cfg['starting_different_time_first_day_yes_no'];
 		$different_first_day_start_time = $cfg['different_first_day_start_time'];
 		$different_first_day_end_time = $cfg['different_first_day_end_time'];
-		
-		
+
+
 		/* TO GET ALL THE EVENTS WITH FOLLOWING CONDITIONS */
 		// group_event = yes || event_kind_id = Elimination || needs_schedule = 1 || has_to_be_consecutive = no
 		$arrEventsC3 = $this->getEventsForCategory($conventionSD, true, 'Elimination', false);
-		
-		
+
+
 		$eventCTR = 0;
 		// Now run loop on each event and get groups and schedule
 		foreach($arrEventsC3 as $event_id_c3)
 		{
 			/* PART 1 OF THIS EVENT */
-			
+
 			$mainArrForEvent = array();
-			
+
 			// to get event details
 			$eventD = $this->Events->find()->where(['Events.id' => $event_id_c3])->first();
-			
+
 			// now check that if any room is allocated for this event
 			$roomResult = $this->findRoomsForEvent($conventionSD, $event_id_c3);
 			$roomArrCSEvent = $roomResult['rooms'];
 			$eventSpbValue = $roomResult['spb'];
 			//$this->prx($roomArrCSEvent);
-			 
+
 			// now get groups for this event from convention registration
 			$mainArrForEvent = $this->getGroupsForEvent($conventionSD, $event_id_c3);
-			
-			
-			
+
+
+
 			if(count((array)$mainArrForEvent))
 			{
 				shuffle($mainArrForEvent);
-				
+
 				// now get total bye groups
 				$totalGroupsEV 				= count($mainArrForEvent);
 				$totalByeGroup 				= $this->getByePlayerScheduling($totalGroupsEV);
 				$arrGroupsForSplice 		= $mainArrForEvent;
-				
+
 				//$this->prx($arrGroupsForSplice);
-				
+
 				//echo $totalByeGroup;exit;
-				
+
 				$match_number = 1;
 				/* DEFINE SCHEDULING FOR BYE GROUPS */
 				if($totalByeGroup>0)
@@ -2752,21 +2943,21 @@ class SchedulingtimingsController extends AppController {
 					{
 						// generate a random number from 0 to total count of students
 						$randByeNumber 		= rand(0,count($arrGroupsForSplice)-1);
-						
+
 						// now explode data from array to get al details
 						$dataGExplode = explode("==",$arrGroupsForSplice[$randByeNumber]);
 						//$this->prx($dataGExplode);
-						
+
 						array_splice($arrGroupsForSplice, $randByeNumber, 1);
-						
-						/* Here we will check that this user_id is School Or student 
+
+						/* Here we will check that this user_id is School Or student
 						School means its a group event
 						Student means it's an individual event
 						*/
 						$fetchUserType = $this->fetchUserType($dataGExplode[7]);
-						
-						
-						
+
+
+
 						//now save bye player in database, opponent of bye player id will be 0
 						$schedulingtimings = $this->Schedulingtimings->newEntity();
 						$dataBye = $this->Schedulingtimings->patchEntity($schedulingtimings, array());
@@ -2781,6 +2972,7 @@ class SchedulingtimingsController extends AppController {
 						$dataBye->event_id_number 				= $eventD->event_id_number;
 						$dataBye->user_id 						= $dataGExplode[7];
 						$dataBye->group_name 					= $dataGExplode[8];
+						$dataBye->group_name_user_ids 			= $this->getGroupParticipantCsv($conventionSD->id, $dataGExplode[7], $eventD->id, $dataGExplode[8]);
 						$dataBye->room_id 						= NULL;
 						$dataBye->day 							= NULL;
 						$dataBye->start_time 					= NULL;
@@ -2790,19 +2982,19 @@ class SchedulingtimingsController extends AppController {
 						$dataBye->match_number 					= $match_number;
 						$dataBye->is_bye 						= 1;
 						$dataBye->created 						= date('Y-m-d H:i:s');
-						
+
 						$dataBye->sch_date_time 				= NULL;
-						
+
 						$dataBye->user_type 					= $fetchUserType;
 
 						$resultBye = $this->Schedulingtimings->save($dataBye);
-						
+
 						$match_number++;
 					}
 				}
-				
+
 				//$this->prx($arrGroupsForSplice);
-				
+
 				/* DEFINE SCHEDULING FOR REMAINING PLAYERS AFTER BYE PLAYERS */
 				// To check how many matches are there
 				$totalMatches = ($totalGroupsEV-$totalByeGroup)/2;
@@ -2813,20 +3005,20 @@ class SchedulingtimingsController extends AppController {
 					// now explode data to get info
 					$dataGExplodeFirst = explode("==",$arrGroupsForSplice[$randFirstP]);
 					array_splice($arrGroupsForSplice, $randFirstP, 1);
-					
-					
+
+
 					// to get opponent group id
 					$randSecondP 				= rand(0,count((array)$arrGroupsForSplice)-1);
 					// now explode data to get info
 					$dataGExplodeSecond = explode("==",$arrGroupsForSplice[$randSecondP]);
 					array_splice($arrGroupsForSplice, $randSecondP, 1);
-					
-					/* Here we will check that this user_id is School Or student 
+
+					/* Here we will check that this user_id is School Or student
 					School means its a group event
 					Student means it's an individual event
 					*/
 					$fetchUserType = $this->fetchUserType($dataGExplodeFirst[7]);
-					
+
 					//now save remaining player in database with opponent user id
 					$schedulingtimings = $this->Schedulingtimings->newEntity();
 					$dataBye = $this->Schedulingtimings->patchEntity($schedulingtimings, array());
@@ -2841,59 +3033,61 @@ class SchedulingtimingsController extends AppController {
 					$dataBye->event_id_number 				= $eventD->event_id_number;
 					$dataBye->user_id 						= $dataGExplodeFirst[7];
 					$dataBye->group_name 					= $dataGExplodeFirst[8];
+					$dataBye->group_name_user_ids 			= $this->getGroupParticipantCsv($conventionSD->id, $dataGExplodeFirst[7], $eventD->id, $dataGExplodeFirst[8]);
 					$dataBye->room_id 						= NULL;
 					$dataBye->day 							= NULL;
 					$dataBye->start_time 					= NULL;
 					$dataBye->finish_time 					= NULL;
 					$dataBye->user_id_opponent 				= $dataGExplodeSecond[7];
 					$dataBye->group_name_opponent 			= $dataGExplodeSecond[8];
+					$dataBye->group_name_opponent_user_ids = $this->getGroupParticipantCsv($conventionSD->id, $dataGExplodeSecond[7], $eventD->id, $dataGExplodeSecond[8]);
 					$dataBye->round_number 					= 1;
 					$dataBye->match_number 					= $match_number;
 					$dataBye->is_bye 						= 0;
 					$dataBye->created 						= date('Y-m-d H:i:s');
-					
+
 					$dataBye->sch_date_time 				= $start_date.' 00:00:00';
-					
+
 					$dataBye->user_type 					= $fetchUserType;
 
 					$resultBye = $this->Schedulingtimings->save($dataBye);
-					
+
 					$match_number++;
-					
+
 				}
 			}
-			
-			
-			
-			
-			
-			
+
+
+
+
+
+
 			/* PART 2 OF THIS EVENT */
-			
+
 			/* After first round, we need to schedule next rounds till last round between 2 players */
 			// Get all matches for each event and perform scheduling 'Schedulingtimings.schedule_category' => 3
-			
+
 			// to get total matches played in first round for this event including byes if any
 			$countTotalMatR1Event = $this->Schedulingtimings->find()->where(['Schedulingtimings.schedule_category' => 3,'Schedulingtimings.conventionseasons_id' => $conventionSD->id,'Schedulingtimings.convention_id' => $conventionSD->convention_id,'Schedulingtimings.season_id' => $conventionSD->season_id,'Schedulingtimings.season_year' => $conventionSD->season_year,'Schedulingtimings.event_id' => $event_id_c3,'Schedulingtimings.round_number' => 1])->count();
 			if ($countTotalMatR1Event < 2) {
 				continue;
 			}
-			
+
 			// to get the last match number for this event
 			$evLastMatch = $this->Schedulingtimings->find()->where(['Schedulingtimings.schedule_category' => 3,'Schedulingtimings.conventionseasons_id' => $conventionSD->id,'Schedulingtimings.convention_id' => $conventionSD->convention_id,'Schedulingtimings.season_id' => $conventionSD->season_id,'Schedulingtimings.season_year' => $conventionSD->season_year,'Schedulingtimings.event_id' => $event_id_c3,'Schedulingtimings.round_number' => 1])->order(['Schedulingtimings.match_number' => 'DESC'])->first();
 			if (empty($evLastMatch)) {
 				continue;
 			}
 			$lastMatchNumber = $evLastMatch->match_number;
-			
+
 			$lastMatchNumber = $lastMatchNumber+1;
-			
+
 			$loopNumber = $countTotalMatR1Event/2;
-			
+
 			for($cntrOR=0;$cntrOR<$loopNumber;$cntrOR++)
 			{
 				$roundNumber = $cntrOR+1;
-				
+
 				// fetch matches of this round and save schedule
 				$arrNR = array();
 				$nextRounds = $this->Schedulingtimings->find()->where(['Schedulingtimings.schedule_category' => 3,'Schedulingtimings.conventionseasons_id' => $conventionSD->id,'Schedulingtimings.convention_id' => $conventionSD->convention_id,'Schedulingtimings.season_id' => $conventionSD->season_id,'Schedulingtimings.season_year' => $conventionSD->season_year,'Schedulingtimings.event_id' => $event_id_c3,'Schedulingtimings.round_number' => $roundNumber])->all();
@@ -2901,13 +3095,13 @@ class SchedulingtimingsController extends AppController {
 				{
 					$arrNR[] = $nextRound->id;
 				}
-				
+
 				//$this->prx($arrNR);
-				
+
 				$inLoopR = floor(count($arrNR)/2);
-				
+
 				//echo $inLoopR;exit;
-				
+
 				//now run loop on this array and schedule
 				for($cntrIn=0;$cntrIn<$inLoopR;$cntrIn++)
 				{
@@ -2915,13 +3109,13 @@ class SchedulingtimingsController extends AppController {
 					$randFirstID 				= rand(0,count($arrNR)-1);
 					$first_id 					= $arrNR[$randFirstID];
 					array_splice($arrNR, $randFirstID, 1);
-					
+
 					// to get opponent user id
 					$randSecondID 				= rand(0,count($arrNR)-1);
 					$second_id 			= $arrNR[$randSecondID];
 					array_splice($arrNR, $randSecondID, 1);
-					
-					
+
+
 					//now save remaining player in database with opponent user id
 					$schedulingtimings = $this->Schedulingtimings->newEntity();
 					$dataBye = $this->Schedulingtimings->patchEntity($schedulingtimings, array());
@@ -2947,41 +3141,41 @@ class SchedulingtimingsController extends AppController {
 					$dataBye->match_number 					= $lastMatchNumber;
 					$dataBye->is_bye 						= 0;
 					$dataBye->created 						= date('Y-m-d H:i:s');
-					
+
 					$dataBye->sch_date_time 				= $start_date.' 00:00:00';
 
 					$resultBye = $this->Schedulingtimings->save($dataBye);
-					
+
 					$lastMatchNumber++;
-					
+
 				}
-				
+
 			}
-			
-			
-			
-			
-			
-			
-			
-			
-			
+
+
+
+
+
+
+
+
+
 			/* PART 3 OF THIS EVENT */
-			
+
 			/* IN ABOVE CODE, WE DEFINE SCHEDULING BUT NOT DEFINED DAY (EXCEPT BYE), START AND END TIME */
-			/* IN BELOW CODE WE WILL FETCH THIS SCHEDULING AGAIN FOR EACH EVENT ONE BY ONE AND DEFINE 
+			/* IN BELOW CODE WE WILL FETCH THIS SCHEDULING AGAIN FOR EACH EVENT ONE BY ONE AND DEFINE
 			DAY, START TIME AND END TIME */
-			
+
 			$event_id = $event_id_c3;
-			
+
 			// to calculate event execution time
 			$eventSetupRoundJudTime 	= $eventD->setup_time+$eventD->round_time+$eventD->judging_time;
-			
+
 			// now check that if any room is allocated for this event
 			$roomResult = $this->findRoomsForEvent($conventionSD, $event_id);
 			$roomArrCSEvent = $roomResult['rooms'];
-			
-			
+
+
 			// check if there is rooms assigned for this event
 			if(count((array)$roomArrCSEvent))
 			{
@@ -2991,14 +3185,14 @@ class SchedulingtimingsController extends AppController {
 				$condST[] = "(Schedulingtimings.schedule_category = '3' AND Schedulingtimings.is_bye = '0' AND Schedulingtimings.event_id = '".$event_id."')";
 				$schedulingT = $this->Schedulingtimings->find()->where($condST)->order(["Schedulingtimings.id" => "ASC"])->all();
 				//$this->prx($schedulingT);
-				
+
 				$cntrDays 		= 1;
 				$resetTime 		= 1;
 				$balancingDays = $this->getConventionBalancingDays($first_day, 4);
 				$balancedStartDay = $this->pickLeastLoadedStartDay($conventionSD->id, $balancingDays);
 				$schDay 		= !empty($balancedStartDay) ? $balancedStartDay : $first_day;
 				$schStartDate = $this->getDateForDayFromStart($start_date, $first_day, $schDay);
-				
+
 				$totalRoomsForThisEvent = count((array)$roomArrCSEvent);
 				// now firstly choose first room
 				$cntrRoomCSEvent 	= 0;
@@ -3006,7 +3200,7 @@ class SchedulingtimingsController extends AppController {
 				$blockCounter 		= 0;
 				$blockStartTime 	= null;
 				$blockFinishTime 	= null;
-				
+
 				foreach($schedulingT as $schdata)
 				{
 					if($totalRoomsForThisEvent == 1)
@@ -3017,7 +3211,7 @@ class SchedulingtimingsController extends AppController {
 					{
 						$roomID = $roomArrCSEvent[$cntrRoomCSEvent];
 					}
-					
+
 					/* here we calculate room, day, start time and end time - starts */
 					if($resetTime == 1)
 					{
@@ -3030,7 +3224,7 @@ class SchedulingtimingsController extends AppController {
 								$normal_finish_time 	= $different_first_day_end_time;
 							}
 						}
-						
+
 						$start_time 	= $normal_starting_time;
 						$finish_time 	= date("H:i:s", strtotime('+ '.$eventSetupRoundJudTime.' minutes', strtotime($normal_starting_time)));
 					}
@@ -3044,7 +3238,7 @@ class SchedulingtimingsController extends AppController {
 					if(strtotime($finish_time)<=strtotime($normal_finish_time))
 					{
 						$resetTime = 0;
-					}	
+					}
 					else
 					{
 						$slotShift = $this->moveToNextRoomOrDay(
@@ -3067,47 +3261,47 @@ class SchedulingtimingsController extends AppController {
 						$normal_finish_time = $slotShift['normal_finish_time'];
 						$start_time = $slotShift['start_time'];
 						$finish_time = $slotShift['finish_time'];
-						
+
 						//echo $normal_starting_time;
 						//echo $normal_finish_time;
 					}
-					
-					
+
+
 					/* HERE WE NEED TO CHECK IF THIS ROOM ALREADY HAVING AN EVENT
 					THEN WE NEED TO CHANGE START/FINISH TIMINGS ON THAT BASIS
 					NOTE: We check ALL rooms in the same Room Allocation so that
 					rooms sharing a physical space are scheduled sequentially.
 					*/
-					
+
 					$condRAvail = array();
 					$_allocRoomIds = $this->getAllocationRoomIds($roomID);
 					$_allocRoomIdsStr = implode(',', $_allocRoomIds);
 					$condRAvail[] = "(Schedulingtimings.conventionseasons_id = '".$conventionSD->id."' AND Schedulingtimings.convention_id = '".$conventionSD->convention_id."')";
 					$condRAvail[] = "(Schedulingtimings.room_id IN ($_allocRoomIdsStr))";
-					
+
 					$condRAvail[] = "(Schedulingtimings.start_time IS NOT NULL AND Schedulingtimings.finish_time IS NOT NULL)";
-					
+
 					if($eventCTR>0)
 					{
 						$condRAvail[] = "(Schedulingtimings.is_bye = 0)";
 					}
-					
+
 					$checkRoomAvailability = $this->Schedulingtimings->find()->where($condRAvail)->order(["Schedulingtimings.sch_date_time" => "DESC","Schedulingtimings.finish_time" => "DESC"])->first();
-					
+
 					/* echo '<pre>';print_r($condRAvail);
 					echo '</pre>'; */
-					
+
 					if($checkRoomAvailability)
 					{	//$this->prx($checkRoomAvailability);
 						$availID = $checkRoomAvailability->id;
-						
+
 						$room_finish_time 	= date("H:i:s",strtotime($checkRoomAvailability->finish_time));
 						$bufferMin = isset($schedulingsD->buffer_minutes) && $schedulingsD->buffer_minutes !== null ? (int)$schedulingsD->buffer_minutes : 5;
 						$start_time 	= date("H:i:s", strtotime('+'.$bufferMin.' minutes', strtotime($room_finish_time)));
 						$finish_time 	= date("H:i:s", strtotime('+ '.$eventSetupRoundJudTime.' minutes', strtotime($start_time)));
 						$schStartDate 	= date('Y-m-d', strtotime($checkRoomAvailability->sch_date_time));
 						$schDay 		= $checkRoomAvailability->day;
-						
+
 						// suppose in this case, finish time reach to day end time, then shift to next day
 						if(strtotime($finish_time)>=strtotime($normal_finish_time))
 						{
@@ -3121,27 +3315,27 @@ class SchedulingtimingsController extends AppController {
 								$schStartDate = date('Y-m-d', strtotime($schStartDate . ' +1 day'));
 							}
 							$cntrDays++;
-							
+
 							$normal_starting_time 	= date("H:i:s",strtotime($schedulingsD->normal_starting_time));
 							$normal_finish_time 	= date("H:i:s",strtotime($schedulingsD->normal_finish_time));
-							
+
 							$start_time 	= $normal_starting_time;
 							$finish_time 	= date("H:i:s", strtotime('+ '.$eventSetupRoundJudTime.' minutes', strtotime($normal_starting_time)));
 						}
-						
+
 						if($schDay != $first_day)
 						{
 							$normal_starting_time 	= date("H:i:s",strtotime($schedulingsD->normal_starting_time));
 							$normal_finish_time 	= date("H:i:s",strtotime($schedulingsD->normal_finish_time));
 						}
-						
+
 						/* echo $schDay.'->'.$start_time.' :: '.$finish_time.'==eventid--'.$event_id.'---availID=====>'.$availID.'-----normal_starting_time==>'.$normal_starting_time.'--normal_finish_time==>'.$normal_finish_time;
 						echo '<br>'; */
 					}
-					
-					
-					
-					
+
+
+
+
 					/* Apply time constraints (lunch, breaks, sports, room restrictions) */
 					$tc = $this->applyTimeConstraints($schedulingsD, $eventSetupRoundJudTime, $roomID,
 						$start_time, $finish_time, $schDay, $schStartDate, $cntrDays);
@@ -3152,10 +3346,10 @@ class SchedulingtimingsController extends AppController {
 					$cntrDays = $tc['cntrDays'];
 					$normal_starting_time = date("H:i:s", strtotime($schedulingsD->normal_starting_time));
 					$normal_finish_time = date("H:i:s", strtotime($schedulingsD->normal_finish_time));
-					
-					
-					
-					
+
+
+
+
 					if (!$this->isSchedulableConventionDay($schDay)) {
 						$this->Schedulingtimings->updateAll(
 						[
@@ -3221,7 +3415,7 @@ class SchedulingtimingsController extends AppController {
 							$blockFinishTime = $finish_time;
 						}
 					}
-					
+
 					// update day, start time and end time
 					$this->Schedulingtimings->updateAll(
 					[
@@ -3229,43 +3423,43 @@ class SchedulingtimingsController extends AppController {
 					'day' 			=> $schDay,
 					'start_time' 	=> $start_time,
 					'finish_time' 	=> $finish_time,
-					
+
 					'sch_date_time' 	=> $schStartDate.' '.date("H:i:s", strtotime($start_time)),
-					
+
 					'modified' 		=> date("Y-m-d H:i:s")
 					],
 					["id" => $schdata->id]);
-					
+
 					$cntrEVSCH++;
-					
+
 					/* echo $schDay.'->'.$start_time.' :: '.$finish_time.'==eventid--'.$event_id.'---availID=====>'.$availID.'-----normal_finish_time==>'.$normal_finish_time;
 					echo '<br>'; */
-					
+
 				}
-			
+
 			}
-			
+
 			//echo '<hr>';
-			
-		$eventCTR++;	
-			
+
+		$eventCTR++;
+
 		}
-		
+
 		//exit;
 		//echo $cntrEVSCH;exit;
-		
+
 		//$this->Flash->success('Scheduling completed successfully for category 3.');
 		$this->redirect(['controller' => 'schedulingtimings', 'action' => 'startschedulec4', $convention_season_slug]);
-		
+
 	}
-	
-	
+
+
 	public function startschedulec4($convention_season_slug=null) {
-		
+
 		$conventionSD = $this->Conventionseasons->find()->where(['Conventionseasons.slug' => $convention_season_slug])->contain(["Conventions"])->first();
-		
+
 		//$this->prx($conventionSD);
-		
+
 		// to get details of schedule timings
 		$cfg = $this->loadSchedulingConfig($conventionSD);
 		$schedulingsD = $cfg['schedulingsD'];
@@ -3278,13 +3472,13 @@ class SchedulingtimingsController extends AppController {
 		$starting_different_time_first_day_yes_no = $cfg['starting_different_time_first_day_yes_no'];
 		$different_first_day_start_time = $cfg['different_first_day_start_time'];
 		$different_first_day_end_time = $cfg['different_first_day_end_time'];
-		
-		
+
+
 		/* TO GET ALL THE EVENTS WITH FOLLOWING CONDITIONS */
 		// group_event = no || event_kind_id = Sequential || needs_schedule = 1 || has_to_be_consecutive = yes
 		$arrEventsC4 = $this->getEventsForCategory($conventionSD, false, 'Sequential', true);
-		
-		
+
+
 		/* NOW GET STUDENTS FOR EACH EVENT */
 		$arrStudentsC4 = array();
 		foreach($arrEventsC4 as $event_id_c4)
@@ -3294,25 +3488,25 @@ class SchedulingtimingsController extends AppController {
 				$arrStudentsC4[$event_id_c4] = $students;
 			}
 		}
-		
-		
+
+
 		/* NOW FETCH STUDENTS FOR EACH EVENT AND PERFORM SCHEDULING */
 		foreach($arrStudentsC4 as $event_id_c4 => $studentsListC4)
-		{	
+		{
 			// to get event details
 			$eventD = $this->Events->find()->where(['Events.id' => $event_id_c4])->first();
-			
+
 			// shuffle array
 			shuffle($studentsListC4);
-			
+
 			foreach($studentsListC4 as $student_id)
 			{
-				/* Here we will check that this user_id is School Or student 
+				/* Here we will check that this user_id is School Or student
 				School means its a group event
 				Student means it's an individual event
 				*/
 				$fetchUserType = $this->fetchUserType($student_id);
-				
+
 				//now enter schedule timings
 				$schedulingtimings = $this->Schedulingtimings->newEntity();
 				$dataST = $this->Schedulingtimings->patchEntity($schedulingtimings, array());
@@ -3327,46 +3521,46 @@ class SchedulingtimingsController extends AppController {
 				$dataST->event_id_number 				= $eventD->event_id_number;
 				$dataST->user_id 						= $student_id;
 				$dataST->group_name 					= NULL;
-				
+
 				$dataST->room_id 						= NULL;
 				$dataST->day 							= NULL;
 				$dataST->start_time 					= NULL;
 				$dataST->finish_time 					= NULL;
-				
+
 				$dataST->created 						= date('Y-m-d H:i:s');
 				$dataST->modified 						= date('Y-m-d H:i:s');
-				
+
 				$dataST->sch_date_time 					= $start_date.' 00:00:00';
-				
+
 				$dataST->user_type 						= $fetchUserType;
 				//$this->prx($dataST);
 
 				$resultST = $this->Schedulingtimings->save($dataST);
 			}
-			
-			
+
+
 		}
-		
-		
+
+
 		/* IN ABOVE CODE, WE DEFINE SCHEDULING BUT NOT DEFINED DAY, START AND END TIME */
-		/* IN BELOW CODE WE WILL FETCH THIS SCHEDULING AGAIN FOR EACH EVENT ONE BY ONE AND DEFINE 
+		/* IN BELOW CODE WE WILL FETCH THIS SCHEDULING AGAIN FOR EACH EVENT ONE BY ONE AND DEFINE
 		DAY, START TIME AND END TIME */
-		
+
 		foreach($arrEventsC4 as $event_id)
 		{
 			// to get event details
 			$eventD = $this->Events->find()->where(['Events.id' => $event_id])->first();
-			
+
 			// to calculate event execution time
 			$eventSetupRoundJudTime 	= $eventD->setup_time+$eventD->round_time+$eventD->judging_time;
-			
+
 			// now check that if any room is allocated for this event
 			$roomResult = $this->findRoomsForEvent($conventionSD, $event_id);
 			$roomArrCSEvent = $roomResult['rooms'];
 			$eventSpbValue = $roomResult['spb'];
 			//$this->prx($roomArrCSEvent);
-			
-			
+
+
 			// check if there is rooms assigned for this event
 			if(count((array)$roomArrCSEvent))
 			{
@@ -3376,14 +3570,14 @@ class SchedulingtimingsController extends AppController {
 				$condST[] = "(Schedulingtimings.schedule_category = '4' AND Schedulingtimings.event_id = '".$event_id."')";
 				$schedulingT = $this->Schedulingtimings->find()->where($condST)->order(["Schedulingtimings.id" => "ASC"])->all();
 				//$this->prx($schedulingT);
-				
+
 				$cntrDays 		= 1;
 				$resetTime 		= 1;
 				$balancingDays = $this->getConventionBalancingDays($first_day, 4);
 				$balancedStartDay = $this->pickLeastLoadedStartDay($conventionSD->id, $balancingDays);
 				$schDay 		= !empty($balancedStartDay) ? $balancedStartDay : $first_day;
 				$schStartDate = $this->getDateForDayFromStart($start_date, $first_day, $schDay);
-				
+
 				$totalRoomsForThisEvent = count((array)$roomArrCSEvent);
 				// now firstly choose first room
 				$cntrRoomCSEvent 	= 0;
@@ -3391,7 +3585,7 @@ class SchedulingtimingsController extends AppController {
 				$blockCounter 		= 0; // tracks students in current block for students_per_block grouping
 				$blockStartTime 	= null;
 				$blockFinishTime 	= null;
-				
+
 				foreach($schedulingT as $schdata)
 				{
 					if($totalRoomsForThisEvent == 1)
@@ -3402,7 +3596,7 @@ class SchedulingtimingsController extends AppController {
 					{
 						$roomID = $roomArrCSEvent[$cntrRoomCSEvent];
 					}
-					
+
 					// Students per block grouping: if still within a block, reuse same time
 					if ($blockCounter > 0 && $blockCounter < $eventSpbValue && $blockStartTime !== null) {
 						$start_time = $blockStartTime;
@@ -3411,7 +3605,7 @@ class SchedulingtimingsController extends AppController {
 					} else {
 					// Start a new block — determine time via room availability check
 					$blockCounter = 1;
-					
+
 					/* HERE WE NEED TO CHECK IF THIS ROOM ALREADY HAVING AN EVENT
 					THEN WE NEED TO CHANGE START/FINISH TIMINGS ON THAT BASIS
 					NOTE: We check ALL rooms in the same Room Allocation so that
@@ -3421,10 +3615,10 @@ class SchedulingtimingsController extends AppController {
 					$_allocRoomIds = $this->getAllocationRoomIds($roomID);
 					$_allocRoomIdsStr = implode(',', $_allocRoomIds);
 					$condRAvail[] = "(Schedulingtimings.conventionseasons_id = '".$conventionSD->id."' AND Schedulingtimings.convention_id = '".$conventionSD->convention_id."' AND Schedulingtimings.room_id IN ($_allocRoomIdsStr) AND Schedulingtimings.start_time IS NOT NULL AND Schedulingtimings.finish_time IS NOT NULL)";
-					
+
 					$checkRoomAvailability = $this->Schedulingtimings->find()->where($condRAvail)->order(["Schedulingtimings.sch_date_time" => "DESC","Schedulingtimings.finish_time" => "DESC"])->first();
-					
-					
+
+
 					if($checkRoomAvailability)
 					{
 						$room_finish_time 	= date("H:i:s",strtotime($checkRoomAvailability->finish_time));
@@ -3433,27 +3627,27 @@ class SchedulingtimingsController extends AppController {
 						$finish_time 	= date("H:i:s", strtotime('+ '.$eventSetupRoundJudTime.' minutes', strtotime($start_time)));
 						$schStartDate 	= date('Y-m-d', strtotime($checkRoomAvailability->sch_date_time));
 						$schDay 		= $checkRoomAvailability->day;
-						
+
 						/* echo $schDay;  echo '<br>';
 						echo $normal_finish_time; echo '<br>';
 						echo $start_time; echo '<br>';
 						echo $finish_time; echo '<br>';
 						exit; */
-						
+
 						// suppose in this case, finish time reach to day end time, then shift to next day
 						if(strtotime($finish_time)>=strtotime($normal_finish_time))
 						{
 							$schDay = $this->getNextWeekDay($schDay);
 							//echo $schDay;exit;
-							
+
 							// change to next date
 							$schStartDate = date('Y-m-d', strtotime($schStartDate . ' +1 day'));
 							//echo 'here2';exit;
 							$cntrDays++;
-							
+
 							$normal_starting_time 	= date("H:i:s",strtotime($schedulingsD->normal_starting_time));
 							$normal_finish_time 	= date("H:i:s",strtotime($schedulingsD->normal_finish_time));
-							
+
 							$start_time 	= $normal_starting_time;
 							$finish_time 	= date("H:i:s", strtotime('+ '.$eventSetupRoundJudTime.' minutes', strtotime($normal_starting_time)));
 						}
@@ -3473,7 +3667,7 @@ class SchedulingtimingsController extends AppController {
 									$normal_finish_time 	= $different_first_day_end_time;
 								}
 							}
-							
+
 							$start_time 	= $normal_starting_time;
 							$finish_time 	= date("H:i:s", strtotime('+ '.$eventSetupRoundJudTime.' minutes', strtotime($start_time)));
 						}
@@ -3485,12 +3679,12 @@ class SchedulingtimingsController extends AppController {
 							$finish_time 	= date("H:i:s", strtotime('+ '.$eventSetupRoundJudTime.' minutes', strtotime($start_time)));
 						}
 						//exit;
-						
+
 						/* now check if finish time of this schedule is before day finish time or later */
 						if(strtotime($finish_time)<=strtotime($normal_finish_time))
 						{
 							$resetTime = 0;
-						}	
+						}
 						else
 						{
 							$slotShift = $this->moveToNextRoomOrDay(
@@ -3513,10 +3707,10 @@ class SchedulingtimingsController extends AppController {
 						}
 						////////////////////////////
 					}
-					
-					
-					
-					
+
+
+
+
 					/* Apply time constraints (lunch, breaks, sports, room restrictions) */
 					$room_id_tocheck = $roomArrCSEvent[$cntrRoomCSEvent];
 					$tc = $this->applyTimeConstraints($schedulingsD, $eventSetupRoundJudTime, $room_id_tocheck,
@@ -3528,14 +3722,14 @@ class SchedulingtimingsController extends AppController {
 					$cntrDays = $tc['cntrDays'];
 					$normal_starting_time = date("H:i:s", strtotime($schedulingsD->normal_starting_time));
 					$normal_finish_time = date("H:i:s", strtotime($schedulingsD->normal_finish_time));
-					
+
 					// Save the block's time so subsequent students in this block reuse it
 					$blockStartTime = $start_time;
 					$blockFinishTime = $finish_time;
-					
+
 					} // end of else (new block time determination)
-					
-					
+
+
 					if (!$this->isSchedulableConventionDay($schDay)) {
 						$this->Schedulingtimings->updateAll(
 						[
@@ -3553,7 +3747,7 @@ class SchedulingtimingsController extends AppController {
 
 					// True when this row is reusing an already chosen block slot.
 					$reuseBlockSlot = ($eventSpbValue > 1 && $blockCounter > 1 && $blockStartTime !== null);
-					
+
 					/* USER CONFLICT CHECK for Category 4 (individual events):
 					   Ensure this student is not already scheduled at this time */
 					if (!empty($schdata->user_id)) {
@@ -3577,7 +3771,7 @@ class SchedulingtimingsController extends AppController {
 							$blockFinishTime = $finish_time;
 						}
 					}
-					
+
 					/* ROOM CONFLICT CHECK for Category 4: Verify the room is
 					   not already booked at this time (including allocation siblings) */
 					if (!$reuseBlockSlot) {
@@ -3590,7 +3784,7 @@ class SchedulingtimingsController extends AppController {
 							$roomConflictRetries++;
 							$start_time = date("H:i:s", strtotime('+'.$eventSetupRoundJudTime.' minutes', strtotime($start_time)));
 							$finish_time = date("H:i:s", strtotime('+'.$eventSetupRoundJudTime.' minutes', strtotime($start_time)));
-							
+
 							if (strtotime($finish_time) > strtotime($normal_finish_time)) {
 								$schDay = $this->getNextWeekDay($schDay);
 								$schStartDate = date('Y-m-d', strtotime($schStartDate . ' +1 day'));
@@ -3640,20 +3834,20 @@ class SchedulingtimingsController extends AppController {
 							$blockFinishTime = $finish_time;
 						}
 					}
-					
+
 					$arrP = [
 					'room_id' 		=> $roomArrCSEvent[$cntrRoomCSEvent],
 					'day' 			=> $schDay,
 					'start_time' 	=> $start_time,
 					'finish_time' 	=> $finish_time,
-					
+
 					'sch_date_time' 	=> $schStartDate.' '.date("H:i:s", strtotime($start_time)),
-					
+
 					'modified' 		=> date("Y-m-d H:i:s")
 					];
 					//$this->pr($arrP);
 					//echo '<hr>';
-					
+
 					// update day, start time and end time
 					$this->Schedulingtimings->updateAll(
 					[
@@ -3661,24 +3855,24 @@ class SchedulingtimingsController extends AppController {
 					'day' 			=> $schDay,
 					'start_time' 	=> $start_time,
 					'finish_time' 	=> $finish_time,
-					
+
 					'sch_date_time' 	=> $schStartDate.' '.date("H:i:s", strtotime($start_time)),
-					
+
 					'modified' 		=> date("Y-m-d H:i:s")
 					],
 					["id" => $schdata->id]);
-					
+
 					$cntrEVSCH++;
-					
+
 				}
-				
+
 				//exit;
-			
+
 			}
-			
-			
+
+
 		}
-		
+
 		// Safety net: bye records should never consume a real slot.
 		$this->Schedulingtimings->updateAll(
 		[
@@ -3697,33 +3891,35 @@ class SchedulingtimingsController extends AppController {
 		);
 
 		$this->retryUnscheduledRows($conventionSD, $schedulingsD, $start_date, $first_day);
-		
+
 		//$this->Flash->success('Scheduling done for category 4.');
 		$this->redirect(['controller' => 'schedulingtimings', 'action' => 'fillgroupuserids', $convention_season_slug]);
-		
+
 	}
-	
+
 	public function fillgroupuserids($convention_season_slug=null)
 	{
 		$updateDateTime = date("Y-m-d H:i:s");
-		
+
 		// To get convention season details
 		$conventionSD = $this->Conventionseasons->find()->where(['Conventionseasons.slug' => $convention_season_slug])->contain(["Conventions"])->first();
-		
+
 		// Now fetch group events from Schedulings
 		$condGroupScht = array();
 		$condGroupScht[] = "(
-			Schedulingtimings.conventionseasons_id = '".$conventionSD->id."' AND 
-			Schedulingtimings.convention_id = '".$conventionSD->convention_id."' AND 
-			Schedulingtimings.season_id = '".$conventionSD->season_id."' AND 
-			Schedulingtimings.season_year = '".$conventionSD->season_year."' AND 
-			Schedulingtimings.user_type = 'School'  AND 
-			(Schedulingtimings.group_name != '' OR  Schedulingtimings.group_name != NULL) AND
-			(Schedulingtimings.group_name_opponent != '' OR  Schedulingtimings.group_name_opponent != NULL) AND
-			Schedulingtimings.user_id > 0 AND Schedulingtimings.user_id_opponent > 0 AND
-			Schedulingtimings.is_bye != 1 
+			Schedulingtimings.conventionseasons_id = '".$conventionSD->id."' AND
+			Schedulingtimings.convention_id = '".$conventionSD->convention_id."' AND
+			Schedulingtimings.season_id = '".$conventionSD->season_id."' AND
+			Schedulingtimings.season_year = '".$conventionSD->season_year."' AND
+			Schedulingtimings.user_type = 'School' AND
+			Schedulingtimings.is_bye != 1 AND
+			(
+				(Schedulingtimings.group_name IS NOT NULL AND Schedulingtimings.group_name != '' AND Schedulingtimings.user_id > 0)
+				OR
+				(Schedulingtimings.group_name_opponent IS NOT NULL AND Schedulingtimings.group_name_opponent != '' AND Schedulingtimings.user_id_opponent > 0)
+			)
 		)";
-		
+
 		// Fetch each schedule and check if there is any group name assigned
 		$schGroup = $this->Schedulingtimings
 					->find()
@@ -3733,151 +3929,116 @@ class SchedulingtimingsController extends AppController {
 		//$this->prx($schGroup);
 		foreach($schGroup as $schrecord)
 		{
-			// Now for each record, we need to get users of each group and group_opponent and fillgroupuserids
-			
-			// 1. First do for user_id, now fetch all users of this group for this user_id and this event
-			$groupUsersID = $this->Crstudentevents
-							->find()
-							->where(
-								[
-									'conventionseason_id' 	=> $conventionSD->id,
-									'user_id' 				=> $schrecord->user_id,
-									'event_id' 				=> $schrecord->event_id,
-									'group_name' 			=> $schrecord->group_name,
-								]
-							)
-							->select('student_id')
-							->order(["Crstudentevents.id" => "ASC"])
-							->all();
-			$studentIds = $groupUsersID->extract('student_id')->toArray();
-			//$this->prx($studentIds);
-			if(count($studentIds))
-			{
-				// Update record
-				$this->Schedulingtimings->updateAll(
-					[
-						'group_name_user_ids' => implode(",",$studentIds)
-					], 
-					[
-						"id" => $schrecord->id
-					]
-				);
+			// Side A: fill group_name_user_ids from crstudentevents (guard: group_name + user_id present)
+			if (!empty($schrecord->group_name) && $schrecord->user_id > 0) {
+				$groupUsersID = $this->Crstudentevents
+								->find()
+								->where(
+									[
+										'conventionseason_id' => $conventionSD->id,
+										'user_id'             => $schrecord->user_id,
+										'event_id'            => $schrecord->event_id,
+										'group_name'          => $schrecord->group_name,
+									]
+								)
+								->select('student_id')
+								->order(["Crstudentevents.id" => "ASC"])
+								->all();
+				$studentIds = $groupUsersID->extract('student_id')->toArray();
+				if (count($studentIds)) {
+					$this->Schedulingtimings->updateAll(
+						['group_name_user_ids' => implode(',', $studentIds)],
+						['id' => $schrecord->id]
+					);
+				}
 			}
-			
-			
-			
-			// 2. Now do for user_id_opponent, now fetch all users of this group for this user_id_opponent and this event
-			$groupUsersIDOpponent = $this->Crstudentevents
-							->find()
-							->where(
-								[
-									'conventionseason_id' 	=> $conventionSD->id,
-									'user_id' 				=> $schrecord->user_id_opponent,
-									'event_id' 				=> $schrecord->event_id,
-									'group_name' 			=> $schrecord->group_name_opponent,
-								]
-							)
-							->select('student_id')
-							->order(["Crstudentevents.id" => "ASC"])
-							->all();
-			$studentIdsOpponent = $groupUsersIDOpponent->extract('student_id')->toArray();
-			//$this->prx($studentIdsOpponent);
-			if(count($studentIdsOpponent))
-			{
-				// Update record
-				$this->Schedulingtimings->updateAll(
-					[
-						'group_name_opponent_user_ids' => implode(",",$studentIdsOpponent)
-					], 
-					[
-						"id" => $schrecord->id
-					]
-				);
+
+			// Side B: fill group_name_opponent_user_ids from crstudentevents (guard: group_name_opponent + user_id_opponent present)
+			if (!empty($schrecord->group_name_opponent) && $schrecord->user_id_opponent > 0) {
+				$groupUsersIDOpponent = $this->Crstudentevents
+								->find()
+								->where(
+									[
+										'conventionseason_id' => $conventionSD->id,
+										'user_id'             => $schrecord->user_id_opponent,
+										'event_id'            => $schrecord->event_id,
+										'group_name'          => $schrecord->group_name_opponent,
+									]
+								)
+								->select('student_id')
+								->order(["Crstudentevents.id" => "ASC"])
+								->all();
+				$studentIdsOpponent = $groupUsersIDOpponent->extract('student_id')->toArray();
+				if (count($studentIdsOpponent)) {
+					$this->Schedulingtimings->updateAll(
+						['group_name_opponent_user_ids' => implode(',', $studentIdsOpponent)],
+						['id' => $schrecord->id]
+					);
+				}
 			}
 		}
 		//exit;
-		
+
 		// Now check for conflicts
 		$this->redirect(['controller' => 'schedulingtimings', 'action' => 'listconflicts', $convention_season_slug]);
 	}
-	
-	
+
+
 	public function listconflicts($convention_season_slug=null)
 	{
 		// First we need to collect all students list of all schools
 		$conventionSD = $this->Conventionseasons->find()->where(['Conventionseasons.slug' => $convention_season_slug])->contain(["Conventions"])->first();
+		if (empty($conventionSD) || empty($conventionSD->id)) {
+			throw new \Cake\Http\Exception\NotFoundException('Invalid convention season slug.');
+		}
+
 		$schedulingD = $this->Schedulings->find()->where(['Schedulings.conventionseasons_id' => $conventionSD->id])->first();
 		$bufferMinutes = isset($schedulingD->buffer_minutes) && $schedulingD->buffer_minutes !== null ? (int)$schedulingD->buffer_minutes : 5;
 		$bufferSeconds = $bufferMinutes * 60;
-		
-		// To get list of all conflict
-		$condSchList = array();
-		$condSchList[] = "(
-			Schedulingtimings.conventionseasons_id = '".$conventionSD->id."' AND 
-			Schedulingtimings.convention_id = '".$conventionSD->convention_id."' AND 
-			Schedulingtimings.season_id = '".$conventionSD->season_id."' AND 
-			Schedulingtimings.season_year = '".$conventionSD->season_year."' AND 
-			Schedulingtimings.user_type = 'Student' AND 
-			Schedulingtimings.user_id > 0 AND 
-			Schedulingtimings.is_bye != 1 
-			
-		)";
-		// Fetch each schedule and check if there is any group name assigned
+
+		// Fetch ALL non-bye placed rows for the season (both Student and School user_type)
+		// so that group event participants are included in conflict detection.
+		$condSchList = [
+			"Schedulingtimings.conventionseasons_id = '".$conventionSD->id."'",
+			"Schedulingtimings.is_bye != 1",
+			"Schedulingtimings.start_time IS NOT NULL",
+			"Schedulingtimings.day IS NOT NULL",
+		];
 		$schedulingtimings = $this->Schedulingtimings
 			->find()
 			->where($condSchList)
 			->order(["Schedulingtimings.id" => "ASC"])
 			->all();
-		
-		// Step 2: Normalize - build a mapping of user_id → their schedules
+
+		// Step 2: Normalize - build a mapping of participant_id → their scheduled slots.
+		// Uses getTimingParticipantIds() which does a live crstudentevents lookup for group
+		// rows, so conflicts are detected even when group_name_user_ids CSVs are unpopulated.
 		$userSchedules = [];
-		
-		
+
 		foreach($schedulingtimings as $schrecord)
 		{
-			$day 	= $schrecord->day;
-			$start 	= strtotime($schrecord->start_time);
-			$end   	= strtotime($schrecord->finish_time);
+			$day   = $schrecord->day;
+			$start = strtotime($schrecord->start_time);
+			$end   = strtotime($schrecord->finish_time);
 
-			// Direct user_id
-			if ($schrecord->user_id) {
-				$userSchedules[$schrecord->user_id][] = [
-					'id' => $schrecord->id,
-					'day' => $day,
-					'start' => $start,
-					'end' => $end
-				];
-			}
-			
-			// Direct user_id_opponent
-			if ($schrecord->user_id_opponent) {
-				$userSchedules[$schrecord->user_id_opponent][] = [
-					'id' => $schrecord->id,
-					'day' => $day,
-					'start' => $start,
-					'end' => $end
-				];
+			if (!$day || !$start || !$end) {
+				continue;
 			}
 
-			// Group members
-			foreach (['group_name_user_ids', 'group_name_opponent_user_ids'] as $col) {
-				if (!empty($schrecord[$col])) {
-					$ids = array_map('trim', explode(',', $schrecord[$col]));
-					foreach ($ids as $uid) {
-						if ($uid > 0) {
-							$userSchedules[$uid][] = [
-								'id' => $schrecord['id'],
-								'day' => $day,
-								'start' => $start,
-								'end' => $end
-							];
-						}
-					}
+			$participantIds = $this->getTimingParticipantIds($schrecord, $conventionSD->id);
+
+			foreach ($participantIds as $uid) {
+				if ($uid > 0) {
+					$userSchedules[$uid][] = [
+						'id'    => $schrecord->id,
+						'day'   => $day,
+						'start' => $start,
+						'end'   => $end,
+					];
 				}
 			}
-			
 		}
-		
+
 		// Step 3: Detect conflicts
 		$conflicts = [];
 
@@ -3899,7 +4060,7 @@ class SchedulingtimingsController extends AppController {
 				}
 			}
 		}
-		
+
 		//$this->prx($conflicts);
 
 		// Step 4: Output
@@ -3907,16 +4068,17 @@ class SchedulingtimingsController extends AppController {
 		$conflictDBAutoID 	= [];
 		foreach ($conflicts as $uid => $conflictList) {
 			$conflictUIDS[] = $uid;
-			
+
 			// Get db ids of schedules
 			foreach ($conflictList as $row) {
 				$conflictDBAutoID[] = $row['schedule1'];
 				$conflictDBAutoID[] = $row['schedule2'];
 			}
 		}
-		
+
 		$finalDBAutoIDUnique = array_values(array_unique($conflictDBAutoID));
-		
+		$finalGroupSchDBIDs = [];
+
 		// Save conflicted user ids in database
 		if(count($conflictUIDS)>0)
 		{
@@ -3926,7 +4088,7 @@ class SchedulingtimingsController extends AppController {
 		{
 			$this->Schedulings->updateAll(['conflict_user_ids' => NULL], ["conventionseasons_id" => $conventionSD->id]);
 		}
-		
+
 		// Now filter group db ids where conflict found
 		if(count($finalDBAutoIDUnique)>0)
 		{
@@ -3952,7 +4114,15 @@ class SchedulingtimingsController extends AppController {
 		{
 			$this->Schedulings->updateAll(['conflict_user_ids_group' => NULL], ["conventionseasons_id" => $conventionSD->id]);
 		}
-		
+
+		$this->saveConflictAuditRun(
+			$conventionSD,
+			count($conflictUIDS),
+			count($finalGroupSchDBIDs),
+			count($finalDBAutoIDUnique),
+			'Auto-run after listconflicts computation'
+		);
+
 		// If conflicts exist, chain straight into auto-resolve — no manual button needed
 		if(count($conflictUIDS) > 0 || count($finalGroupSchDBIDs ?? []) > 0)
 		{
@@ -3981,30 +4151,30 @@ class SchedulingtimingsController extends AppController {
 			}
 		}
 	}
-	
-	
+
+
 	/* public function listconflictsgroups($convention_season_slug=null)
 	{
 		// Sudhir - starts from here
 		$this->redirect(['controller' => 'schedulings', 'action' => 'schedulecategory', $convention_season_slug]);
-		
+
 		// First we need to collect all students list of all schools
 		$conventionSD = $this->Conventionseasons->find()->where(['Conventionseasons.slug' => $convention_season_slug])->contain(["Conventions"])->first();
-		
+
 		// To get list of all conflict
 		$condSchList = array();
 		$condSchList[] = "(
-			Schedulingtimings.conventionseasons_id = '".$conventionSD->id."' AND 
-			Schedulingtimings.convention_id = '".$conventionSD->convention_id."' AND 
-			Schedulingtimings.season_id = '".$conventionSD->season_id."' AND 
-			Schedulingtimings.season_year = '".$conventionSD->season_year."' AND 
-			Schedulingtimings.user_type = 'School' AND 
-			Schedulingtimings.user_id > 0 AND 
-			Schedulingtimings.user_id_opponent > 0 AND  
-			(Schedulingtimings.group_name_user_ids != '' OR Schedulingtimings.group_name_user_ids != NULL) AND 
-			(Schedulingtimings.group_name_opponent_user_ids != '' OR Schedulingtimings.group_name_opponent_user_ids != NULL) AND 
-			Schedulingtimings.is_bye != 1 
-			
+			Schedulingtimings.conventionseasons_id = '".$conventionSD->id."' AND
+			Schedulingtimings.convention_id = '".$conventionSD->convention_id."' AND
+			Schedulingtimings.season_id = '".$conventionSD->season_id."' AND
+			Schedulingtimings.season_year = '".$conventionSD->season_year."' AND
+			Schedulingtimings.user_type = 'School' AND
+			Schedulingtimings.user_id > 0 AND
+			Schedulingtimings.user_id_opponent > 0 AND
+			(Schedulingtimings.group_name_user_ids != '' OR Schedulingtimings.group_name_user_ids != NULL) AND
+			(Schedulingtimings.group_name_opponent_user_ids != '' OR Schedulingtimings.group_name_opponent_user_ids != NULL) AND
+			Schedulingtimings.is_bye != 1
+
 		)";
 		// Fetch each schedule and check if there is any group name assigned
 		$schedulingtimings = $this->Schedulingtimings
@@ -4012,11 +4182,11 @@ class SchedulingtimingsController extends AppController {
 			->where($condSchList)
 			->order(["Schedulingtimings.id" => "ASC"])
 			->all();
-		
+
 		// Step 2: Normalize - build a mapping of user_id → their schedules
 		$userSchedules = [];
-		
-		
+
+
 		foreach($schedulingtimings as $schrecord)
 		{
 			$day 	= $schrecord->day;
@@ -4032,7 +4202,7 @@ class SchedulingtimingsController extends AppController {
 					'end' => $end
 				];
 			}
-			
+
 			// Direct user_id_opponent
 			if ($schrecord->user_id_opponent) {
 				$userSchedules[$schrecord->user_id_opponent][] = [
@@ -4059,11 +4229,11 @@ class SchedulingtimingsController extends AppController {
 					}
 				}
 			}
-			
+
 		}
-		
+
 		//$this->prx($userSchedules);
-		
+
 		// Step 3: Detect conflicts
 		$conflicts = [];
 
@@ -4086,7 +4256,7 @@ class SchedulingtimingsController extends AppController {
 				}
 			}
 		}
-		
+
 		//$this->prx($conflicts);
 
 		// Step 4: Output
@@ -4094,26 +4264,26 @@ class SchedulingtimingsController extends AppController {
 		$conflictDBAutoID 	= [];
 		foreach ($conflicts as $uid => $conflictList) {
 			$conflictUIDS[] = $uid;
-			
+
 			// Get db ids of schedules
 			foreach ($conflictList as $row) {
 				$conflictDBAutoID[] = $row['schedule1'];
 				$conflictDBAutoID[] = $row['schedule2'];
 			}
 		}
-		
+
 		$finalDBAutoIDUnique = array_values(array_unique($conflictDBAutoID));
-		
-		
-		
+
+
+
 		//$msG = 'Scheduling completed successfully.';
-		
+
 		// Save conflicted user ids in database
 		if(count($conflictUIDS)>0)
 		{
 			$this->Schedulings->updateAll(['conflict_user_ids_group' => implode(",",$conflictUIDS)], ["conventionseasons_id" => $conventionSD->id]);
 			$msG .= ' There are some conflicts found. Click on resolve conflict button below and resolve conflicts.';
-			
+
 			// Now filter group db ids where conflict found
 			if(count($finalDBAutoIDUnique)>0)
 			{
@@ -4128,7 +4298,7 @@ class SchedulingtimingsController extends AppController {
 						$finalGroupSchDBIDs[] = $group_db_id;
 					}
 				}
-				
+
 				// Now update to db
 				if(count($finalGroupSchDBIDs)>0)
 				{
@@ -4136,25 +4306,25 @@ class SchedulingtimingsController extends AppController {
 				}
 			}
 		}
-		
+
 		$this->prx($finalDBAutoIDUnique);
-		
+
 		$this->Flash->success($msG);
 		$this->redirect(['controller' => 'schedulings', 'action' => 'schedulecategory', $convention_season_slug]);
 	} */
-	
-	
-	
+
+
+
 	/* public function removeoverlapping_noneed($convention_season_slug=null)
-	{	
+	{
 		// First we need to collect all students list of all schools
 		$conventionSD = $this->Conventionseasons->find()->where(['Conventionseasons.slug' => $convention_season_slug])->contain(["Conventions"])->first();
-		
+
 		$condSchList = array();
 		$condSchList[] = "(
-			Schedulingtimings.conventionseasons_id = '".$conventionSD->id."' AND 
-			Schedulingtimings.convention_id = '".$conventionSD->convention_id."' AND 
-			Schedulingtimings.season_id = '".$conventionSD->season_id."' AND 
+			Schedulingtimings.conventionseasons_id = '".$conventionSD->id."' AND
+			Schedulingtimings.convention_id = '".$conventionSD->convention_id."' AND
+			Schedulingtimings.season_id = '".$conventionSD->season_id."' AND
 			Schedulingtimings.season_year = '".$conventionSD->season_year."'
 		)";
 		// Fetch each schedule and check if there is any group name assigned
@@ -4163,25 +4333,25 @@ class SchedulingtimingsController extends AppController {
 			->where($condSchList)
 			->order(["Schedulingtimings.id" => "ASC"])
 			->all();
-			
+
 		$arrallStudents= array();
-		
+
 		foreach($schedulingtimings as $recordsch)
 		{
 			// Individual events
 			if($recordsch->user_type == 'Student')
-			{	
+			{
 				if(!in_array($recordsch->user_id,$arrallStudents) && $recordsch->user_id>0)
 				{
 					$arrallStudents[] = $recordsch->user_id;
 				}
-				
+
 				if(!in_array($recordsch->user_id_opponent,$arrallStudents) && $recordsch->user_id_opponent>0)
 				{
 					$arrallStudents[] = $recordsch->user_id_opponent;
 				}
 			}
-			
+
 			// Group events
 			if($recordsch->user_type == 'School')
 			{
@@ -4196,7 +4366,7 @@ class SchedulingtimingsController extends AppController {
 						}
 					}
 				}
-				
+
 				if(!empty($recordsch->group_name_opponent_user_ids) && $recordsch->group_name_opponent_user_ids != NULL)
 				{
 					$group_name_opponent_user_ids_explode = explode(",",$recordsch->group_name_opponent_user_ids);
@@ -4210,19 +4380,19 @@ class SchedulingtimingsController extends AppController {
 				}
 			}
 		}
-		
+
 		echo implode(",",$arrallStudents);
-		
+
 		$this->prx($arrallStudents);
 	} */
-	
-	
+
+
 	public function conflictdone($convention_season_slug=null) {
-		
+
 		$this->Flash->success('Scheduling completed successfully. Overlapping and conflicts removed successfully.');
-		
+
 		$this->redirect(['controller' => 'schedulings', 'action' => 'schedulecategory', $convention_season_slug]);
-		
+
 	}
 
 	/**
