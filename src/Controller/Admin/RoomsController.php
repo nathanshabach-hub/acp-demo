@@ -16,13 +16,6 @@ class RoomsController extends AppController {
         $this->loadComponent('Paginator');
         $this->loadComponent('Flash');
         $this->loadModel('Rooms');
-        $action = $this->request->getParam('action');
-        $loggedAdminId = $this->request->getSession()->read('admin_id');
-        if ($action != 'forgotPassword' && $action != 'logout') {
-            if (!$loggedAdminId && $action != "login" && $action != 'captcha') {
-                $this->redirect(['controller' => 'admins', 'action' => 'login']);
-            }
-        }
     }
 
     public function index() {
@@ -179,37 +172,37 @@ class RoomsController extends AppController {
         $this->set('manageRooms', '1');
 
         if ($this->request->is('post')) {
-            
+
             if (empty($this->request->getData()['import_file']['name'])) {
                 $this->Flash->error('Please select a file to import.');
                 $this->redirect(['controller' => 'rooms', 'action' => 'importexcel']);
                 return;
             }
-            
+
             $file = $this->request->getData()['import_file'];
             $fileName = $file['name'];
             $fileTmp = $file['tmp_name'];
             $fileExt = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
-            
+
             // Validate file type
             if (!in_array($fileExt, ['csv', 'xlsx', 'xls'])) {
                 $this->Flash->error('Invalid file format. Supported formats: CSV, XLSX, XLS');
                 $this->redirect(['controller' => 'rooms', 'action' => 'importexcel']);
                 return;
             }
-            
+
             $rooms = [];
-            
+
             try {
                 if ($fileExt === 'csv') {
                     // Handle CSV
                     $handle = fopen($fileTmp, 'r');
                     $header = fgetcsv($handle);
-                    
+
                     // Find column indices
                     $roomNameCol = -1;
                     $descCol = -1;
-                    
+
                     foreach ($header as $idx => $col) {
                         $col_lower = strtolower(trim($col));
                         if (strpos($col_lower, 'room') !== false && strpos($col_lower, 'name') !== false) {
@@ -219,11 +212,11 @@ class RoomsController extends AppController {
                             $descCol = $idx;
                         }
                     }
-                    
+
                     if ($roomNameCol === -1) {
                         throw new \Exception('CSV must contain a "Room Name" column');
                     }
-                    
+
                     while (($row = fgetcsv($handle)) !== false) {
                         if (!empty(trim($row[$roomNameCol]))) {
                             $rooms[] = [
@@ -233,26 +226,26 @@ class RoomsController extends AppController {
                         }
                     }
                     fclose($handle);
-                    
+
                 } else {
                     // Handle Excel (XLSX/XLS) using PHPExcel
                     require_once(ROOT . '/vendors/PHPExcel/Classes/PHPExcel.php');
-                    
+
                     $objPHPExcel = \PHPExcel_IOFactory::load($fileTmp);
                     $objWorksheet = $objPHPExcel->getActiveSheet();
                     $highestRow = $objWorksheet->getHighestRow();
                     $highestCol = $objWorksheet->getHighestColumn();
-                    
+
                     // Read header
                     $header = [];
                     for ($col = 'A'; $col !== $highestCol; $col++) {
                         $header[] = strtolower(trim($objWorksheet->getCell($col . '1')->getValue()));
                     }
-                    
+
                     // Find column indices
                     $roomNameCol = -1;
                     $descCol = -1;
-                    
+
                     foreach ($header as $idx => $col) {
                         if (strpos($col, 'room') !== false && strpos($col, 'name') !== false) {
                             $roomNameCol = $idx;
@@ -261,22 +254,22 @@ class RoomsController extends AppController {
                             $descCol = $idx;
                         }
                     }
-                    
+
                     if ($roomNameCol === -1) {
                         throw new \Exception('Excel must contain a "Room Name" column');
                     }
-                    
+
                     // Read data rows
                     for ($row = 2; $row <= $highestRow; $row++) {
                         $col_array = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'];
                         $roomName = trim($objWorksheet->getCell($col_array[$roomNameCol] . $row)->getValue());
-                        
+
                         if (!empty($roomName)) {
                             $description = '';
                             if ($descCol !== -1) {
                                 $description = trim($objWorksheet->getCell($col_array[$descCol] . $row)->getValue());
                             }
-                            
+
                             $rooms[] = [
                                 'name' => $roomName,
                                 'description' => $description
@@ -284,23 +277,23 @@ class RoomsController extends AppController {
                         }
                     }
                 }
-                
+
                 // Insert rooms
                 $insertedCount = 0;
                 $skippedCount = 0;
                 $errors = [];
-                
+
                 foreach ($rooms as $roomData) {
                     // Check if room already exists
                     $exists = $this->Rooms->find()
                         ->where(['Rooms.name' => $roomData['name']])
                         ->first();
-                    
+
                     if ($exists) {
                         $skippedCount++;
                         continue;
                     }
-                    
+
                     // Create new room
                     $newRoom = $this->Rooms->newEntity();
                     $newRoom->name = $roomData['name'];
@@ -308,14 +301,14 @@ class RoomsController extends AppController {
                     $newRoom->slug = 'room-' . time() . '-' . rand(10, 100000);
                     $newRoom->status = 1;
                     $newRoom->created = date('Y-m-d H:i:s');
-                    
+
                     if ($this->Rooms->save($newRoom)) {
                         $insertedCount++;
                     } else {
                         $errors[] = "Failed to insert: " . $roomData['name'];
                     }
                 }
-                
+
                 if ($insertedCount > 0) {
                     $message = "Successfully imported $insertedCount room(s).";
                     if ($skippedCount > 0) {
@@ -327,17 +320,17 @@ class RoomsController extends AppController {
                 } else {
                     $this->Flash->error('No rooms were imported.');
                 }
-                
+
                 if (!empty($errors)) {
                     foreach ($errors as $error) {
                         $this->Flash->error($error);
                     }
                 }
-                
+
             } catch (\Exception $e) {
                 $this->Flash->error('Error processing file: ' . $e->getMessage());
             }
-            
+
             $this->redirect(['controller' => 'rooms', 'action' => 'index']);
         }
     }

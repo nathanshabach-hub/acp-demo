@@ -17,14 +17,6 @@ class EvaluationareasController extends AppController {
         parent::initialize();
         $this->loadComponent('Paginator');
         $this->loadComponent('Flash');
-        $action = $this->request->getParam('action');
-        $loggedAdminId = $this->request->getSession()->read('admin_id');
-        if ($action != 'forgotPassword' && $action != 'logout') {
-            if (!$loggedAdminId && $action != "login" && $action != 'captcha') {
-                $this->redirect(['controller' => 'admins', 'action' => 'login']);
-            }
-        }
-		
 		$this->loadModel('Evaluationforms');
 		$this->loadModel('Evaluationcategories');
 		$this->loadModel('Evaluationquestions');
@@ -36,7 +28,7 @@ class EvaluationareasController extends AppController {
         $this->viewBuilder()->setLayout('admin');
         $this->set('manageEvaluations', '1');
         $this->set('formsList', '1');
-		
+
 		if ($form_slug) {
             $formD = $this->Evaluationforms->find()->where(['Evaluationforms.slug' => $form_slug])->first();
             $form_id = $formD->id;
@@ -53,7 +45,7 @@ class EvaluationareasController extends AppController {
 			$this->Flash->error('Invalid action.');
             $this->redirect(['controller' => 'evaluationforms', 'action' => 'index']);
 		}
-		
+
 		$categoryDD = $this->Evaluationcategories->find()->where([])->order(['Evaluationcategories.name' => 'ASC'])->combine('id', 'name')->toArray();
 		$this->set('categoryDD', $categoryDD);
 
@@ -123,10 +115,10 @@ class EvaluationareasController extends AppController {
     public function add($form_slug=null) {
         $this->set('title', ADMIN_TITLE . 'Add Area');
         $this->viewBuilder()->setLayout('admin');
-		
+
         $this->set('manageEvaluations', '1');
         $this->set('formsList', '1');
-		
+
 		if ($form_slug) {
             $formD = $this->Evaluationforms->find()->where(['Evaluationforms.slug' => $form_slug])->first();
             $form_id = $formD->id;
@@ -143,24 +135,24 @@ class EvaluationareasController extends AppController {
 			$this->Flash->error('Invalid action.');
             $this->redirect(['controller' => 'evaluationforms', 'action' => 'index']);
 		}
-		
+
 		$categoryDD = $this->Evaluationcategories->find()->where([])->order(['Evaluationcategories.name' => 'ASC'])->combine('id', 'name')->toArray();
 		$this->set('categoryDD', $categoryDD);
-		
+
 		$questionsDD = $this->Evaluationquestions->find()->where([])->order(['Evaluationquestions.question' => 'ASC'])->combine('id', 'question')->toArray();
 		$this->set('questionsDD', $questionsDD);
-		
+
         $evaluationareas = $this->Evaluationareas->newEntity();
         if ($this->request->is('post')) {
-			
+
             //$this->prx($this->request->getData());
             $requestData = $this->request->getData();
-			
+
             $evaluationquestion_ids = isset($requestData['Evaluationareas']['evaluationquestion_ids']) ? (array)$requestData['Evaluationareas']['evaluationquestion_ids'] : [];
 			$evaluationquestion_ids_implode = implode(",",$evaluationquestion_ids);
-			
+
             $data = $this->Evaluationareas->patchEntity($evaluationareas, $requestData);
-			
+
 			// to check that this category already added for this form
 			$checkFlag = 1;
 			$checkCatForm = $this->Evaluationareas->find()->where(['Evaluationareas.evaluationform_id' => $form_id,'Evaluationareas.evaluationcategory_id' => $data->evaluationcategory_id])->first();
@@ -168,11 +160,11 @@ class EvaluationareasController extends AppController {
 			{
 				$checkFlag = 0;
 				$this->Flash->error('You have already added this category for this form.');
-				
+
 				$questionsDD = $this->Evaluationquestions->find()->where(['Evaluationquestions.evaluationcategory_id' => $data->evaluationcategory_id])->order(['Evaluationquestions.question' => 'ASC'])->combine('id', 'question')->toArray();
 				$this->set('questionsDD', $questionsDD);
 			}
-			
+
             if (count($data->getErrors()) == 0 && $checkFlag == 1) {
 
 				$slug = $this->getSlug('form-area-' . time(), 'Evaluationareas');
@@ -180,10 +172,10 @@ class EvaluationareasController extends AppController {
                 $data->status 			= 1;
                 $data->created 			= date('Y-m-d H:i:s');
                 $data->modified 		= NULL;
-				
+
 				$data->evaluationform_id 			= $formD->id;
 				$data->evaluationquestion_ids 		= $evaluationquestion_ids_implode;
-				
+
                 if ($this->Evaluationareas->save($data)) {
                     $this->Flash->success('Area added successfully.');
                     $this->redirect(['controller' => 'evaluationareas', 'action' => 'index',$form_slug]);
@@ -198,10 +190,10 @@ class EvaluationareasController extends AppController {
     public function edit($form_slug=null,$record_slug = null) {
         $this->set('title', ADMIN_TITLE . 'Edit Question');
         $this->viewBuilder()->setLayout('admin');
-        
+
 		$this->set('manageEvaluations', '1');
         $this->set('formsList', '1');
-		
+
 		if ($form_slug) {
             $formD = $this->Evaluationforms->find()->where(['Evaluationforms.slug' => $form_slug])->first();
             $form_id = $formD->id;
@@ -218,15 +210,15 @@ class EvaluationareasController extends AppController {
 			$this->Flash->error('Invalid action.');
             $this->redirect(['controller' => 'evaluationforms', 'action' => 'index']);
 		}
-		
+
 		if ($record_slug) {
             $areaD = $this->Evaluationareas->find()->where(['Evaluationareas.slug' => $record_slug])->first();
             $uid = $areaD->id;
         }
-		
+
 		$categoryDD = $this->Evaluationcategories->find()->where([])->order(['Evaluationcategories.name' => 'ASC'])->combine('id', 'name')->toArray();
 		$this->set('categoryDD', $categoryDD);
-		
+
 		$questionsDD = array();
 		$questionsListCat = $this->Evaluationquestions->find()->where(['Evaluationquestions.evaluationcategory_id' => $areaD->evaluationcategory_id])->order(['Evaluationquestions.question' => 'ASC'])->order(["Evaluationquestions.id" =>"ASC"]);
 		foreach($questionsListCat as $catquestion)
@@ -234,17 +226,17 @@ class EvaluationareasController extends AppController {
 			$questionsDD[$catquestion->id] = $catquestion->question.' ('.$catquestion->max_points.')';
 		}
 		$this->set('questionsDD', $questionsDD);
-        
-		
+
+
         $evaluationareas = $this->Evaluationareas->get($uid);
         if ($this->request->is(['post', 'put'])) {
-            
+
             $requestData = $this->request->getData();
             $evaluationquestion_ids = isset($requestData['Evaluationareas']['evaluationquestion_ids']) ? (array)$requestData['Evaluationareas']['evaluationquestion_ids'] : [];
 			$evaluationquestion_ids_implode = implode(",",$evaluationquestion_ids);
-			
+
             $data = $this->Evaluationareas->patchEntity($evaluationareas, $requestData);
-			
+
 			// to check that this category already added for this form
 			$checkFlag = 1;
 			if($data->evaluationcategory_id != $data->evaluationcategory_id_old)
@@ -254,17 +246,17 @@ class EvaluationareasController extends AppController {
 				{
 					$checkFlag = 0;
 					$this->Flash->error('You have already added this category for this form.');
-					
+
 					$questionsDD = $this->Evaluationquestions->find()->where(['Evaluationquestions.evaluationcategory_id' => $data->evaluationcategory_id])->order(['Evaluationquestions.question' => 'ASC'])->combine('id', 'question')->toArray();
 					$this->set('questionsDD', $questionsDD);
 				}
 			}
-			
+
             if (count($data->getErrors()) == 0 && $checkFlag == 1) {
 				$data->modified = date("Y-m-d H:i:s");
-				
+
 				$data->evaluationquestion_ids 		= $evaluationquestion_ids_implode;
-				
+
                 if ($this->Evaluationareas->save($data)) {
                     $this->Flash->success('Area details updated successfully.');
                     $this->redirect(['controller' => 'evaluationareas', 'action' => 'index',$form_slug]);
@@ -275,7 +267,7 @@ class EvaluationareasController extends AppController {
         }
         $this->set('evaluationareas', $evaluationareas);
     }
-	
+
 	public function activatequestion($slug = null) {
         if ($slug != '') {
             $this->viewBuilder()->setLayout("");
@@ -297,9 +289,9 @@ class EvaluationareasController extends AppController {
             $this->render('update_status');
         }
     }
-	
+
 	public function deletearea($form_slug = null,$record_slug = null) {//exit;
-		
+
         if ($form_slug) {
             $formD = $this->Evaluationforms->find()->where(['Evaluationforms.slug' => $form_slug])->first();
             $form_id = $formD->id;
@@ -314,13 +306,13 @@ class EvaluationareasController extends AppController {
 			$this->Flash->error('Invalid action.');
             $this->redirect(['controller' => 'evaluationforms', 'action' => 'index']);
 		}
-		
+
 		// to chek if question exists
 		if($record_slug)
 		{
 			// to get details of question
 			$areaD = $this->Evaluationareas->find()->where(['Evaluationareas.slug' => $record_slug])->first();
-			
+
 			if($areaD)
 			{
 				$this->Evaluationareas->deleteAll(["slug" => $record_slug]);
@@ -335,7 +327,7 @@ class EvaluationareasController extends AppController {
 		{
 			$this->Flash->error('Invalid details.');
 		}
-		
+
         $this->redirect(['controller' => 'evaluationareas', 'action' => 'index',$form_slug]);
     }
 

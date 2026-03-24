@@ -17,14 +17,6 @@ class AdvertisementsController extends AppController {
         parent::initialize();
         $this->loadComponent('Paginator');
         $this->loadComponent('Flash');
-        $action = $this->request->getParam('action');
-        $loggedAdminId = $this->request->getSession()->read('admin_id');
-        if ($action != 'forgotPassword' && $action != 'logout') {
-            if (!$loggedAdminId && $action != "login" && $action != 'captcha') {
-                $this->redirect(['controller' => 'admins', 'action' => 'login']);
-            }
-        }
-		
 		$this->loadModel("Amenities");
         $this->loadModel("Cities");
     }
@@ -114,10 +106,10 @@ class AdvertisementsController extends AppController {
     }
 
     public function deletead($slug = null) {
-        
+
 		// to get details of category
 		$catDetails = $this->Advertisements->find()->where(['Advertisements.slug' => $slug])->first();
-		
+
 		$this->Advertisements->deleteAll(["slug" => $slug]);
         $this->Flash->success('Ads details deleted successfully.');
         $this->redirect(['controller' => 'advertisements', 'action' => 'index']);
@@ -126,60 +118,60 @@ class AdvertisementsController extends AppController {
     public function edit($slug = null) {
         $this->set('title', ADMIN_TITLE . 'Edit Ad');
         $this->viewBuilder()->setLayout('admin');
-        
+
 		$this->set('manageAds', '1');
         $this->set('adsList', '1');
-		
+
 		global $adsActivity;
 		$this->set('adsActivity', $adsActivity);
-		
+
 		global $adsHousingType;
 		$this->set('adsHousingType', $adsHousingType);
-		
+
 		global $adsFurnishTypes;
 		$this->set('adsFurnishTypes', $adsFurnishTypes);
-		
+
 		global $adsSellingType;
 		$this->set('adsSellingType', $adsSellingType);
-		
+
 		global $yesNoDD;
 		$this->set('yesNoDD', $yesNoDD);
-		
+
 		global $adsSellingCondition;
 		$this->set('adsSellingCondition', $adsSellingCondition);
-		
+
 		$amenitiesDD = $this->Amenities->find()->where(['Amenities.status' => 1])->order(['Amenities.name' => 'ASC'])->combine('id', 'name')->toArray();
 		$this->set('amenitiesDD', $amenitiesDD);
 
         $cities = $this->Cities->find()->where(['Cities.status' => 1])->order(['Cities.name' => 'ASC'])->combine('id', 'name')->toArray();
 		$this->set('cities', $cities);
-		
+
         if ($slug) {
             $categories1 = $this->Advertisements->find()->where(['Advertisements.slug' => $slug])->first();
             $uid = $categories1->id;
         }
-		
+
         $advertisements = $this->Advertisements->get($uid);
         if ($this->request->is(['post', 'put'])) {
 			$requestData = $this->request->getData();
             $data = $this->Advertisements->patchEntity($advertisements, $requestData);
-			
+
 			$msgLL = '';
             if (count($data->getErrors()) == 0) {
                 //$data->name = trim($this->request->getData()['Advertisements']['name']);
-				
+
 				$data->date_available = date("Y-m-d",strtotime($data->date_available));
-				
+
 				$renting_amenities = $requestData['Advertisements']['renting_amenities'];
 				if(count($renting_amenities))
 					$rentingAmenities = implode(",",$renting_amenities);
 				else
 					$rentingAmenities = '';
-				
+
 				$data->renting_amenities = $rentingAmenities;
-				
+
 				$data->modified = date("Y-m-d");
-				
+
 				if($data->activity_sell_rent == "Selling")
 				{
 					if($data->housing_type == "Plots of land")
@@ -195,7 +187,7 @@ class AdvertisementsController extends AppController {
 						$data->selling_housing_type_land_parcel_number 	= '';
 					}
 				}
-				
+
 				// to get lat long of each ad
                 if (!empty($requestData['latitude']) && !empty($requestData['longitude'])) {
                     $data->latitude 	= $requestData['latitude'];
@@ -204,14 +196,14 @@ class AdvertisementsController extends AppController {
                     $addressArr = array();
 				    if(!empty($data->location))
 					    $addressArr[] = $data->location;
-				
+
 				    $location_Full = implode(" ",$addressArr);
 				    $location = str_replace(" ", "+", $location_Full);
-				
+
 				    $latLongArr = $this->getLatLng($location);
-				
+
 				    //$this->prx($latLongArr);
-				
+
 				    if(!empty($latLongArr[0]) && !empty($latLongArr[1]))
 				    {
 					    $data->latitude 	= $latLongArr[0];
@@ -222,8 +214,8 @@ class AdvertisementsController extends AppController {
 					    $msgLL = " Error :: Latitude and logitude does not seems to be correct.";
 				    }
                 }
-				
-				
+
+
                 if ($this->Advertisements->save($data)) {
                     $this->Flash->success('Ad details updated successfully. '.$msgLL);
                     $this->redirect(['controller' => 'advertisements', 'action' => 'index']);

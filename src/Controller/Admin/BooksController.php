@@ -17,14 +17,6 @@ class BooksController extends AppController {
         parent::initialize();
         $this->loadComponent('Paginator');
         $this->loadComponent('Flash');
-        $action = $this->request->getParam('action');
-        $loggedAdminId = $this->request->getSession()->read('admin_id');
-        if ($action != 'forgotPassword' && $action != 'logout') {
-            if (!$loggedAdminId && $action != "login" && $action != 'captcha') {
-                $this->redirect(['controller' => 'admins', 'action' => 'login']);
-            }
-        }
-		
 		$this->loadModel("Conventionbooks");
 		$this->loadModel("Conventionbookevents");
     }
@@ -94,23 +86,23 @@ class BooksController extends AppController {
     public function add() {
         $this->set('title', ADMIN_TITLE . 'Add Book');
         $this->viewBuilder()->setLayout('admin');
-		
+
         $this->set('manageBooks', '1');
         $this->set('bookAdd', '1');
-		
+
         $books = $this->Books->newEntity();
         if ($this->request->is('post')) {
-			
+
 			//$this->prx($this->request->getData());
-			
+
 			$flagC = 1;
 			$requestData = $this->request->getData();
-			
+
             $data = $this->Books->patchEntity($books, $requestData, ['validate' => 'add']);
             if (count($data->getErrors()) == 0 && $flagC == 1) {
 
 				$slug = $this->getSlug($requestData['Books']['book_name'] . ' ' . time(), 'Books');
-				
+
                 $data->slug = $slug;
                 $data->status = 1;
                 $data->created = date('Y-m-d H:i:s');

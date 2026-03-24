@@ -17,14 +17,6 @@ class TransactionsController extends AppController {
         parent::initialize();
         $this->loadComponent('Paginator');
         $this->loadComponent('Flash');
-		$action = $this->request->getParam('action');
-		$loggedAdminId = $this->request->getSession()->read('admin_id');
-        if ($action != 'forgotPassword' && $action != 'logout') {
-            if (!$loggedAdminId && $action != "login" && $action != 'captcha') {
-                $this->redirect(['controller' => 'admins', 'action' => 'login']);
-            }
-        }
-		
 		$this->loadModel('Conventions');
 		$this->loadModel('Events');
 		$this->loadModel('Transactionstudents');
@@ -43,23 +35,23 @@ class TransactionsController extends AppController {
 
         $separator = array();
         $condition = array();
-        
+
 		// to check if conv season selected from header then filter list
 		$sess_admin_header_season_id = $this->request->getSession()->read("sess_admin_header_season_id");
 		if($sess_admin_header_season_id>0)
 		{
 			$condition[] = "(Transactions.conventionseason_id = '".$sess_admin_header_season_id."')";
 		}
-		
+
 		global $priceStructureCR;
 		$this->set('priceStructureCR', $priceStructureCR);
-		
+
 		global $paymentStatus;
 		$this->set('paymentStatus', $paymentStatus);
-		
+
 		$conventionsDD = $this->Conventions->find()->where([])->order(['Conventions.name' => 'ASC'])->combine('id', 'name')->toArray();
 		$this->set('conventionsDD', $conventionsDD);
-		
+
 		$seasonsDD = $this->Seasons->find()->where([])->order(['Seasons.season_year' => 'DESC'])->combine('season_year', 'season_year')->toArray();
 		$this->set('seasonsDD', $seasonsDD);
 
@@ -110,7 +102,7 @@ class TransactionsController extends AppController {
             $condition[] = "(Transactions.season_year = '".addslashes($season_year)."')";
             $this->set('season_year', $season_year);
         }
-		
+
         //$this->prx($condition);exit;
         $separator = implode("/", $separator);
         $this->set('separator', $separator);
@@ -122,62 +114,62 @@ class TransactionsController extends AppController {
             $this->render('index');
         }
     }
-	
+
 	public function viewdetails($slug = null) {
         $this->set('title', ADMIN_TITLE . 'Transaction details');
         $this->viewBuilder()->setLayout('admin');
         $this->set('manageTransactions', '1');
         $this->set('transactionsList', '1');
-		
+
 		global $priceStructureCR;
 		$this->set('priceStructureCR', $priceStructureCR);
-		
+
 		global $paymentStatus;
 		$this->set('paymentStatus', $paymentStatus);
-		
+
 		$changePaymentS = array(
 			'1' => 'Yes'
 		);
 		$this->set('changePaymentS', $changePaymentS);
-		
+
         if ($slug)
 		{
             $transactionD = $this->Transactions->find()->where(['Transactions.slug' => $slug])->contain(['Conventions','Users'])->first();
 			$this->set('transactionD', $transactionD);
 			$prevPaymentStatus = $paymentStatus[$transactionD->status];
-            
+
 			if($transactionD)
 			{
 				// to get the students list of this transaction
 				$transactionStudents = $this->Transactionstudents->find()->where(['Transactionstudents.transaction_id' => $transactionD->id])->order(["Transactionstudents.id" => "ASC"])->contain(['Users'])->all();
 				$this->set('transactionStudents', $transactionStudents);
-				
+
 				// to get the teachers list of this transaction
 				$transactionTeachers = $this->Transactionteachers->find()->where(['Transactionteachers.transaction_id' => $transactionD->id])->order(["Transactionteachers.id" => "ASC"])->contain(['Users'])->all();
 				$this->set('transactionTeachers', $transactionTeachers);
-				
+
 				// save form data
 				if ($this->request->is('post'))
 				{
 					//$this->prx($this->request->getData());
 					$requestData = $this->request->getData();
-					
+
 					if($transactionD->status == 2 || $transactionD->status == 3)
 					{
 						$transaction_id_received 	= $requestData['Transactions']['transaction_id_received'];
 						$transaction_data 			= $requestData['Transactions']['transaction_data'];
-						
+
 						$this->Transactions->updateAll(['status' => '1','transaction_id_received' => $transaction_id_received,'transaction_data' => $transaction_data], ["slug" => $slug]);
-						
+
 						// update transactionstudents table status as well
 						$this->Transactionstudents->updateAll(['status' => '1'], ["transaction_id" => $transactionD->id]);
-						
+
 						// update transactionteachers table status as well
 						$this->Transactionteachers->updateAll(['status' => '1'], ["transaction_id" => $transactionD->id]);
-						
+
 						// Now send email to school admin
 						$emailId = $transactionD->Users['email_address'];
-							
+
 						$emailtemplateMessage = $this->Emailtemplates->find()->where(['Emailtemplates.id' => '9'])->first();
 
 						$toRepArray = array('[!school_name!]','[!convention_name!]','[!season_year!]','[!CURR!]','[!total_amount!]','[!previous_payment_status!]','[!customer_code!]');
@@ -185,22 +177,22 @@ class TransactionsController extends AppController {
 
 						$subjectToSend = str_replace($toRepArray, $fromRepArray, $emailtemplateMessage['subject']);
 						$messageToSend = str_replace($toRepArray, $fromRepArray, $emailtemplateMessage['template']);
-						
+
 						//echo $messageToSend; exit;
-						
+
 						$this->sendLegacyHtmlEmail($emailId, $subjectToSend, $messageToSend, [HEADERS_FROM_EMAIL => HEADERS_FROM_NAME], HEADERS_CC);
-						
+
 						$this->Flash->success('Payment transaction status confirmed successfully.');
 					}
 					else
 					{
 						$this->Flash->error('You cannot change payment transaction status.');
 					}
-					
+
 					$this->redirect(['controller' => 'transactions', 'action' => 'index']);
-					
+
 				}
-				
+
 			}
 			else
 			{
@@ -213,7 +205,7 @@ class TransactionsController extends AppController {
 			$this->Flash->error('Invalid transaction.');
 			$this->redirect(['controller' => 'transactions', 'action' => 'index']);
 		}
-		
+
     }
 
 }

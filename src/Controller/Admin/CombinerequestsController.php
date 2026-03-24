@@ -18,14 +18,6 @@ class CombinerequestsController extends AppController {
         parent::initialize();
         $this->loadComponent('Paginator');
         $this->loadComponent('Flash');
-        $action = $this->request->getParam('action');
-        $loggedAdminId = $this->request->getSession()->read('admin_id');
-        if ($action != 'forgotPassword' && $action != 'logout') {
-            if (!$loggedAdminId && $action != "login" && $action != 'captcha') {
-                $this->redirect(['controller' => 'admins', 'action' => 'login']);
-            }
-        }
-		
 		$this->loadModel('Conventions');
 		$this->loadModel('Events');
 		$this->loadModel('Emailtemplates');
@@ -41,7 +33,7 @@ class CombinerequestsController extends AppController {
         $separator = array();
         $condition = array();
         //$condition = array('Combinerequests.parent_id' => 0);
-		
+
 		// to check if conv season selected from header then filter list
 		$sess_admin_header_season_id = $this->request->getSession()->read("sess_admin_header_season_id");
 		if($sess_admin_header_season_id>0)
@@ -99,17 +91,17 @@ class CombinerequestsController extends AppController {
             $this->render('index');
         }
     }
-	
+
 	public function approverequest($slug=null) {
-        
+
 		$requestD = $this->Combinerequests->find()->where(['Combinerequests.slug' => $slug,'Combinerequests.status' => 2])->contain(['Conventions','Users','Combineduser','Events'])->first();
 		if($requestD)
 		{
 			$this->Combinerequests->updateAll(['status' => '1','modified' => date('Y-m-d H:i:s', time())], ["slug"=>$slug]);
-			
+
 			// now sendning email to user who added this request
 			$emailId = $requestD->Users['email_address'];
-							
+
 			$emailtemplateMessage = $this->Emailtemplates->find()->where(['Emailtemplates.id' => '23'])->first();
 
 			$toRepArray = array('[!school_name!]','[!combine_with_school_name!]','[!event_name!]','[!event_id_number!]','[!convention_name!]','[!season_year!]');
@@ -117,13 +109,13 @@ class CombinerequestsController extends AppController {
 
 			$subjectToSend = str_replace($toRepArray, $fromRepArray, $emailtemplateMessage['subject']);
 			$messageToSend = str_replace($toRepArray, $fromRepArray, $emailtemplateMessage['template']);
-			
+
 			//echo $messageToSend; exit;
-			
+
             $this->sendLegacyHtmlEmail($emailId, $subjectToSend, $messageToSend, [HEADERS_FROM_EMAIL => HEADERS_FROM_NAME], ACCOUNTS_TEAM_ANOTHER_EMAIL);
-			
+
 			$this->Flash->success('Request approved successfully.');
-		
+
 		}
 		else
 		{
@@ -131,17 +123,17 @@ class CombinerequestsController extends AppController {
 		}
         $this->redirect(['controller'=>'combinerequests', 'action' => 'index']);
     }
-	
+
 	public function declinerequest($slug=null) {
-        
+
 		$requestD = $this->Combinerequests->find()->where(['Combinerequests.slug' => $slug,'Combinerequests.status' => 2])->contain(['Conventions','Users','Combineduser','Events'])->first();
 		if($requestD)
 		{
 			$this->Combinerequests->updateAll(['status' => '0','modified' => date('Y-m-d H:i:s', time())], ["slug"=>$slug]);
-			
+
 			// now sendning email to user who added this request
 			$emailId = $requestD->Users['email_address'];
-							
+
 			$emailtemplateMessage = $this->Emailtemplates->find()->where(['Emailtemplates.id' => '24'])->first();
 
 			$toRepArray = array('[!school_name!]','[!combine_with_school_name!]','[!event_name!]','[!event_id_number!]','[!convention_name!]','[!season_year!]');
@@ -149,13 +141,13 @@ class CombinerequestsController extends AppController {
 
 			$subjectToSend = str_replace($toRepArray, $fromRepArray, $emailtemplateMessage['subject']);
 			$messageToSend = str_replace($toRepArray, $fromRepArray, $emailtemplateMessage['template']);
-			
+
 			//echo $messageToSend; exit;
-			
+
             $this->sendLegacyHtmlEmail($emailId, $subjectToSend, $messageToSend, [HEADERS_FROM_EMAIL => HEADERS_FROM_NAME], ACCOUNTS_TEAM_ANOTHER_EMAIL);
-			
+
 			$this->Flash->success('Request declined successfully.');
-		
+
 		}
 		else
 		{

@@ -9,31 +9,24 @@ class PagesController extends AppController{
     public $paginate = ['limit' => 50,'order' => ['Pages.name' => 'asc']];
     public $components = ['RequestHandler', 'PImage', 'PImageTest'];
     //public $helpers = array('Javascript', 'Ajax');
-   
+
     public function initialize(){
         parent::initialize();
         $this->loadComponent('Paginator');
         $this->loadComponent('Flash');
-        $action = $this->request->getParam('action');
-        $loggedAdminId = $this->request->getSession()->read('admin_id');
-        if ($action != 'forgotPassword' && $action != 'logout') {
-            if (!$loggedAdminId && $action != "login" && $action != 'captcha') {
-                 $this->redirect(['controller'=>'admins', 'action' => 'login']);
-            }
-        }
     }
-    
+
     public function index() {
         $this->set('title', ADMIN_TITLE. 'Manage Content');
         $this->viewBuilder()->setLayout('admin');
         $this->set('staticPages', '1');
         $this->set('pageList', '1');
-        
+
         $separator = array();
         $condition = array();
-        
+
         $separator = implode("/", $separator);
-        $this->set('separator',$separator); 
+        $this->set('separator',$separator);
         $this->paginate = ['conditions' => $condition, 'limit' => 20, 'order' => ['Pages.static_page_title' => 'ASC']];
         $this->set('pages', $this->paginate($this->Pages));
         if($this->request->is("ajax")){
@@ -42,14 +35,14 @@ class PagesController extends AppController{
             $this->render('index');
         }
     }
-  
-   public function edit($slug=null){  
+
+   public function edit($slug=null){
 		$this->set('title', ADMIN_TITLE. 'Edit Page');
 		$this->viewBuilder()->setLayout('admin');
-       
+
 		$this->set('staticPages', '1');
         $this->set('pageList', '1');
-	   
+
 		if($slug){
             $pages1 = $this->Pages->find()->where(['Pages.slug' => $slug])->first();
             $uid = $pages1->id;
@@ -66,10 +59,10 @@ class PagesController extends AppController{
                // $this->Flash->error('Please below listed errors.');
             }
         }
-        $this->set('pages', $pages); 
+        $this->set('pages', $pages);
     }
- 
-    public function pageimages($slug=null){  
+
+    public function pageimages($slug=null){
         $imageArray = $_FILES['upload'];
         $returnedUploadImageArray = $this->PImage->upload($imageArray, UPLOAD_PAGES_IMAGE_PATH);
         echo "<span style='font-size: 16px;  font-weight: bold;'>Copy below URL and Paste in next screen:</span> <span style='float: left; font-size: 14px; margin: 7px 0 0; width: 100%;'>" . DISPLAY_PAGES_IMAGE_PATH . $returnedUploadImageArray[0].'</span>'; exit;
@@ -82,7 +75,7 @@ class PagesController extends AppController{
         }
         exit;
     }
-    
+
 }
 
 

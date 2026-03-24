@@ -17,14 +17,6 @@ class EvaluationtagsController extends AppController {
         parent::initialize();
         $this->loadComponent('Paginator');
         $this->loadComponent('Flash');
-        $action = $this->request->getParam('action');
-        $loggedAdminId = $this->request->getSession()->read('admin_id');
-        if ($action != 'forgotPassword' && $action != 'logout') {
-            if (!$loggedAdminId && $action != "login" && $action != 'captcha') {
-                $this->redirect(['controller' => 'admins', 'action' => 'login']);
-            }
-        }
-		
 		$this->loadModel('Evaluationforms');
     }
 
@@ -93,16 +85,16 @@ class EvaluationtagsController extends AppController {
     public function add() {
         $this->set('title', ADMIN_TITLE . 'Add Tag');
         $this->viewBuilder()->setLayout('admin');
-		
+
         $this->set('manageEvaluations', '1');
         $this->set('tagsList', '1');
-		
+
         $evaluationtags = $this->Evaluationtags->newEntity();
         if ($this->request->is('post')) {
-			
+
 			//$this->prx($this->request->getData());
 			$requestData = $this->request->getData();
-			
+
             $data = $this->Evaluationtags->patchEntity($evaluationtags, $requestData, ['validate' => 'add']);
             if (count($data->getErrors()) == 0) {
 
@@ -126,20 +118,20 @@ class EvaluationtagsController extends AppController {
     public function edit($slug = null) {
         $this->set('title', ADMIN_TITLE . 'Edit Tag');
         $this->viewBuilder()->setLayout('admin');
-        
+
 		$this->set('manageEvaluations', '1');
         $this->set('tagsList', '1');
-		
+
         if ($slug) {
             $tagD = $this->Evaluationtags->find()->where(['Evaluationtags.slug' => $slug])->first();
             $uid = $tagD->id;
         }
-		
+
         $evaluationtags = $this->Evaluationtags->get($uid);
         if ($this->request->is(['post', 'put'])) {
 			$requestData = $this->request->getData();
             $data = $this->Evaluationtags->patchEntity($evaluationtags, $requestData, ['validate' => 'edit']);
-			
+
             if (count($data->getErrors()) == 0) {
                 $data->name = trim($requestData['Evaluationtags']['name']);
 				$data->modified = date("Y-m-d H:i:s");
@@ -153,7 +145,7 @@ class EvaluationtagsController extends AppController {
         }
         $this->set('evaluationtags', $evaluationtags);
     }
-	
+
 	public function activatetag($slug = null) {
         if ($slug != '') {
             $this->viewBuilder()->setLayout("");
@@ -175,21 +167,21 @@ class EvaluationtagsController extends AppController {
             $this->render('update_status');
         }
     }
-	
+
 	public function deletetag($slug = null) {exit;
-		
+
         // to chek if tag exists
 		if($slug)
 		{
 			// to get details of tag
 			$tagD = $this->Evaluationtags->find()->where(['Evaluationtags.slug' => $slug])->first();
-			
+
 			if($tagD)
 			{
 				// to check if any form is related with this tag
 				$condTag = array();
 				$condTag[] = "(Evaluationforms.tag_ids LIKE '".$tagD->id."' OR Evaluationforms.tag_ids LIKE '".$tagD->id.",%' OR Evaluationforms.tag_ids LIKE '%,".$tagD->id.",%' OR Evaluationforms.tag_ids LIKE '%,".$tagD->id."')";
-				
+
 				$checkTagForm = $this->Evaluationforms->find()->where($condTag)->first();
 				if($checkTagForm)
 				{
@@ -210,7 +202,7 @@ class EvaluationtagsController extends AppController {
 		{
 			$this->Flash->error('Invalid details.');
 		}
-		
+
         $this->redirect(['controller' => 'evaluationtags', 'action' => 'index']);
     }
 

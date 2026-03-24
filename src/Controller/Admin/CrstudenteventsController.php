@@ -17,14 +17,6 @@ class CrstudenteventsController extends AppController {
         parent::initialize();
         $this->loadComponent('Paginator');
         $this->loadComponent('Flash');
-		$action = $this->request->getParam('action');
-		$loggedAdminId = $this->request->getSession()->read('admin_id');
-        if ($action != 'forgotPassword' && $action != 'logout') {
-            if (!$loggedAdminId && $action != "login" && $action != 'captcha') {
-                $this->redirect(['controller' => 'admins', 'action' => 'login']);
-            }
-        }
-		
 		$this->loadModel('Conventions');
 		$this->loadModel('Events');
 		$this->loadModel('Settings');
@@ -32,18 +24,18 @@ class CrstudenteventsController extends AppController {
 		$this->loadModel('Emailtemplates');
 		$this->loadModel('Conventionregistrations');
     }
-	
+
 	public function groups($slug = null) {
-		
+
 		$this->set('title', ADMIN_TITLE . 'Groups');
         $this->viewBuilder()->setLayout('admin');
-		
+
         $this->set('manageRegistrations', '1');
         $this->set('registrationsList', '1');
-		
+
 		$CRDetails = $this->Conventionregistrations->find()->where(['Conventionregistrations.slug' => $slug])->contain(['Conventions'])->first();
 		$this->set('CRDetails', $CRDetails);
-			
+
 		$this->set('slug', $slug);
 		//$this->prx($convRedG);
 		if($CRDetails->id >0)
@@ -51,9 +43,9 @@ class CrstudenteventsController extends AppController {
 			// now check groups
 			$arrConvGroups 	= array();
 			$convGroups 	= $this->Crstudentevents->find()->where(['Crstudentevents.conventionregistration_id' => $CRDetails->id])->order(["Crstudentevents.event_id" => "ASC"])->all();
-			
+
 			foreach($convGroups as $convg)
-			{	
+			{
 				if(!empty($convg->group_name))
 				{
 					$arrConvGroups[$convg->event_id][$convg->group_name][] = $convg->student_id;
@@ -66,10 +58,10 @@ class CrstudenteventsController extends AppController {
 		{
 			$this->Flash->error('Invalid registration.');
 		}
-		
+
 		//$this->redirect(['controller' => 'conventionregistrations', 'action' => 'index']);
     }
-	
+
 
 }
 

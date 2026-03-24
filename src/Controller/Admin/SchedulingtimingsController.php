@@ -18,15 +18,7 @@ class SchedulingtimingsController extends AppController {
     public function initialize() {
         parent::initialize();
         $this->loadComponent('Paginator');
-        $this->loadComponent('Flash');
-        $action = $this->request->getParam('action');
-        $loggedAdminId = $this->request->getSession()->read('admin_id');
-        if ($action != 'forgotPassword' && $action != 'logout') {
-            if (!$loggedAdminId && $action != "login" && $action != 'captcha') {
-                $this->redirect(['controller' => 'admins', 'action' => 'login']);
-            }
-        }
-		
+        $this->loadComponent('Flash');		
 		$this->loadModel("Conventionseasons");
 		$this->loadModel("Conventionseasonevents");
 		$this->loadModel("Events");
@@ -38,7 +30,11 @@ class SchedulingtimingsController extends AppController {
 		$this->loadModel("Conventionregistrationstudents");
 		$this->loadModel("Conventionrooms");
     }
-	
+
+	public function beforeFilter(\Cake\Event\EventInterface $event) {
+		return parent::beforeFilter($event);
+	}
+
 	/**
 	 * Returns all room IDs that share the same Room Allocation as $roomId,
 	 * including $roomId itself. If the room has no allocation, returns [$roomId].

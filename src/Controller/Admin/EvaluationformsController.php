@@ -17,14 +17,6 @@ class EvaluationformsController extends AppController {
         parent::initialize();
         $this->loadComponent('Paginator');
         $this->loadComponent('Flash');
-        $action = $this->request->getParam('action');
-        $loggedAdminId = $this->request->getSession()->read('admin_id');
-        if ($action != 'forgotPassword' && $action != 'logout') {
-            if (!$loggedAdminId && $action != "login" && $action != 'captcha') {
-                $this->redirect(['controller' => 'admins', 'action' => 'login']);
-            }
-        }
-		
 		$this->loadModel('Events');
 		$this->loadModel('Evaluationtags');
 		$this->loadModel('Evaluationareas');
@@ -95,13 +87,13 @@ class EvaluationformsController extends AppController {
     public function add() {
         $this->set('title', ADMIN_TITLE . 'Add Form');
         $this->viewBuilder()->setLayout('admin');
-		
+
         $this->set('manageEvaluations', '1');
         $this->set('formsList', '1');
-		
+
 		$tagsDD = $this->Evaluationtags->find()->where([])->order(['Evaluationtags.name' => 'ASC'])->combine('id', 'name')->toArray();
 		$this->set('tagsDD', $tagsDD);
-		
+
 		$eventNameIDDD = array();
 		$condEvents = array();
 		//$condEvents[] = "(Events.id IN ($arrConvSeasonEventsImplode) )";
@@ -111,13 +103,13 @@ class EvaluationformsController extends AppController {
 			$eventNameIDDD[$eventrec->event_id_number] = $eventrec->event_name.' ('.$eventrec->event_id_number.')';
 		}
 		$this->set('eventNameIDDD', $eventNameIDDD);
-		
+
         $evaluationforms = $this->Evaluationforms->newEntity();
         if ($this->request->is('post')) {
-			
+
             //$this->prx($this->request->getData());
             $requestData = $this->request->getData();
-			
+
             $tag_ids = isset($requestData['Evaluationforms']['tag_ids']) ? (array)$requestData['Evaluationforms']['tag_ids'] : [];
             if(count($tag_ids))
 			{
@@ -127,24 +119,24 @@ class EvaluationformsController extends AppController {
 			{
 				$tag_ids_implode = '';
 			}
-			
+
 			$event_id_numbers = isset($requestData['Evaluationforms']['event_id_numbers']) ? (array)$requestData['Evaluationforms']['event_id_numbers'] : [];
 			$event_id_numbers_implode = implode(",",$event_id_numbers);
-			
+
             $data = $this->Evaluationforms->patchEntity($evaluationforms, $requestData, ['validate' => 'add']);
             if (count($data->getErrors()) == 0) {
 
 				$slug = $this->getSlug($requestData['Evaluationforms']['name'] . ' ' . time(), 'Evaluationforms');
                 $data->name 			= trim($requestData['Evaluationforms']['name']);
                 $data->slug 			= $slug;
-				
+
                 $data->tag_ids 			= $tag_ids_implode;
                 $data->event_id_numbers = $event_id_numbers_implode;
-				
+
                 $data->status 			= 1;
                 $data->created 			= date('Y-m-d H:i:s');
                 $data->modified 		= NULL;
-				
+
 				// now upload pdf file
                 if(!empty($requestData['Evaluationforms']['reference_pdf_file_name']['name']))
 				{
@@ -158,7 +150,7 @@ class EvaluationformsController extends AppController {
 						echo "Sorry, there was an error uploading your file.";exit;
 					}
 				}
-				
+
                 if ($this->Evaluationforms->save($data)) {
                     $this->Flash->success('Form added successfully.');
                     $this->redirect(['controller' => 'evaluationforms', 'action' => 'index']);
@@ -173,13 +165,13 @@ class EvaluationformsController extends AppController {
     public function edit($slug = null) {
         $this->set('title', ADMIN_TITLE . 'Edit Form');
         $this->viewBuilder()->setLayout('admin');
-        
+
 		$this->set('manageEvaluations', '1');
         $this->set('formsList', '1');
-		
+
 		$tagsDD = $this->Evaluationtags->find()->where([])->order(['Evaluationtags.name' => 'ASC'])->combine('id', 'name')->toArray();
 		$this->set('tagsDD', $tagsDD);
-		
+
 		$eventNameIDDD = array();
 		$condEvents = array();
 		//$condEvents[] = "(Events.id IN ($arrConvSeasonEventsImplode) )";
@@ -189,34 +181,34 @@ class EvaluationformsController extends AppController {
 			$eventNameIDDD[$eventrec->event_id_number] = $eventrec->event_name.' ('.$eventrec->event_id_number.')';
 		}
 		$this->set('eventNameIDDD', $eventNameIDDD);
-		
+
         if ($slug) {
             $tagD = $this->Evaluationforms->find()->where(['Evaluationforms.slug' => $slug])->first();
             $uid = $tagD->id;
         }
-		
+
         $evaluationforms = $this->Evaluationforms->get($uid);
         if ($this->request->is(['post', 'put'])) {
-            
+
             //$this->prx($this->request->getData());
             $requestData = $this->request->getData();
-			
+
             $tag_ids = isset($requestData['Evaluationforms']['tag_ids']) ? (array)$requestData['Evaluationforms']['tag_ids'] : [];
 			$tag_ids_implode = implode(",",$tag_ids);
-			
+
             $event_id_numbers = isset($requestData['Evaluationforms']['event_id_numbers']) ? (array)$requestData['Evaluationforms']['event_id_numbers'] : [];
 			$event_id_numbers_implode = implode(",",$event_id_numbers);
-			
+
             $data = $this->Evaluationforms->patchEntity($evaluationforms, $requestData, ['validate' => 'edit']);
-			
+
             if (count($data->getErrors()) == 0) {
                 $data->name = trim($requestData['Evaluationforms']['name']);
-				
+
 				$data->tag_ids 			= $tag_ids_implode;
                 $data->event_id_numbers = $event_id_numbers_implode;
-				
+
 				$data->modified = date("Y-m-d H:i:s");
-				
+
 				// now upload pdf file
                 if(!empty($requestData['Evaluationforms']['reference_pdf_file_name']['name']))
 				{
@@ -230,17 +222,17 @@ class EvaluationformsController extends AppController {
 						echo "Sorry, there was an error uploading your file.";exit;
 					}
 				}
-				else				
+				else
                 if(!empty($requestData['Evaluationforms']['hidd_icon']))
 				{
                     $data->reference_pdf_file_name =  $requestData['Evaluationforms']['hidd_icon'];
-				}			
+				}
 				else{
 					$data->reference_pdf_file_name = '';
 				}
-				
+
 				//$this->prx($data);
-				
+
                 if ($this->Evaluationforms->save($data)) {
                     $this->Flash->success('Form details updated successfully.');
                     $this->redirect(['controller' => 'evaluationforms', 'action' => 'index']);
@@ -251,7 +243,7 @@ class EvaluationformsController extends AppController {
         }
         $this->set('evaluationforms', $evaluationforms);
     }
-	
+
 	public function activateform($slug = null) {
         if ($slug != '') {
             $this->viewBuilder()->setLayout("");
@@ -273,21 +265,21 @@ class EvaluationformsController extends AppController {
             $this->render('update_status');
         }
     }
-	
+
 	public function deleteform($slug = null) {//exit;
-		
+
         // to chek if form exists
 		if($slug)
 		{
 			// to get details of tag
 			$recordD = $this->Evaluationforms->find()->where(['Evaluationforms.slug' => $slug])->first();
-			
+
 			if($recordD)
 			{
 				// to check if any form is related with this form
 				$condRecord = array();
 				$condRecord[] = "(Evaluationareas.evaluationform_id = '".$recordD->id."')";
-				
+
 				$checkExists = $this->Evaluationareas->find()->where($condRecord)->first();
 				if($checkExists)
 				{
@@ -297,7 +289,7 @@ class EvaluationformsController extends AppController {
 				{
 					// remove pdf
 					@unlink(UPLOAD_JUDGING_REFERENCE_PDF_PATH.$recordD->reference_pdf_file_name);
-					
+
 					$this->Evaluationareas->deleteAll(["evaluationform_id" => $recordD->id]);
 					$this->Evaluationforms->deleteAll(["slug" => $slug]);
 					$this->Flash->success('Form details deleted successfully.');
@@ -312,12 +304,12 @@ class EvaluationformsController extends AppController {
 		{
 			$this->Flash->error('Invalid details.');
 		}
-		
+
         $this->redirect(['controller' => 'evaluationforms', 'action' => 'index']);
     }
-	
+
 	public function deletepdf($slug = null) {
-		
+
 		// to get image name from slug
 		if ($slug) {
             $catD = $this->Evaluationforms->find()->where(['Evaluationforms.slug' => $slug])->first();
@@ -326,7 +318,7 @@ class EvaluationformsController extends AppController {
         }
 		@unlink(UPLOAD_JUDGING_REFERENCE_PDF_PATH.$reference_pdf_file_name);
 		$this->Evaluationforms->updateAll(['reference_pdf_file_name' => '','modified' => date("Y-m-d H:i:s")], ["slug" => $slug]);
-		
+
         $this->Flash->success('PDF removed successfully.');
         $this->redirect(['controller' => 'evaluationforms', 'action' => 'edit/'.$slug]);
     }

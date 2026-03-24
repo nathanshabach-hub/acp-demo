@@ -17,14 +17,6 @@ class SeasonsController extends AppController {
         parent::initialize();
         $this->loadComponent('Paginator');
         $this->loadComponent('Flash');
-        $action = $this->request->getParam('action');
-        $loggedAdminId = $this->request->getSession()->read('admin_id');
-        if ($action != 'forgotPassword' && $action != 'logout') {
-            if (!$loggedAdminId && $action != "login" && $action != 'captcha') {
-                $this->redirect(['controller' => 'admins', 'action' => 'login']);
-            }
-        }
-		
 		$this->loadModel("Conventionseasons");
 		$this->loadModel("Conventionseasonevents");
     }
@@ -91,7 +83,7 @@ class SeasonsController extends AppController {
     }
 
     public function deleteseason($slug = null) {
-        
+
 		// first check that this season exists
 		$seasonD = $this->Seasons->find()->where(['Seasons.slug' => $slug])->first();
 		if($seasonD)
@@ -99,7 +91,7 @@ class SeasonsController extends AppController {
 			// to check if this season linked with any other data
 			$season_id 	= $seasonD->id;
 			$flagDelete = 1;
-			
+
 			//1. check in conventionseasons
 			$checkConventionSeasons = $this->Conventionseasons->find()->where(['Conventionseasons.season_id' => $season_id])->first();
 			if($checkConventionSeasons)
@@ -107,7 +99,7 @@ class SeasonsController extends AppController {
 				$flagDelete = 0;
 				$this->Flash->error('Season cannot delete. Season is linked with Convention > Seasons.');
 			}
-			
+
 			//2. check in conventionseasonevents
 			$checkConventionSeasonEvents = $this->Conventionseasonevents->find()->where(['Conventionseasonevents.season_id' => $season_id])->first();
 			if($checkConventionSeasonEvents)
@@ -115,7 +107,7 @@ class SeasonsController extends AppController {
 				$flagDelete = 0;
 				$this->Flash->error('Season cannot delete. Season is linked with Convention > Seasons > Events.');
 			}
-			
+
 			if($flagDelete == 1)
 			{
 				$this->Seasons->deleteAll(["slug" => $slug]);
@@ -126,38 +118,38 @@ class SeasonsController extends AppController {
 		{
 			$this->Flash->error('Season not found.');
 		}
-		
-		
+
+
         $this->redirect(['controller' => 'seasons', 'action' => 'index']);
     }
 
     public function add() {
         $this->set('title', ADMIN_TITLE . 'Add Season');
         $this->viewBuilder()->setLayout('admin');
-		
+
         $this->set('manageSeasons', '1');
         $this->set('seasonAdd', '1');
-		
+
         $seasons = $this->Seasons->newEntity();
         if ($this->request->is('post')) {
-			
+
 			//$this->prx($this->request->getData());
-			
+
 			$flagC = 1;
-			
+
 			$seasonYear = $this->request->getData()['Seasons']['season_year'];
-			
+
 			if($seasonYear<2023 || $seasonYear>2030)
 			{
 				$flagC = 0;
 				$this->Flash->error('Season year must be in between 2023 and 2030.');
 			}
-			
+
             $data = $this->Seasons->patchEntity($seasons, $this->request->getData(), ['validate' => 'add']);
             if (count($data->getErrors()) == 0 && $flagC == 1) {
 
 				$slug = 'season-'.$this->request->getData()['Seasons']['season_year'];
-				
+
                 $data->slug = $slug;
                 $data->status = 1;
                 $data->created = date('Y-m-d H:i:s');
@@ -175,35 +167,35 @@ class SeasonsController extends AppController {
 
     public function edit($slug = null) {
         $this->redirect(['controller' => 'seasons', 'action' => 'index']);
-		
+
 		$this->set('title', ADMIN_TITLE . 'Edit Season');
         $this->viewBuilder()->setLayout('admin');
-        
+
 		$this->set('manageSeasons', '1');
         $this->set('seasonList', '1');
-		
+
 		global $yesNoDD;
 		$this->set('yesNoDD', $yesNoDD);
-		
+
         if ($slug) {
             $categories1 = $this->Seasons->find()->where(['Seasons.slug' => $slug])->first();
             $uid = $categories1->id;
         }
-		
+
         $seasons = $this->Seasons->get($uid);
         if ($this->request->is(['post', 'put'])) {
             $data = $this->Seasons->patchEntity($seasons, $this->request->getData());
-			
+
 			$flagC = 1;
-			
+
 			$seasonYear = $this->request->getData()['Seasons']['season_year'];
-			
+
 			if($seasonYear<2023 || $seasonYear>2030)
 			{
 				$flagC = 0;
 				$this->Flash->error('Season year must be in between 2023 and 2030.');
 			}
-			
+
             if (count($data->getErrors()) == 0 && $flagC == 1) {
                 $data->season_name = trim($this->request->getData()['Seasons']['season_name']);
 				$data->modified = date("Y-m-d");
@@ -217,7 +209,7 @@ class SeasonsController extends AppController {
         }
         $this->set('seasons', $seasons);
     }
-	
+
 	public function activateseason($slug = null) {
         if ($slug != '') {
             $this->viewBuilder()->setLayout("");

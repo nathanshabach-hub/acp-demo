@@ -17,14 +17,6 @@ class EvaluationcategoriesController extends AppController {
         parent::initialize();
         $this->loadComponent('Paginator');
         $this->loadComponent('Flash');
-        $action = $this->request->getParam('action');
-        $loggedAdminId = $this->request->getSession()->read('admin_id');
-        if ($action != 'forgotPassword' && $action != 'logout') {
-            if (!$loggedAdminId && $action != "login" && $action != 'captcha') {
-                $this->redirect(['controller' => 'admins', 'action' => 'login']);
-            }
-        }
-		
 		$this->loadModel('Evaluationquestions');
     }
 
@@ -93,16 +85,16 @@ class EvaluationcategoriesController extends AppController {
     public function add() {
         $this->set('title', ADMIN_TITLE . 'Add Category');
         $this->viewBuilder()->setLayout('admin');
-		
+
         $this->set('manageEvaluations', '1');
         $this->set('evalcategoriesList', '1');
-		
+
         $evaluationcategories = $this->Evaluationcategories->newEntity();
         if ($this->request->is('post')) {
-			
+
 			//$this->prx($this->request->getData());
 			$requestData = $this->request->getData();
-			
+
             $data = $this->Evaluationcategories->patchEntity($evaluationcategories, $requestData, ['validate' => 'add']);
             if (count($data->getErrors()) == 0) {
 
@@ -126,20 +118,20 @@ class EvaluationcategoriesController extends AppController {
     public function edit($slug = null) {
         $this->set('title', ADMIN_TITLE . 'Edit Category');
         $this->viewBuilder()->setLayout('admin');
-        
+
 		$this->set('manageEvaluations', '1');
         $this->set('evalcategoriesList', '1');
-		
+
         if ($slug) {
             $tagD = $this->Evaluationcategories->find()->where(['Evaluationcategories.slug' => $slug])->first();
             $uid = $tagD->id;
         }
-		
+
         $evaluationcategories = $this->Evaluationcategories->get($uid);
         if ($this->request->is(['post', 'put'])) {
 			$requestData = $this->request->getData();
             $data = $this->Evaluationcategories->patchEntity($evaluationcategories, $requestData, ['validate' => 'edit']);
-			
+
             if (count($data->getErrors()) == 0) {
                 $data->name = trim($requestData['Evaluationcategories']['name']);
 				$data->modified = date("Y-m-d H:i:s");
@@ -153,7 +145,7 @@ class EvaluationcategoriesController extends AppController {
         }
         $this->set('evaluationcategories', $evaluationcategories);
     }
-	
+
 	public function activatecategory($slug = null) {
         if ($slug != '') {
             $this->viewBuilder()->setLayout("");
@@ -175,21 +167,21 @@ class EvaluationcategoriesController extends AppController {
             $this->render('update_status');
         }
     }
-	
+
 	public function deletecategory($slug = null) {exit;
-		
+
         // to chek if category exists
 		if($slug)
 		{
 			// to get details of tag
 			$categoryD = $this->Evaluationcategories->find()->where(['Evaluationcategories.slug' => $slug])->first();
-			
+
 			if($categoryD)
 			{
 				// to check if any question is related with this category
 				$condChk = array();
 				$condChk[] = "(Evaluationquestions.evaluationcategory_id = '".$categoryD->id."')";
-				
+
 				$checkExists = $this->Evaluationquestions->find()->where($condChk)->first();
 				if($checkExists)
 				{
@@ -210,7 +202,7 @@ class EvaluationcategoriesController extends AppController {
 		{
 			$this->Flash->error('Invalid details.');
 		}
-		
+
         $this->redirect(['controller' => 'evaluationcategories', 'action' => 'index']);
     }
 

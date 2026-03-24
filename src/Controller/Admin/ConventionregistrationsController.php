@@ -17,14 +17,6 @@ class ConventionregistrationsController extends AppController {
         parent::initialize();
         $this->loadComponent('Paginator');
         $this->loadComponent('Flash');
-        $action = $this->request->getParam('action');
-        $loggedAdminId = $this->request->getSession()->read('admin_id');
-        if ($action != 'forgotPassword' && $action != 'logout') {
-            if (!$loggedAdminId && $action != "login" && $action != 'captcha') {
-                $this->redirect(['controller' => 'admins', 'action' => 'login']);
-            }
-        }
-		
 		$this->loadModel('Conventions');
 		$this->loadModel('Events');
 		$this->loadModel('Settings');
@@ -47,20 +39,20 @@ class ConventionregistrationsController extends AppController {
         $separator = array();
         $condition = array();
         //$condition = array('Conventionregistrations.parent_id' => 0);
-		
+
 		// to check if conv season selected from header then filter list
 		$sess_admin_header_season_id = $this->request->getSession()->read("sess_admin_header_season_id");
 		if($sess_admin_header_season_id>0)
 		{
 			$condition[] = "(Conventionregistrations.conventionseason_id = '".$sess_admin_header_season_id."')";
 		}
-		
+
 		global $priceStructureCR;
 		$this->set('priceStructureCR', $priceStructureCR);
-		
+
 		$conventionsDD = $this->Conventions->find()->where([])->order(['Conventions.name' => 'ASC'])->combine('id', 'name')->toArray();
 		$this->set('conventionsDD', $conventionsDD);
-		
+
 		$seasonsDD = $this->Seasons->find()->where([])->order(['Seasons.season_year' => 'DESC'])->combine('season_year', 'season_year')->toArray();
 		$this->set('seasonsDD', $seasonsDD);
 
@@ -110,9 +102,9 @@ class ConventionregistrationsController extends AppController {
             $condition[] = "(Conventionregistrations.season_year = '".addslashes($season_year)."')";
             $this->set('season_year', $season_year);
         }
-		
+
 		//$this->pr($condition);
-		
+
         /* //$this->prx($condition);exit;
         $separator = implode("/", $separator);
         $this->set('separator', $separator);
@@ -123,34 +115,34 @@ class ConventionregistrationsController extends AppController {
             $this->viewBuilder()->templatePath('Element' . DS . 'Admin/Conventionregistrations');
             $this->render('index');
         } */
-		
+
 		$conventionregistrations 		= $this->Conventionregistrations->find()->where($condition)->contain(['Conventions','Users'])->order(['Conventionregistrations.id' => 'DESC'])->all();
 		$this->set('conventionregistrations', $conventionregistrations);
-		
+
     }
-	
+
 	public function teachers($slug=null) {
 
         $this->set('title', ADMIN_TITLE . 'Convention Registrations Supervisors');
         $this->viewBuilder()->setLayout('admin');
         $this->set('manageRegistrations', '1');
         $this->set('registrationsList', '1');
-		
+
 		$separator = array();
         $condition = array();
         //$condition = array('Conventionregistrations.parent_id' => 0);
-		
+
 		if($slug)
 		{
 			$CRDetails = $this->Conventionregistrations->find()->where(['Conventionregistrations.slug' => $slug])->contain(['Conventions'])->first();
 			$this->set('CRDetails', $CRDetails);
-			
+
 			$this->set('slug', $slug);
-			
+
 			$condition = array('Conventionregistrationteachers.conventionregistration_id' => $CRDetails->id);
 		}
 
-        
+
 
         if ($this->request->is('post')) {
             if (isset($this->request->getData()['action'])) {
@@ -198,7 +190,7 @@ class ConventionregistrationsController extends AppController {
             $condition[] = "(Conventionregistrationteachers.season_year = '".addslashes($season_year)."')";
             $this->set('season_year', $season_year);
         }
-		
+
         //$this->prx($condition);exit;
         $separator = implode("/", $separator);
         $this->set('separator', $separator);
@@ -210,28 +202,28 @@ class ConventionregistrationsController extends AppController {
             $this->render('teachers');
         }
     }
-	
+
 	public function students($slug=null) {
 
         $this->set('title', ADMIN_TITLE . 'Convention Registrations Students');
         $this->viewBuilder()->setLayout('admin');
         $this->set('manageRegistrations', '1');
         $this->set('registrationsList', '1');
-		
+
 		$separator = array();
         $condition = array();
-		
+
 		if($slug)
 		{
 			$CRDetails = $this->Conventionregistrations->find()->where(['Conventionregistrations.slug' => $slug])->contain(['Conventions'])->first();
 			$this->set('CRDetails', $CRDetails);
-			
+
 			$this->set('slug', $slug);
-			
+
 			$condition = array('Conventionregistrationstudents.conventionregistration_id' => $CRDetails->id);
 		}
 
-        
+
 
         if ($this->request->is('post')) {
             if (isset($this->request->getData()['action'])) {
@@ -279,7 +271,7 @@ class ConventionregistrationsController extends AppController {
             $condition[] = "(Conventionregistrationstudents.season_year = '".addslashes($season_year)."')";
             $this->set('season_year', $season_year);
         }
-		
+
         //$this->prx($condition);exit;
         $separator = implode("/", $separator);
         $this->set('separator', $separator);
@@ -291,28 +283,28 @@ class ConventionregistrationsController extends AppController {
             $this->render('students');
         }
     }
-	
+
 	public function heartevents($slug=null) {
 
         $this->set('title', ADMIN_TITLE . 'Events of the heart');
         $this->viewBuilder()->setLayout('admin');
         $this->set('manageRegistrations', '1');
         $this->set('registrationsList', '1');
-		
+
 		$separator = array();
         $condition = array();
-		
+
 		if($slug)
 		{
 			$CRDetails = $this->Conventionregistrations->find()->where(['Conventionregistrations.slug' => $slug])->contain(['Conventions'])->first();
 			$this->set('CRDetails', $CRDetails);
-			
+
 			$this->set('slug', $slug);
-			
+
 			$condition = array('Heartevents.conventionregistration_id' => $CRDetails->id);
 		}
 
-        
+
 
         if ($this->request->is('post')) {
             if (isset($this->request->getData()['action'])) {
@@ -360,7 +352,7 @@ class ConventionregistrationsController extends AppController {
             $condition[] = "(Heartevents.season_year = '".addslashes($season_year)."')";
             $this->set('season_year', $season_year);
         }
-		
+
         //$this->prx($condition);exit;
         $separator = implode("/", $separator);
         $this->set('separator', $separator);
@@ -372,20 +364,20 @@ class ConventionregistrationsController extends AppController {
             $this->render('heartevents');
         }
     }
-	
+
 	public function removedocument($eventheart_slug = null, $conv_reg_slug = null) {
-		
+
 		$convRedG = $this->Conventionregistrations->find()->where(['Conventionregistrations.slug' => $conv_reg_slug])->first();
 		if($convRedG)
 		{
 			// check if events of heart exists
 			$checkExists = $this->Heartevents->find()->where(['Heartevents.slug' => $eventheart_slug,'Heartevents.conventionregistration_id' => $convRedG->id])->first();
-			
+
 			if($checkExists)
 			{
 				// to remove document as well
 				@unlink(UPLOAD_EVENTS_HEART_PATH.$checkExists->mediafile_file_system_name);
-				
+
 				$this->Flash->success('Events of the heart removed successfully.');
 				$this->Heartevents->deleteAll(["slug" => $eventheart_slug]);
 			}
@@ -398,20 +390,20 @@ class ConventionregistrationsController extends AppController {
 		{
 			$this->Flash->error('Invalid registration.');
 		}
-		
+
 		$this->redirect(['controller' => 'conventionregistrations', 'action' => 'heartevents', $conv_reg_slug]);
     }
-	
+
 	public function approvejudgeregistration($slug=null) {
-        
+
 		$convRegEnteredD = $this->Conventionregistrations->find()->where(['Conventionregistrations.slug' => $slug,'Conventionregistrations.status' => 2])->contain(['Conventions','Users'])->first();
 		if($convRegEnteredD)
 		{
 			$this->Conventionregistrations->updateAll(['status' => '1','modified' => date('Y-m-d H:i:s', time())], ["slug"=>$slug]);
-			
+
 			// now sendning email to judge that account is active
 			$emailId = $convRegEnteredD->Users['email_address'];
-							
+
 			$emailtemplateMessage = $this->Emailtemplates->find()->where(['Emailtemplates.id' => '19'])->first();
 
 			$toRepArray = array('[!first_name!]','[!convention_name!]','[!season_year!]');
@@ -419,13 +411,13 @@ class ConventionregistrationsController extends AppController {
 
 			$subjectToSend = str_replace($toRepArray, $fromRepArray, $emailtemplateMessage['subject']);
 			$messageToSend = str_replace($toRepArray, $fromRepArray, $emailtemplateMessage['template']);
-			
+
 			//echo $messageToSend; exit;
-			
+
             $this->sendLegacyHtmlEmail($emailId, $subjectToSend, $messageToSend, [HEADERS_FROM_EMAIL => HEADERS_FROM_NAME], ACCOUNTS_TEAM_ANOTHER_EMAIL);
-			
+
 			$this->Flash->success('Registration approved successfully.');
-		
+
 		}
 		else
 		{
@@ -433,17 +425,17 @@ class ConventionregistrationsController extends AppController {
 		}
         $this->redirect(['controller'=>'conventionregistrations', 'action' => 'index']);
     }
-	
+
 	public function declinejudgeregistration($slug=null) {
-        
+
 		$convRegEnteredD = $this->Conventionregistrations->find()->where(['Conventionregistrations.slug' => $slug,'Conventionregistrations.status' => 2])->contain(['Conventions','Users'])->first();
 		if($convRegEnteredD)
 		{
 			$this->Conventionregistrations->updateAll(['status' => '0','modified' => date('Y-m-d H:i:s', time())], ["slug"=>$slug]);
-			
+
 			// now sendning email to judge that account is active
 			$emailId = $convRegEnteredD->Users['email_address'];
-							
+
 			$emailtemplateMessage = $this->Emailtemplates->find()->where(['Emailtemplates.id' => '20'])->first();
 
 			$toRepArray = array('[!first_name!]','[!convention_name!]','[!season_year!]');
@@ -451,13 +443,13 @@ class ConventionregistrationsController extends AppController {
 
 			$subjectToSend = str_replace($toRepArray, $fromRepArray, $emailtemplateMessage['subject']);
 			$messageToSend = str_replace($toRepArray, $fromRepArray, $emailtemplateMessage['template']);
-			
+
 			//echo $messageToSend; exit;
-			
+
             $this->sendLegacyHtmlEmail($emailId, $subjectToSend, $messageToSend, [HEADERS_FROM_EMAIL => HEADERS_FROM_NAME], ACCOUNTS_TEAM_ANOTHER_EMAIL);
-			
+
 			$this->Flash->success('Registration approved successfully.');
-		
+
 		}
 		else
 		{
@@ -465,19 +457,19 @@ class ConventionregistrationsController extends AppController {
 		}
         $this->redirect(['controller'=>'conventionregistrations', 'action' => 'index']);
     }
-	
+
 	public function judgeregevents($slug=null) {
 
         $this->set('title', ADMIN_TITLE . 'Judge Events');
         $this->viewBuilder()->setLayout('admin');
         $this->set('manageRegistrations', '1');
         $this->set('registrationsList', '1');
-		
+
 		if($slug)
 		{
 			$CRDetails = $this->Conventionregistrations->find()->where(['Conventionregistrations.slug' => $slug])->contain(['Conventions','Users'])->first();
 			$this->set('CRDetails', $CRDetails);
-			
+
 			// sometimes conventionseason_id is null
 			if($CRDetails->conventionseason_id >0)
 			{
@@ -487,19 +479,19 @@ class ConventionregistrationsController extends AppController {
 			{
 				// get conv season
 				$getConvSeason = $this->Conventionseasons->find()->where(['Conventionseasons.convention_id' => $CRDetails->convention_id,'Conventionseasons.season_id' => $CRDetails->season_id,'Conventionseasons.season_year' => $CRDetails->season_year])->first();
-				
+
 				if($getConvSeason->id >0)
 				{
 					// update conv season id
 					$this->Conventionregistrations->updateAll(['conventionseason_id' => $getConvSeason->id], ["slug" => $slug]);
-					
+
 					$CRDetails = $this->Conventionregistrations->find()->where(['Conventionregistrations.slug' => $slug])->contain(['Conventions','Users'])->first();
 				}
-				
+
 			}
-			
+
 			$this->set('slug', $slug);
-			
+
 			// to get the list of event ids chosen in this convention for this season
 			$arrConvSeasonEvents = array();
 			$arrConvSeasonEvents[] = 0;
@@ -509,7 +501,7 @@ class ConventionregistrationsController extends AppController {
 				$arrConvSeasonEvents[] = $convsevent->event_id;
 			}
 			$arrConvSeasonEventsImplode = implode(",",$arrConvSeasonEvents);
-			
+
 			// now create event dropdown with event name and number
 			$eventNameIDDD = array();
 			$condEvents = array();
@@ -520,15 +512,15 @@ class ConventionregistrationsController extends AppController {
 				$eventNameIDDD[$eventrec->id] = $eventrec->event_name.' ('.$eventrec->event_id_number.')';
 			}
 			$this->set('eventNameIDDD', $eventNameIDDD);
-			
-			
-			
+
+
+
 			if ($this->request->is('post'))
-			{	
+			{
 				//$this->prx($this->request->getData());
-				
+
 				$send_email_notification = $this->request->getData()['send_email_notification'];
-				
+
 				if(count($this->request->getData()['Conventionregistrations']['judges_event_ids']))
 				{
 					$judges_event_ids 			= implode(",",$this->request->getData()['Conventionregistrations']['judges_event_ids']);
@@ -537,16 +529,16 @@ class ConventionregistrationsController extends AppController {
 				{
 					$judges_event_ids 			= '';
 				}
-				
+
 				$this->Conventionregistrations->updateAll(['judges_event_ids' => $judges_event_ids, 'modified' => date("Y-m-d H:i:s")], ["slug" => $slug]);
-				
-				
+
+
 				// for us to send email notification that events have been added to their judges portal
 				$msgNot = "";
 				if($send_email_notification)
 				{
 					$emailId = $CRDetails->Users['email_address'];
-									
+
 					$emailtemplateMessage = $this->Emailtemplates->find()->where(['Emailtemplates.id' => '25'])->first();
 
 					$toRepArray = array('[!first_name!]','[!convention_name!]','[!season_year!]');
@@ -554,66 +546,66 @@ class ConventionregistrationsController extends AppController {
 
 					$subjectToSend = str_replace($toRepArray, $fromRepArray, $emailtemplateMessage['subject']);
 					$messageToSend = str_replace($toRepArray, $fromRepArray, $emailtemplateMessage['template']);
-					
+
 					//echo $messageToSend; exit;
-					
+
                     $this->sendLegacyHtmlEmail($emailId, $subjectToSend, $messageToSend, [HEADERS_FROM_EMAIL => HEADERS_FROM_NAME], ACCOUNTS_TEAM_ANOTHER_EMAIL);
-					
+
 					$msgNot = " Email notification sent successfully to judge.";
 				}
-				
-				
+
+
 				$this->Flash->success('Events list updated successfully.'.$msgNot);
 				$this->redirect(['controller'=>'conventionregistrations', 'action' => 'index']);
-				 
+
 			}
-			
-			
+
+
 		}
 		else
 		{
 			$this->Flash->error('Invalid action.');
 			$this->redirect(['controller'=>'conventionregistrations', 'action' => 'index']);
 		}
-        
+
     }
-	
+
 	public function allschools($conv_season_slug=null) {
 
         $this->set('title', ADMIN_TITLE . 'Convention Registrations Schools');
         $this->viewBuilder()->setLayout('admin');
         $this->set('dashboard', '1');
-		
+
 		$sess_admin_header_season_id = $this->request->getSession()->read("sess_admin_header_season_id");
 		$convSeasonD = $this->Conventionseasons->find()->where(['Conventionseasons.id' => $sess_admin_header_season_id])->first();
-		
+
 		$this->set('convSeasonD', $convSeasonD);
-		
+
 		$condition = array();
-		
+
 		$condition[] = "(Conventionregistrations.convention_id = '".$convSeasonD->convention_id."' AND Conventionregistrations.season_id = '".$convSeasonD->season_id."' AND Conventionregistrations.season_year = '".$convSeasonD->season_year."')";
-		
-		
+
+
 		$conventionregistrations = $this->Conventionregistrations->find()->contain(['Users'])->where($condition)->order(["Conventionregistrations.id" => "DESC"])->all();
 		$this->set('conventionregistrations', $conventionregistrations);
     }
-	
+
 	public function alljudges() {
 
         $this->set('title', ADMIN_TITLE . 'Convention Registrations Judges');
         $this->viewBuilder()->setLayout('admin');
         $this->set('dashboard', '1');
         //$this->set('registrationsList', '1');
-		
+
 		$sess_admin_header_season_id = $this->request->getSession()->read("sess_admin_header_season_id");
 		$convSeasonD = $this->Conventionseasons->find()->where(['Conventionseasons.id' => $sess_admin_header_season_id])->first();
-		
+
 		$condition[] = "(Conventionregistrations.convention_id = '".$convSeasonD->convention_id."' AND Conventionregistrations.season_id = '".$convSeasonD->season_id."' AND Conventionregistrations.season_year = '".$convSeasonD->season_year."')";
-		
+
 		$conventionregistrations = $this->Conventionregistrations->find()->contain(['Users'])->where($condition)->order(["Conventionregistrations.id" => "DESC"])->all();
 		$this->set('conventionregistrations', $conventionregistrations);
     }
-	
+
 
 }
 

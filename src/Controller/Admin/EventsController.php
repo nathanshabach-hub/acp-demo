@@ -17,14 +17,6 @@ class EventsController extends AppController {
         parent::initialize();
         $this->loadComponent('Paginator');
         $this->loadComponent('Flash');
-        $action = $this->request->getParam('action');
-        $loggedAdminId = $this->request->getSession()->read('admin_id');
-        if ($action != 'forgotPassword' && $action != 'logout') {
-            if (!$loggedAdminId && $action != "login" && $action != 'captcha') {
-                $this->redirect(['controller' => 'admins', 'action' => 'login']);
-            }
-        }
-		
 		$this->loadModel('Divisions');
 		$this->loadModel('Books');
 		$this->loadModel("Conventionseasonevents");
@@ -36,7 +28,7 @@ class EventsController extends AppController {
         $this->viewBuilder()->setLayout('admin');
         $this->set('manageEvents', '1');
         $this->set('eventList', '1');
-		
+
 		$divisionDD = $this->Divisions->find()->where([])->order(['Divisions.name' => 'ASC'])->combine('id', 'name')->toArray();
 		$this->set('divisionDD', $divisionDD);
 
@@ -66,11 +58,11 @@ class EventsController extends AppController {
             if (isset($requestData['Events']['keyword']) && $requestData['Events']['keyword'] != '') {
                 $keyword = trim($requestData['Events']['keyword']);
             }
-			
+
 			if (isset($requestData['Events']['division_id']) && $requestData['Events']['division_id'] != '') {
 				$division_id = trim($requestData['Events']['division_id']);
             }
-			
+
         } elseif ($this->request->getParam('pass')) {
             if (isset($this->request->getParam('pass')[0]) && $this->request->getParam('pass')[0] != '') {
                 $searchArr = $this->request->getParam('pass');
@@ -93,7 +85,7 @@ class EventsController extends AppController {
             $condition[] = "(Events.division_id = '".addslashes($division_id)."')";
             $this->set('division_id', $division_id);
         }
-		
+
         //pr($condition);exit;
         $separator = implode("/", $separator);
         $this->set('separator', $separator);
@@ -129,7 +121,7 @@ class EventsController extends AppController {
     }
 
     public function deleteevent($slug = null) {
-        
+
 		// first check that this event exists
 		$eventD = $this->Events->find()->where(['Events.slug' => $slug])->first();
 		if($eventD)
@@ -137,7 +129,7 @@ class EventsController extends AppController {
 			// to check if this event linked with any other data
 			$event_id 	= $eventD->id;
 			$flagDelete = 1;
-			
+
 			//check in conventionseasonevents
 			$checkConventionSeasonEvents = $this->Conventionseasonevents->find()->where(['Conventionseasonevents.event_id' => $event_id])->first();
 			if($checkConventionSeasonEvents)
@@ -145,7 +137,7 @@ class EventsController extends AppController {
 				$flagDelete = 0;
 				$this->Flash->error('Event cannot delete. Event is linked with Convention > Seasons > Events.');
 			}
-			
+
 			if($flagDelete == 1)
 			{
 				$this->Events->deleteAll(["slug" => $slug]);
@@ -156,55 +148,55 @@ class EventsController extends AppController {
 		{
 			$this->Flash->error('Event not found.');
 		}
-		
-		
+
+
         $this->redirect(['controller' => 'events', 'action' => 'index']);
     }
 
     public function add() {
         $this->set('title', ADMIN_TITLE . 'Add Event');
         $this->viewBuilder()->setLayout('admin');
-		
+
         $this->set('manageEvents', '1');
         $this->set('eventAdd', '1');
-		
+
 		$divisionDD = $this->Divisions->find()->where([])->order(['Divisions.name' => 'ASC'])->combine('id', 'name')->toArray();
 		$this->set('divisionDD', $divisionDD);
-		
+
 		$bookDD = $this->Books->find()->where([])->order(['Books.book_name' => 'ASC'])->combine('id', 'book_name')->toArray();
 		$this->set('bookDD', $bookDD);
-		
+
 		global $yesNoDD;
 		$this->set('yesNoDD', $yesNoDD);
-		
+
 		global $eventTypeDD;
 		$this->set('eventTypeDD', $eventTypeDD);
-		
+
 		global $eventUploadTypeDD;
 		$this->set('eventUploadTypeDD', $eventUploadTypeDD);
-		
+
 		global $eventGroupNameDD;
 		$this->set('eventGroupNameDD', $eventGroupNameDD);
-		
+
 		global $eventGenderDD;
 		$this->set('eventGenderDD', $eventGenderDD);
-		
+
 		global $eventKindID;
 		$this->set('eventKindID', $eventKindID);
-		
+
 		global $eventJudgeType;
 		$this->set('eventJudgeType', $eventJudgeType);
-		
+
         $events = $this->Events->newEntity();
         if ($this->request->is('post')) {
-			
+
             //$this->prx($this->request->getData());
             $requestData = $this->request->getData();
-			
+
             $data = $this->Events->patchEntity($events, $requestData, ['validate' => 'add']);
-			
+
             $book_ids = $requestData['Events']['book_ids'];
-			
+
 			if(isset($book_ids) && count($book_ids))
 			{
 				$data->book_ids = implode(",",$book_ids);
@@ -213,7 +205,7 @@ class EventsController extends AppController {
 			{
 				$data->book_ids = '';
 			}
-			
+
             if (count($data->getErrors()) == 0) {
 
 				$slug = $this->getSlug($requestData['Events']['event_name'] . ' ' . time(), 'Events');
@@ -235,51 +227,51 @@ class EventsController extends AppController {
     public function edit($slug = null) {
         $this->set('title', ADMIN_TITLE . 'Edit Event');
         $this->viewBuilder()->setLayout('admin');
-        
+
 		$this->set('manageEvents', '1');
         $this->set('eventList', '1');
-		
+
 		$divisionDD = $this->Divisions->find()->where([])->order(['Divisions.name' => 'ASC'])->combine('id', 'name')->toArray();
 		$this->set('divisionDD', $divisionDD);
-		
+
 		$bookDD = $this->Books->find()->where([])->order(['Books.book_name' => 'ASC'])->combine('id', 'book_name')->toArray();
 		$this->set('bookDD', $bookDD);
-		
+
 		global $yesNoDD;
 		$this->set('yesNoDD', $yesNoDD);
-		
+
 		global $eventTypeDD;
 		$this->set('eventTypeDD', $eventTypeDD);
-		
+
 		global $eventUploadTypeDD;
 		$this->set('eventUploadTypeDD', $eventUploadTypeDD);
-		
+
 		global $eventGroupNameDD;
 		$this->set('eventGroupNameDD', $eventGroupNameDD);
-		
+
 		global $eventGenderDD;
 		$this->set('eventGenderDD', $eventGenderDD);
-		
+
 		global $eventKindID;
 		$this->set('eventKindID', $eventKindID);
-		
+
 		global $eventJudgeType;
 		$this->set('eventJudgeType', $eventJudgeType);
-		
+
         if ($slug) {
             $categories1 = $this->Events->find()->where(['Events.slug' => $slug])->first();
             $uid = $categories1->id;
         }
-		
+
         $events = $this->Events->get($uid);
         if ($this->request->is(['post', 'put'])) {
 			$requestData = $this->request->getData();
             $data = $this->Events->patchEntity($events, $requestData);
-			
+
 			$book_ids = $requestData['Events']['book_ids'];
-			
-			
-			
+
+
+
 			if(isset($book_ids) && count((array)$book_ids))
 			{
 				$data->book_ids = implode(",",(array)$book_ids);
@@ -288,9 +280,9 @@ class EventsController extends AppController {
 			{
 				$data->book_ids = '';
 			}
-			
+
             if (count($data->getErrors()) == 0) {
-				
+
 				$data->modified = date("Y-m-d H:i:s");
                 if ($this->Events->save($data)) {
                     $this->Flash->success('Event details updated successfully.');

@@ -13,15 +13,7 @@ class PastorsController extends AppController {
         parent::initialize();
         $this->loadComponent('Paginator');
         $this->loadComponent('Flash');
-        
-        $action = $this->request->getParam('action');
-        $loggedAdminId = $this->request->getSession()->read('admin_id');
-        if ($action != 'forgotPassword' && $action != 'logout') {
-            if (!$loggedAdminId && $action != "login" && $action != 'captcha') {
-                $this->redirect(['controller' => 'admins', 'action' => 'login']);
-            }
-        }
-    }
+            }
 
     public function index() {
         $this->set('title', ADMIN_TITLE . 'Manage Pastors');
@@ -76,7 +68,7 @@ class PastorsController extends AppController {
         $this->set('separator', $separator);
         $this->paginate = ['conditions' => $condition, 'limit' => 50, 'order' => ['Pastors.id' => 'DESC']];
         $this->set('pastors', $this->paginate($this->Pastors));
-        
+
         if ($this->request->is("ajax")) {
             $this->viewBuilder()->setLayout(($this->request->is("ajax")) ? "" : "default");
             $this->viewBuilder()->templatePath('Element' . DS . 'Admin/Pastors');
@@ -91,17 +83,17 @@ class PastorsController extends AppController {
         $this->set('addPastor', '1');
 
         $pastor = $this->Pastors->newEntity();
-        
+
         if ($this->request->is('post')) {
             $pastor = $this->Pastors->patchEntity($pastor, $this->request->getData());
-            
+
             if ($this->Pastors->save($pastor)) {
                 $this->Flash->success('Pastor has been added successfully.');
                 return $this->redirect(['action' => 'index']);
             }
             $this->Flash->error('Pastor could not be saved. Please, try again.');
         }
-        
+
         $this->set(compact('pastor'));
     }
 
@@ -112,30 +104,30 @@ class PastorsController extends AppController {
         $this->set('editPastor', '1');
 
         $pastor = $this->Pastors->get($id);
-        
+
         if ($this->request->is(['patch', 'post', 'put'])) {
             $pastor = $this->Pastors->patchEntity($pastor, $this->request->getData());
-            
+
             if ($this->Pastors->save($pastor)) {
                 $this->Flash->success('Pastor has been updated successfully.');
                 return $this->redirect(['action' => 'index']);
             }
             $this->Flash->error('Pastor could not be saved. Please, try again.');
         }
-        
+
         $this->set(compact('pastor'));
     }
 
     public function delete($id = null) {
         $this->request->allowMethod(['post', 'delete']);
         $pastor = $this->Pastors->get($id);
-        
+
         if ($this->Pastors->delete($pastor)) {
             $this->Flash->success('Pastor has been deleted successfully.');
         } else {
             $this->Flash->error('Pastor could not be deleted. Please, try again.');
         }
-        
+
         return $this->redirect(['action' => 'index']);
     }
 }

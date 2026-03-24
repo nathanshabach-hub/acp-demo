@@ -17,13 +17,6 @@ class CitiesController extends AppController {
         parent::initialize();
         $this->loadComponent('Paginator');
         $this->loadComponent('Flash');
-        $action = $this->request->getParam('action');
-        $loggedAdminId = $this->request->getSession()->read('admin_id');
-        if ($action != 'forgotPassword' && $action != 'logout') {
-            if (!$loggedAdminId && $action != "login" && $action != 'captcha') {
-                $this->redirect(['controller' => 'admins', 'action' => 'login']);
-            }
-        }
     }
 
     public function index() {
@@ -111,10 +104,10 @@ class CitiesController extends AppController {
     }
 
     public function deleteamenity($slug = null) {
-        
+
 		// to get details of category
 		$catDetails = $this->Cities->find()->where(['Cities.slug' => $slug])->first();
-		
+
 		$this->Cities->deleteAll(["slug" => $slug]);
         $this->Flash->success('City details deleted successfully.');
         $this->redirect(['controller' => 'cities', 'action' => 'index']);
@@ -129,10 +122,10 @@ class CitiesController extends AppController {
         $cities = $this->Cities->newEntity();
 
         if ($this->request->is('post')) {
-			
+
 			//$this->prx($this->request->getData());
 			$requestData = $this->request->getData();
-			
+
             $data = $this->Cities->patchEntity($cities, $requestData, ['validate' => 'add']);
             if (count($data->getErrors()) == 0) {
 
@@ -156,20 +149,20 @@ class CitiesController extends AppController {
     public function edit($slug = null) {
         $this->set('title', ADMIN_TITLE . 'Edit City');
         $this->viewBuilder()->setLayout('admin');
-        
+
         $this->set('manageCities', '1');
         $this->set('locationList', '1');
-        
+
         if ($slug) {
             $categories1 = $this->Cities->find()->where(['Cities.slug' => $slug])->first();
             $uid = $categories1->id;
         }
-		
+
         $cities = $this->Cities->get($uid);
         if ($this->request->is(['post', 'put'])) {
 			$requestData = $this->request->getData();
             $data = $this->Cities->patchEntity($cities, $requestData, ['validate' => 'edit']);
-			
+
             if (count($data->getErrors()) == 0) {
                 $data->name = trim($requestData['Cities']['name']);
 				$data->modified = date("Y-m-d");

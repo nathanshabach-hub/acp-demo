@@ -17,14 +17,6 @@ class EventcategoriesController extends AppController {
         parent::initialize();
         $this->loadComponent('Paginator');
         $this->loadComponent('Flash');
-        $action = $this->request->getParam('action');
-        $loggedAdminId = $this->request->getSession()->read('admin_id');
-        if ($action != 'forgotPassword' && $action != 'logout') {
-            if (!$loggedAdminId && $action != "login" && $action != 'captcha') {
-                $this->redirect(['controller' => 'admins', 'action' => 'login']);
-            }
-        }
-		
 		$this->loadModel('Conventions');
 		$this->loadModel('Events');
     }
@@ -92,13 +84,13 @@ class EventcategoriesController extends AppController {
     }
 
     public function deletedivision($slug = null) {
-		
+
         // to chek if division exists
 		if($slug)
 		{
 			// to get details of division
 			$divisionD = $this->Eventcategories->find()->where(['Eventcategories.slug' => $slug])->first();
-			
+
 			if($divisionD)
 			{
 				// to check if any event associated with this eventcategories
@@ -122,23 +114,23 @@ class EventcategoriesController extends AppController {
 		{
 			$this->Flash->error('Invalid details.');
 		}
-		
+
         $this->redirect(['controller' => 'eventcategories', 'action' => 'index']);
     }
 
     public function add() {
         $this->set('title', ADMIN_TITLE . 'Add Division');
         $this->viewBuilder()->setLayout('admin');
-		
+
         $this->set('manageEvents', '1');
         $this->set('manageEventcategories', '1');
-		
+
         $eventcategories = $this->Eventcategories->newEntity();
         if ($this->request->is('post')) {
-			
+
 			//$this->prx($this->request->getData());
 			$requestData = $this->request->getData();
-			
+
             $data = $this->Eventcategories->patchEntity($eventcategories, $requestData, ['validate' => 'add']);
             if (count($data->getErrors()) == 0) {
 
@@ -162,20 +154,20 @@ class EventcategoriesController extends AppController {
     public function edit($slug = null) {
         $this->set('title', ADMIN_TITLE . 'Edit Division');
         $this->viewBuilder()->setLayout('admin');
-        
+
 		$this->set('manageEvents', '1');
         $this->set('manageEventcategories', '1');
-		
+
         if ($slug) {
             $categories1 = $this->Eventcategories->find()->where(['Eventcategories.slug' => $slug])->first();
             $uid = $categories1->id;
         }
-		
+
         $eventcategories = $this->Eventcategories->get($uid);
         if ($this->request->is(['post', 'put'])) {
 			$requestData = $this->request->getData();
             $data = $this->Eventcategories->patchEntity($eventcategories, $requestData, ['validate' => 'edit']);
-			
+
             if (count($data->getErrors()) == 0) {
                 $data->name = trim($requestData['Eventcategories']['name']);
 				$data->modified = date("Y-m-d H:i:s");

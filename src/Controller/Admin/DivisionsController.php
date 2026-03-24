@@ -17,14 +17,6 @@ class DivisionsController extends AppController {
         parent::initialize();
         $this->loadComponent('Paginator');
         $this->loadComponent('Flash');
-        $action = $this->request->getParam('action');
-        $loggedAdminId = $this->request->getSession()->read('admin_id');
-        if ($action != 'forgotPassword' && $action != 'logout') {
-            if (!$loggedAdminId && $action != "login" && $action != 'captcha') {
-                $this->redirect(['controller' => 'admins', 'action' => 'login']);
-            }
-        }
-		
 		$this->loadModel('Conventions');
 		$this->loadModel('Events');
 		$this->loadModel('Eventcategories');
@@ -92,13 +84,13 @@ class DivisionsController extends AppController {
     }
 
     public function deletedivision($slug = null) {
-		
+
         // to chek if division exists
 		/* if($slug)
 		{
 			// to get details of division
 			$divisionD = $this->Divisions->find()->where(['Divisions.slug' => $slug])->first();
-			
+
 			if($divisionD)
 			{
 				// to check if any event associated with this divisions
@@ -122,7 +114,7 @@ class DivisionsController extends AppController {
 		{
 			$this->Flash->error('Invalid details.');
 		} */
-		
+
 		$this->Flash->error('Division not allowed to delete.');
         $this->redirect(['controller' => 'divisions', 'action' => 'index']);
     }
@@ -130,19 +122,19 @@ class DivisionsController extends AppController {
     public function add() {
         $this->set('title', ADMIN_TITLE . 'Add Division');
         $this->viewBuilder()->setLayout('admin');
-		
+
         $this->set('manageEvents', '1');
         $this->set('manageDivisions', '1');
-		
+
 		// to get values of event categories
 		$eventCatDD = $this->Eventcategories->find()->where([])->order(['Eventcategories.name' => 'ASC'])->combine('id', 'name')->toArray();
 		$this->set('eventCatDD', $eventCatDD);
-		
+
         $divisions = $this->Divisions->newEntity();
         if ($this->request->is('post')) {
-			
+
 			//$this->prx($this->request->getData());
-			
+
             $data = $this->Divisions->patchEntity($divisions, $this->request->getData(), ['validate' => 'add']);
             if (count($data->getErrors()) == 0) {
 
@@ -167,23 +159,23 @@ class DivisionsController extends AppController {
     public function edit($slug = null) {
         $this->set('title', ADMIN_TITLE . 'Edit Division');
         $this->viewBuilder()->setLayout('admin');
-        
+
 		$this->set('manageEvents', '1');
         $this->set('manageDivisions', '1');
-		
+
 		// to get values of event categories
 		$eventCatDD = $this->Eventcategories->find()->where([])->order(['Eventcategories.name' => 'ASC'])->combine('id', 'name')->toArray();
 		$this->set('eventCatDD', $eventCatDD);
-		
+
         if ($slug) {
             $categories1 = $this->Divisions->find()->where(['Divisions.slug' => $slug])->first();
             $uid = $categories1->id;
         }
-		
+
         $divisions = $this->Divisions->get($uid);
         if ($this->request->is(['post', 'put'])) {
             $data = $this->Divisions->patchEntity($divisions, $this->request->getData(), ['validate' => 'edit']);
-			
+
             if (count($data->getErrors()) == 0) {
                 $data->name 			= trim($this->request->getData()['Divisions']['name']);
                 $data->eventcategory_id = trim($this->request->getData()['Divisions']['eventcategory_id']);

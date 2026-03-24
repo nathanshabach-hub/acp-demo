@@ -17,14 +17,6 @@ class EvaluationquestionsController extends AppController {
         parent::initialize();
         $this->loadComponent('Paginator');
         $this->loadComponent('Flash');
-        $action = $this->request->getParam('action');
-        $loggedAdminId = $this->request->getSession()->read('admin_id');
-        if ($action != 'forgotPassword' && $action != 'logout') {
-            if (!$loggedAdminId && $action != "login" && $action != 'captcha') {
-                $this->redirect(['controller' => 'admins', 'action' => 'login']);
-            }
-        }
-		
 		$this->loadModel('Evaluationcategories');
 		$this->loadModel('Evaluationareas');
     }
@@ -35,7 +27,7 @@ class EvaluationquestionsController extends AppController {
         $this->viewBuilder()->setLayout('admin');
         $this->set('manageEvaluations', '1');
         $this->set('questionsList', '1');
-		
+
 		$categoryDD = $this->Evaluationcategories->find()->where([])->order(['Evaluationcategories.name' => 'ASC'])->combine('id', 'name')->toArray();
 		$this->set('categoryDD', $categoryDD);
 
@@ -105,19 +97,19 @@ class EvaluationquestionsController extends AppController {
     public function add() {
         $this->set('title', ADMIN_TITLE . 'Add Question');
         $this->viewBuilder()->setLayout('admin');
-		
+
         $this->set('manageEvaluations', '1');
         $this->set('questionsList', '1');
-		
+
 		$categoryDD = $this->Evaluationcategories->find()->where([])->order(['Evaluationcategories.name' => 'ASC'])->combine('id', 'name')->toArray();
 		$this->set('categoryDD', $categoryDD);
-		
+
         $evaluationquestions = $this->Evaluationquestions->newEntity();
         if ($this->request->is('post')) {
-			
+
 			//$this->prx($this->request->getData());
 			$requestData = $this->request->getData();
-			
+
             $data = $this->Evaluationquestions->patchEntity($evaluationquestions, $requestData, ['validate' => 'add']);
             if (count($data->getErrors()) == 0) {
 
@@ -142,23 +134,23 @@ class EvaluationquestionsController extends AppController {
     public function edit($slug = null) {
         $this->set('title', ADMIN_TITLE . 'Edit Question');
         $this->viewBuilder()->setLayout('admin');
-        
+
 		$this->set('manageEvaluations', '1');
         $this->set('questionsList', '1');
-		
+
 		$categoryDD = $this->Evaluationcategories->find()->where([])->order(['Evaluationcategories.name' => 'ASC'])->combine('id', 'name')->toArray();
 		$this->set('categoryDD', $categoryDD);
-		
+
         if ($slug) {
             $questionD = $this->Evaluationquestions->find()->where(['Evaluationquestions.slug' => $slug])->first();
             $uid = $questionD->id;
         }
-		
+
         $evaluationquestions = $this->Evaluationquestions->get($uid);
         if ($this->request->is(['post', 'put'])) {
 			$requestData = $this->request->getData();
             $data = $this->Evaluationquestions->patchEntity($evaluationquestions, $requestData, ['validate' => 'edit']);
-			
+
             if (count($data->getErrors()) == 0) {
                 $data->name = trim($requestData['Evaluationquestions']['name']);
 				$data->modified = date("Y-m-d H:i:s");
@@ -172,7 +164,7 @@ class EvaluationquestionsController extends AppController {
         }
         $this->set('evaluationquestions', $evaluationquestions);
     }
-	
+
 	public function activatequestion($slug = null) {
         if ($slug != '') {
             $this->viewBuilder()->setLayout("");
@@ -194,21 +186,21 @@ class EvaluationquestionsController extends AppController {
             $this->render('update_status');
         }
     }
-	
+
 	public function deletequestion($slug = null) {exit;
-		
+
         // to chek if question exists
 		if($slug)
 		{
 			// to get details of question
 			$questionD = $this->Evaluationquestions->find()->where(['Evaluationquestions.slug' => $slug])->first();
-			
+
 			if($questionD)
 			{
 				// to check if any evaluation area is related with this question
 				$condCheck = array();
 				$condCheck[] = "(Evaluationareas.evaluationquestion_ids LIKE '".$questionD->id."' OR Evaluationareas.evaluationquestion_ids LIKE '".$questionD->id.",%' OR Evaluationareas.evaluationquestion_ids LIKE '%,".$questionD->id.",%' OR Evaluationareas.evaluationquestion_ids LIKE '%,".$questionD->id."')";
-				
+
 				$checkExists = $this->Evaluationareas->find()->where($condCheck)->first();
 				if($checkExists)
 				{
@@ -229,7 +221,7 @@ class EvaluationquestionsController extends AppController {
 		{
 			$this->Flash->error('Invalid details.');
 		}
-		
+
         $this->redirect(['controller' => 'evaluationquestions', 'action' => 'index']);
     }
 

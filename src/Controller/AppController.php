@@ -54,6 +54,26 @@ class AppController extends Controller{
 		$this->loadModel("Schedulingtimings");
     }
 	
+
+	public function beforeFilter(EventInterface $event) {
+		parent::beforeFilter($event);
+
+		$prefix = strtolower((string)$this->request->getParam('prefix'));
+		if ($prefix !== 'admin') {
+			return;
+		}
+
+		$action = strtolower((string)$this->request->getParam('action'));
+		$loggedAdminId = $this->request->getSession()->read('admin_id');
+		$allowedUnauthActions = ['login', 'logout', 'forgotpassword', 'captcha'];
+
+		if (!$loggedAdminId && !in_array($action, $allowedUnauthActions, true)) {
+			$response = $this->redirect(['prefix' => 'admin', 'controller' => 'admins', 'action' => 'login']);
+			$event->stopPropagation();
+			return $response;
+		}
+	}
+
 	public function beforeRender(EventInterface $event) {
         parent::beforeRender($event);
 		

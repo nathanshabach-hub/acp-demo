@@ -18,14 +18,6 @@ class JudgeevaluationsController extends AppController {
         parent::initialize();
         $this->loadComponent('Paginator');
         $this->loadComponent('Flash');
-        $action = $this->request->getParam('action');
-        $loggedAdminId = $this->request->getSession()->read('admin_id');
-        if ($action != 'forgotPassword' && $action != 'logout') {
-            if (!$loggedAdminId && $action != "login" && $action != 'captcha') {
-                $this->redirect(['controller' => 'admins', 'action' => 'login']);
-            }
-        }
-		
 		$this->loadModel('Conventions');
 		$this->loadModel('Conventionseasons');
 		$this->loadModel('Seasons');
@@ -35,20 +27,20 @@ class JudgeevaluationsController extends AppController {
 		$this->loadModel('Eventsubmissions');
 		$this->loadModel('Judgeevaluationmarks');
     }
-	
+
 	public function index() {
 
         $this->set('title', ADMIN_TITLE . 'Judge Evaluations');
         $this->viewBuilder()->setLayout('admin');
         $this->set('judgeEvaluations', '1');
         $this->set('judgeEvaluationsList', '1');
-		
+
 		$conventionsDD = $this->Conventions->find()->where([])->order(['Conventions.name' => 'ASC'])->combine('id', 'name')->toArray();
 		$this->set('conventionsDD', $conventionsDD);
-		
+
 		$seasonsDD = $this->Seasons->find()->where([])->order(['Seasons.season_year' => 'DESC'])->combine('season_year', 'season_year')->toArray();
 		$this->set('seasonsDD', $seasonsDD);
-		
+
 		$eventsDD = array();
 		$eventsList = $this->Events->find()->where([])->order(['Events.event_name' => 'DESC'])->all();
 		foreach($eventsList as $eventl)
@@ -56,17 +48,17 @@ class JudgeevaluationsController extends AppController {
 			$eventsDD[$eventl->id] = $eventl->event_name. ' ('.$eventl->event_id_number.')';
 		}
 		$this->set('eventsDD', $eventsDD);
-		
+
 		$separator = array();
         $condition = array();
-		
+
 		// to check if conv season selected from header then filter list
 		$sess_admin_header_season_id = $this->request->getSession()->read("sess_admin_header_season_id");
 		if($sess_admin_header_season_id>0)
 		{
 			$condition[] = "(Judgeevaluations.conventionseason_id = '".$sess_admin_header_season_id."')";
 		}
-		
+
 		if ($this->request->is('post')) {
             $requestData = $this->request->getData();
             if (isset($requestData['action'])) {
@@ -117,13 +109,13 @@ class JudgeevaluationsController extends AppController {
             $condition[] = "(Judgeevaluations.season_year = '".addslashes($season_year)."')";
             $this->set('season_year', $season_year);
         } */
-		
+
 		if (isset($event_id) && $event_id != '') {
             $separator[] = 'event_id:' . urlencode($event_id);
             $condition[] = "(Judgeevaluations.event_id = '".addslashes($event_id)."')";
             $this->set('event_id', $event_id);
         }
-		
+
         /* //$this->prx($condition);exit;
         $separator = implode("/", $separator);
         $this->set('separator', $separator);
@@ -134,19 +126,19 @@ class JudgeevaluationsController extends AppController {
             $this->viewBuilder()->templatePath('Element' . DS . 'Admin/Judgeevaluations');
             $this->render('index');
         } */
-		
+
 		$judgeevaluations 		= $this->Judgeevaluations->find()->where($condition)->contain(['Eventsubmissions','Conventionregistrations','Conventions','Events','Students','Schools','Judge','Judgeevaluationmarks'])->order(['Judgeevaluations.id' => 'DESC'])->limit(1000000)->all();
-		
+
 		$this->set('judgeevaluations', $judgeevaluations);
     }
-	
+
 	public function removejudgeevaluation($evaluation_slug=null) {
-		
+
 		$judgeEvalD = $this->Judgeevaluations->find()->where(['Judgeevaluations.slug' => $evaluation_slug])->first();
 		if($judgeEvalD)
 		{
 			$this->Judgeevaluations->deleteAll(["slug" => $evaluation_slug]);
-			
+
 			// remove evaluation questions marks
 			$this->Judgeevaluationmarks->deleteAll(["judgeevaluation_id" => $judgeEvalD->id]);
 			$this->Flash->success('Judge evaluation removed successfully.');
@@ -155,39 +147,39 @@ class JudgeevaluationsController extends AppController {
 		{
 			$this->Flash->error('Judge evaluation not found.');
 		}
-		
+
 		$this->redirect(['controller' => 'judgeevaluations', 'action' => 'index']);
     }
-	
+
 	public function timesscoreedit($evaluation_slug = null) {
-		
+
 		$this->set('title', ADMIN_TITLE . 'Edit Times Score');
         $this->viewBuilder()->setLayout('admin');
         $this->set('judgeEvaluations', '1');
         $this->set('judgeEvaluationsList', '1');
-		
+
         if ($evaluation_slug) {
             $judgeEvalD = $this->Judgeevaluations->find()->where(['Judgeevaluations.slug' => $evaluation_slug])->contain(['Events','Schools','Students'])->first();
 			$this->set('judgeEvalD', $judgeEvalD);
             $uid = $judgeEvalD->id;
         }
-		
+
         $judgeevaluations = $this->Judgeevaluations->get($uid);
         if ($this->request->is(['post', 'put']))
 		{
             //$this->prx($this->request->getData());
             $requestData = $this->request->getData();
-			
+
 			$this->Judgeevaluations->updateAll(
 			[
                 'time_score' 		=> $requestData['Judgeevaluations']['time_score'],
                 'place' 			=> $requestData['Judgeevaluations']['place'],
                 'withdraw_yes_no' 	=> $requestData['Judgeevaluations']['withdraw_yes_no'],
 				'modified'			=> date("Y-m-d H:i:s")
-			], 
+			],
 			['slug' => $evaluation_slug]
 			);
-			
+
             $this->Flash->success('Times score updated successfully.');
             $this->redirect(['controller' => 'judgeevaluations', 'action' => 'index']);
         }
