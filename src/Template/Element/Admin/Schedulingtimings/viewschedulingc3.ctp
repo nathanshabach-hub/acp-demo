@@ -18,7 +18,7 @@ $this->Schedulingtimings = TableRegistry::getTableLocator()->get('Schedulingtimi
             <div class="tbl-resp-listing">
 				<table id="convention_events" class="table table-bordered table-striped table-condensed cf">
                     <thead class="cf ajshort">
-                        <tr>
+							<tr>
                             <th class="sorting_paging">#DB ID</th>
                             <th class="sorting_paging">Room</th>
                             <th class="sorting_paging">Day</th>
@@ -36,7 +36,7 @@ $this->Schedulingtimings = TableRegistry::getTableLocator()->get('Schedulingtimi
 						{	
 						?>
                             <?php //pr($datarecord); exit;?> 
-                            <tr>
+							<tr data-schedule-id="<?php echo (int)$datarecord->id; ?>">
                                 <td data-title="DB ID"><?php echo $datarecord->id;?></td>
                                 <td data-title="Room"><?php echo !empty($datarecord->Conventionrooms) ? $datarecord->Conventionrooms['room_name'] : '<span class="label label-danger">No Room</span>';?></td>
                                 <td data-title="Day"><?php echo $datarecord->day !== null ? $datarecord->day : '<span class="label label-warning">Unscheduled</span>';?></td>

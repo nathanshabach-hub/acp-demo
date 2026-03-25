@@ -36,7 +36,7 @@ $this->Events = TableRegistry::getTableLocator()->get('Events');
 							$rowStyle = $isUnscheduled ? ' style="background:#ffe6e6;"' : '';
 						?>
                             <?php //pr($datarecord); exit;?> 
-                            <tr<?php echo $rowStyle; ?>>
+                            <tr data-schedule-id="<?php echo (int)$datarecord->id; ?>"<?php echo $rowStyle; ?>>
                                 <td data-title="DB ID"><?php echo $datarecord->id;?></td>
                                 <td data-title="Room"><?php echo !empty($datarecord->Conventionrooms) ? $datarecord->Conventionrooms['room_name'] : '<span class="label label-danger">No Room</span>';?></td>
                                 <td data-title="Day"><?php echo $datarecord->day !== null ? $datarecord->day : '<span class="label label-warning">Unscheduled</span>';?></td>

@@ -1,5 +1,13 @@
 <?php echo $this->Html->script('highcharts/highcharts.js'); ?>
 <?php echo $this->Html->script('highcharts/exporting.js'); ?>
+<style>
+.dashboard-drilldown-chart {
+    cursor: pointer;
+}
+.dashboard-drilldown-chart:hover {
+    opacity: 0.92;
+}
+</style>
 <div class="content-wrapper">
     <!-- Content Header (Page header) -->
     <section class="content-header">
@@ -114,7 +122,7 @@
                         <h3 class="box-title">Scheduled Events by Category <span class="help-icon" title="Number of scheduled entries in each scheduling category."><i class="fa fa-info-circle"></i></span></h3>
                     </div>
                     <div class="box-body">
-                        <div id="event-distribution-chart" style="height: 280px;"></div>
+                        <div id="event-distribution-chart" class="dashboard-drilldown-chart" data-chart-key="scheduled-by-category" style="height: 280px;"></div>
                     </div>
                 </div>
             </div>
@@ -124,7 +132,7 @@
                         <h3 class="box-title">Schedule Status <span class="help-icon" title="Breakdown of scheduled vs unscheduled entries."><i class="fa fa-info-circle"></i></span></h3>
                     </div>
                     <div class="box-body">
-                        <div id="event-status-chart" style="height: 280px;"></div>
+                        <div id="event-status-chart" class="dashboard-drilldown-chart" data-chart-key="schedule-status" style="height: 280px;"></div>
                     </div>
                 </div>
             </div>
@@ -136,7 +144,7 @@
                         <h3 class="box-title">Participants Breakdown <span class="help-icon" title="Number of students, supervisors, schools and judges registered."><i class="fa fa-info-circle"></i></span></h3>
                     </div>
                     <div class="box-body">
-                        <div id="registration-trend-chart" style="height: 280px;"></div>
+                        <div id="registration-trend-chart" class="dashboard-drilldown-chart" data-chart-key="participants-breakdown" style="height: 280px;"></div>
                     </div>
                 </div>
             </div>
@@ -146,7 +154,29 @@
                         <h3 class="box-title">Events per Convention Day <span class="help-icon" title="How many events are scheduled on each day of the convention."><i class="fa fa-info-circle"></i></span></h3>
                     </div>
                     <div class="box-body">
-                        <div id="schedule-timeline-chart" style="height: 280px;"></div>
+                        <div id="schedule-timeline-chart" class="dashboard-drilldown-chart" data-chart-key="events-per-day" style="height: 280px;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-6">
+                <div class="box box-primary">
+                    <div class="box-header with-border">
+                        <h3 class="box-title">Most Entered Events <span class="help-icon" title="Top events by registration count in this convention season."><i class="fa fa-info-circle"></i></span></h3>
+                    </div>
+                    <div class="box-body">
+                        <div id="top-entered-events-chart" class="dashboard-drilldown-chart" data-chart-key="most-entered-events" style="height: 320px;"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="box box-primary">
+                    <div class="box-header with-border">
+                        <h3 class="box-title">Events With No Registrations <span class="help-icon" title="Events configured for this season that currently have zero registrations."><i class="fa fa-info-circle"></i></span></h3>
+                    </div>
+                    <div class="box-body">
+                        <div id="unregistered-events-chart" class="dashboard-drilldown-chart" data-chart-key="events-with-no-registrations" style="height: 320px;"></div>
                     </div>
                 </div>
             </div>
@@ -155,6 +185,15 @@
 
     <script>
     $(document).ready(function() {
+        var drilldownBaseUrl = '<?php echo $this->Url->build(['controller' => 'Admins', 'action' => 'chartview']); ?>';
+        $('.dashboard-drilldown-chart').on('click', function () {
+            var chartKey = $(this).data('chart-key');
+            if (!chartKey) {
+                return;
+            }
+            window.location.href = drilldownBaseUrl + '/' + chartKey;
+        });
+
         if (typeof Highcharts === 'undefined') {
             $('.box-body [id$="-chart"]').html('<p style="color:#999;padding:20px;">Chart library failed to load. Please refresh the page.</p>');
             return;
@@ -220,6 +259,41 @@
             series: [{ name: 'Entries', data: dayCountData, color: '#3c8dbc' }],
             credits: { enabled: false }
         });
+
+        // Most entered events
+        var topEventLabels = <?php echo isset($topEventLabels) ? $topEventLabels : '[]'; ?>;
+        var topEventCounts = <?php echo isset($topEventCounts) ? $topEventCounts : '[]'; ?>;
+        if (Array.isArray(topEventLabels) && topEventLabels.length > 0) {
+            Highcharts.chart('top-entered-events-chart', {
+                chart: { type: 'bar' },
+                title: { text: null },
+                xAxis: { categories: topEventLabels, title: { text: null } },
+                yAxis: { min: 0, title: { text: 'Registrations' } },
+                legend: { enabled: false },
+                series: [{ name: 'Registrations', data: topEventCounts, color: '#00a65a' }],
+                credits: { enabled: false }
+            });
+        } else {
+            $('#top-entered-events-chart').html('<p style="color:#999;padding:20px;">No event registrations found yet.</p>');
+        }
+
+        // Events with no registrations
+        var unregisteredEventLabels = <?php echo isset($unregisteredEventLabels) ? $unregisteredEventLabels : '[]'; ?>;
+        var unregisteredEventFlags = <?php echo isset($unregisteredEventFlags) ? $unregisteredEventFlags : '[]'; ?>;
+        if (Array.isArray(unregisteredEventLabels) && unregisteredEventLabels.length > 0) {
+            Highcharts.chart('unregistered-events-chart', {
+                chart: { type: 'bar' },
+                title: { text: null },
+                xAxis: { categories: unregisteredEventLabels, title: { text: null } },
+                yAxis: { min: 0, max: 1, tickInterval: 1, title: { text: 'No Registration Flag' } },
+                legend: { enabled: false },
+                plotOptions: { bar: { dataLabels: { enabled: true, formatter: function () { return 'No registrations'; } } } },
+                series: [{ name: 'No registrations', data: unregisteredEventFlags, color: '#dd4b39' }],
+                credits: { enabled: false }
+            });
+        } else {
+            $('#unregistered-events-chart').html('<p style="color:#00a65a;padding:20px;">All configured events have registrations.</p>');
+        }
     });
     </script>
     <?php endif; ?>

@@ -599,11 +599,345 @@ class ConventionregistrationsController extends AppController {
 
 		$sess_admin_header_season_id = $this->request->getSession()->read("sess_admin_header_season_id");
 		$convSeasonD = $this->Conventionseasons->find()->where(['Conventionseasons.id' => $sess_admin_header_season_id])->first();
+        if (empty($convSeasonD)) {
+            $this->Flash->error('Please select a convention season first.');
+            return $this->redirect(['controller' => 'admins', 'action' => 'dashboard']);
+        }
+        $this->set('convSeasonD', $convSeasonD);
 
 		$condition[] = "(Conventionregistrations.convention_id = '".$convSeasonD->convention_id."' AND Conventionregistrations.season_id = '".$convSeasonD->season_id."' AND Conventionregistrations.season_year = '".$convSeasonD->season_year."')";
 
 		$conventionregistrations = $this->Conventionregistrations->find()->contain(['Users'])->where($condition)->order(["Conventionregistrations.id" => "DESC"])->all();
 		$this->set('conventionregistrations', $conventionregistrations);
+
+        $eventNameIDDD = $this->getSeasonEventNameMap((int)$convSeasonD->id);
+        $this->set('eventNameIDDD', $eventNameIDDD);
+
+        $conventionD = $this->Conventions->find()->where(['Conventions.id' => $convSeasonD->convention_id])->first();
+        $slugConvention = !empty($conventionD) ? (string)$conventionD->slug : '';
+        $slugConventionSeason = (string)$convSeasonD->slug;
+        $this->set('slugConvention', $slugConvention);
+        $this->set('slugConventionSeason', $slugConventionSeason);
+        $this->set('eventResultRouteMap', $this->getSeasonEventResultRouteMap($convSeasonD));
+    }
+
+    public function addjudgeevent($slug = null) {
+        $isAjax = $this->request->is('ajax');
+        if (!$this->request->is('post')) {
+            if ($isAjax) {
+                return $this->jsonJudgeEventResponse(false, 'Invalid request.');
+            }
+            $this->Flash->error('Invalid request.');
+            return $this->redirect(['action' => 'alljudges']);
+        }
+
+        $convSeasonD = $this->getSelectedConventionSeasonFromSession();
+        if (empty($convSeasonD)) {
+            if ($isAjax) {
+                return $this->jsonJudgeEventResponse(false, 'Please select a convention season first.');
+            }
+            $this->Flash->error('Please select a convention season first.');
+            return $this->redirect(['controller' => 'admins', 'action' => 'dashboard']);
+        }
+
+        $eventId = (int)$this->request->getData('event_id');
+        if ($eventId <= 0 || empty($slug)) {
+            if ($isAjax) {
+                return $this->jsonJudgeEventResponse(false, 'Invalid event selection.');
+            }
+            $this->Flash->error('Invalid event selection.');
+            return $this->redirect(['action' => 'alljudges']);
+        }
+
+        $allowedEventMap = $this->getSeasonEventNameMap((int)$convSeasonD->id);
+        $eventResultRouteMap = $this->getSeasonEventResultRouteMap($convSeasonD);
+        if (!isset($allowedEventMap[$eventId])) {
+            if ($isAjax) {
+                return $this->jsonJudgeEventResponse(false, 'Selected event is not available in this season.');
+            }
+            $this->Flash->error('Selected event is not available in this season.');
+            return $this->redirect(['action' => 'alljudges']);
+        }
+
+        $judgeReg = $this->Conventionregistrations->find()
+            ->contain(['Users'])
+            ->where(['Conventionregistrations.slug' => $slug])
+            ->first();
+
+        if (empty($judgeReg)) {
+            if ($isAjax) {
+                return $this->jsonJudgeEventResponse(false, 'Judge registration not found.');
+            }
+            $this->Flash->error('Judge registration not found.');
+            return $this->redirect(['action' => 'alljudges']);
+        }
+
+        $isJudge = (($judgeReg->Users['user_type'] == 'Judge' || $judgeReg->Users['user_type'] == 'Teacher_Parent') && (int)$judgeReg->Users['is_judge'] === 1);
+        if (!$isJudge) {
+            if ($isAjax) {
+                return $this->jsonJudgeEventResponse(false, 'Selected registration is not a judge.');
+            }
+            $this->Flash->error('Selected registration is not a judge.');
+            return $this->redirect(['action' => 'alljudges']);
+        }
+
+        $currentEventIds = [];
+        if (!empty($judgeReg->judges_event_ids)) {
+            $currentEventIds = array_values(array_unique(array_map('intval', array_filter(array_map('trim', explode(',', (string)$judgeReg->judges_event_ids))))));
+        }
+
+        if (in_array($eventId, $currentEventIds)) {
+            if ($isAjax) {
+                $payload = $this->buildJudgeEventPayload($judgeReg, $allowedEventMap, $eventResultRouteMap, $convSeasonD);
+                return $this->jsonJudgeEventResponse(true, 'Event already assigned to this judge.', $payload);
+            }
+            $this->Flash->success('Event already assigned to this judge.');
+            return $this->redirect(['action' => 'alljudges']);
+        }
+
+        $currentEventIds[] = $eventId;
+        sort($currentEventIds);
+        $this->Conventionregistrations->updateAll([
+            'judges_event_ids' => implode(',', $currentEventIds),
+            'modified' => date('Y-m-d H:i:s'),
+        ], ['id' => $judgeReg->id]);
+
+        $judgeReg->judges_event_ids = implode(',', $currentEventIds);
+        if ($isAjax) {
+            $payload = $this->buildJudgeEventPayload($judgeReg, $allowedEventMap, $eventResultRouteMap, $convSeasonD);
+            return $this->jsonJudgeEventResponse(true, 'Event added for judge successfully.', $payload);
+        }
+
+        $this->Flash->success('Event added for judge successfully.');
+        return $this->redirect(['action' => 'alljudges']);
+    }
+
+    public function removejudgeevent($slug = null) {
+        $isAjax = $this->request->is('ajax');
+        if (!$this->request->is('post')) {
+            if ($isAjax) {
+                return $this->jsonJudgeEventResponse(false, 'Invalid request.');
+            }
+            $this->Flash->error('Invalid request.');
+            return $this->redirect(['action' => 'alljudges']);
+        }
+
+        $convSeasonD = $this->getSelectedConventionSeasonFromSession();
+        if (empty($convSeasonD)) {
+            if ($isAjax) {
+                return $this->jsonJudgeEventResponse(false, 'Please select a convention season first.');
+            }
+            $this->Flash->error('Please select a convention season first.');
+            return $this->redirect(['controller' => 'admins', 'action' => 'dashboard']);
+        }
+
+        $eventId = (int)$this->request->getData('event_id');
+        if ($eventId <= 0 || empty($slug)) {
+            if ($isAjax) {
+                return $this->jsonJudgeEventResponse(false, 'Invalid event selection.');
+            }
+            $this->Flash->error('Invalid event selection.');
+            return $this->redirect(['action' => 'alljudges']);
+        }
+
+        $allowedEventMap = $this->getSeasonEventNameMap((int)$convSeasonD->id);
+        $eventResultRouteMap = $this->getSeasonEventResultRouteMap($convSeasonD);
+
+        $judgeReg = $this->Conventionregistrations->find()
+            ->contain(['Users'])
+            ->where(['Conventionregistrations.slug' => $slug])
+            ->first();
+
+        if (empty($judgeReg)) {
+            if ($isAjax) {
+                return $this->jsonJudgeEventResponse(false, 'Judge registration not found.');
+            }
+            $this->Flash->error('Judge registration not found.');
+            return $this->redirect(['action' => 'alljudges']);
+        }
+
+        $currentEventIds = [];
+        if (!empty($judgeReg->judges_event_ids)) {
+            $currentEventIds = array_values(array_unique(array_map('intval', array_filter(array_map('trim', explode(',', (string)$judgeReg->judges_event_ids))))));
+        }
+
+        if (!in_array($eventId, $currentEventIds)) {
+            if ($isAjax) {
+                $payload = $this->buildJudgeEventPayload($judgeReg, $allowedEventMap, $eventResultRouteMap, $convSeasonD);
+                return $this->jsonJudgeEventResponse(false, 'Selected event is not assigned to this judge.', $payload);
+            }
+            $this->Flash->error('Selected event is not assigned to this judge.');
+            return $this->redirect(['action' => 'alljudges']);
+        }
+
+        $updatedEventIds = [];
+        foreach ($currentEventIds as $currEventId) {
+            if ((int)$currEventId !== (int)$eventId) {
+                $updatedEventIds[] = (int)$currEventId;
+            }
+        }
+
+        $this->Conventionregistrations->updateAll([
+            'judges_event_ids' => implode(',', $updatedEventIds),
+            'modified' => date('Y-m-d H:i:s'),
+        ], ['id' => $judgeReg->id]);
+
+        $judgeReg->judges_event_ids = implode(',', $updatedEventIds);
+        if ($isAjax) {
+            $payload = $this->buildJudgeEventPayload($judgeReg, $allowedEventMap, $eventResultRouteMap, $convSeasonD);
+            return $this->jsonJudgeEventResponse(true, 'Event removed from judge successfully.', $payload);
+        }
+
+        $this->Flash->success('Event removed from judge successfully.');
+        return $this->redirect(['action' => 'alljudges']);
+    }
+
+    private function buildJudgeEventPayload($judgeReg, $eventNameMap, $eventResultRouteMap = [], $convSeasonD = null) {
+        $assignedEventIds = [];
+        if (!empty($judgeReg->judges_event_ids)) {
+            $assignedEventIds = array_values(array_unique(array_map('intval', array_filter(array_map('trim', explode(',', (string)$judgeReg->judges_event_ids))))));
+        }
+
+        $assignedEvents = [];
+        foreach ($assignedEventIds as $eventId) {
+            $assignedEvents[] = [
+                'id' => (int)$eventId,
+                'label' => isset($eventNameMap[$eventId]) ? (string)$eventNameMap[$eventId] : ('Event #' . $eventId),
+            ];
+        }
+
+        $resultRoutes = [];
+        foreach ($assignedEventIds as $eventId) {
+            if (isset($eventResultRouteMap[$eventId])) {
+                $resultRoutes[] = $eventResultRouteMap[$eventId];
+            }
+        }
+
+        $slugConvention = '';
+        $slugConventionSeason = '';
+        if (!empty($convSeasonD)) {
+            $slugConventionSeason = (string)$convSeasonD->slug;
+            $conventionD = $this->Conventions->find()->where(['Conventions.id' => $convSeasonD->convention_id])->first();
+            if (!empty($conventionD)) {
+                $slugConvention = (string)$conventionD->slug;
+            }
+        }
+
+        $availableEvents = [];
+        foreach ($eventNameMap as $eventId => $eventLabel) {
+            if (!in_array((int)$eventId, $assignedEventIds)) {
+                $availableEvents[] = [
+                    'id' => (int)$eventId,
+                    'label' => (string)$eventLabel,
+                ];
+            }
+        }
+
+        return [
+            'judge_id' => (int)$judgeReg->id,
+            'assigned_event_ids' => $assignedEventIds,
+            'assigned_events' => $assignedEvents,
+            'available_events' => $availableEvents,
+            'event_count' => count($assignedEventIds),
+            'result_routes' => $resultRoutes,
+            'slug_convention' => $slugConvention,
+            'slug_convention_season' => $slugConventionSeason,
+        ];
+    }
+
+    private function getSeasonEventResultRouteMap($convSeasonD) {
+        $routeMap = [];
+        if (empty($convSeasonD) || empty($convSeasonD->id)) {
+            return $routeMap;
+        }
+
+        $seasonEvents = $this->Conventionseasonevents->find()
+            ->where(['Conventionseasonevents.conventionseasons_id' => $convSeasonD->id])
+            ->contain(['Events'])
+            ->all();
+
+        foreach ($seasonEvents as $seasonEvent) {
+            if (empty($seasonEvent->Events)) {
+                continue;
+            }
+            $eventId = (int)$seasonEvent->event_id;
+            $routeMap[$eventId] = [
+                'event_id' => $eventId,
+                'event_slug' => (string)$seasonEvent->Events['slug'],
+                'event_label' => (string)$seasonEvent->Events['event_name'] . ' (' . (string)$seasonEvent->Events['event_id_number'] . ')',
+                'judging_type' => (string)$seasonEvent->Events['event_judging_type'],
+                'judging_ends' => (int)$seasonEvent->judging_ends,
+                'action_results' => $this->getResultActionByJudgingType((string)$seasonEvent->Events['event_judging_type']),
+            ];
+        }
+
+        return $routeMap;
+    }
+
+    private function getResultActionByJudgingType($judgingType) {
+        if ($judgingType == 'times') {
+            return 'resulttimes';
+        }
+        if ($judgingType == 'distances') {
+            return 'resultdistances';
+        }
+        if ($judgingType == 'scores') {
+            return 'resultscores';
+        }
+        if ($judgingType == 'soccer_kick') {
+            return 'resultsoccerkick';
+        }
+        if ($judgingType == 'spellings') {
+            return 'resultspellings';
+        }
+        return 'index';
+    }
+
+    private function jsonJudgeEventResponse($success, $message, $payload = []) {
+        $responseData = [
+            'success' => (bool)$success,
+            'message' => (string)$message,
+            'data' => is_array($payload) ? $payload : [],
+        ];
+        return $this->response
+            ->withType('application/json')
+            ->withStringBody(json_encode($responseData));
+    }
+
+    private function getSelectedConventionSeasonFromSession() {
+        $sessAdminHeaderSeasonId = (int)$this->request->getSession()->read('sess_admin_header_season_id');
+        if ($sessAdminHeaderSeasonId <= 0) {
+            return null;
+        }
+
+        return $this->Conventionseasons->find()->where(['Conventionseasons.id' => $sessAdminHeaderSeasonId])->first();
+    }
+
+    private function getSeasonEventNameMap($conventionSeasonId) {
+        $eventNameIDDD = array();
+        $convSeasonEvents = $this->Conventionseasonevents->find()
+            ->where(['Conventionseasonevents.conventionseasons_id' => $conventionSeasonId])
+            ->order(['Conventionseasonevents.id' => 'ASC'])
+            ->all();
+
+        $seasonEventIds = array();
+        foreach ($convSeasonEvents as $convSeasonEvent) {
+            $seasonEventIds[] = (int)$convSeasonEvent->event_id;
+        }
+        $seasonEventIds = array_values(array_unique(array_filter($seasonEventIds)));
+
+        if (!empty($seasonEventIds)) {
+            $eventsList = $this->Events->find()
+                ->where(['Events.id IN' => $seasonEventIds])
+                ->order(['Events.event_id_number' => 'ASC'])
+                ->all();
+
+            foreach ($eventsList as $eventrec) {
+                $eventNameIDDD[(int)$eventrec->id] = $eventrec->event_name . ' (' . $eventrec->event_id_number . ')';
+            }
+        }
+
+        return $eventNameIDDD;
     }
 
 

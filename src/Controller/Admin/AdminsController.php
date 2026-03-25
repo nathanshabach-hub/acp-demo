@@ -36,6 +36,7 @@ class AdminsController extends AppController {
 		$this->loadModel("Conventionregistrationstudents");
 		$this->loadModel("Conventionregistrationteachers");
 		$this->loadModel("Conventionseasonevents");
+        $this->loadModel("Crstudentevents");
     }
 
     public function login() {
@@ -250,40 +251,16 @@ class AdminsController extends AppController {
 			$total_transactions = $this->Transactions->find()->where($condTr)->count();
 			$this->set('total_transactions', $total_transactions);
 
-			// Chart data: scheduled events by category
-			$schedCategoryData = [];
-			for ($cat = 1; $cat <= 4; $cat++) {
-				$schedCategoryData[] = $this->Schedulingtimings->find()->where([
-					"conventionseasons_id" => $convSD->id,
-					"schedule_category" => $cat,
-					"day IS NOT" => null,
-				])->count();
-			}
-			$this->set('schedCategoryData', json_encode($schedCategoryData));
-
-			// Chart data: scheduled vs unscheduled
-			$totalScheduled = $this->Schedulingtimings->find()->where([
-				"conventionseasons_id" => $convSD->id,
-				"day IS NOT" => null,
-			])->count();
-			$totalUnscheduled = $this->Schedulingtimings->find()->where([
-				"conventionseasons_id" => $convSD->id,
-				"day" => null,
-			])->count();
-			$this->set('totalScheduled', $totalScheduled);
-			$this->set('totalUnscheduled', $totalUnscheduled);
-
-			// Chart data: scheduling by day
-			$dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday'];
-			$dayCountData = [];
-			foreach ($dayNames as $d) {
-				$dayCountData[] = $this->Schedulingtimings->find()->where([
-					"conventionseasons_id" => $convSD->id,
-					"day" => $d,
-				])->count();
-			}
-			$this->set('dayNames', json_encode($dayNames));
-			$this->set('dayCountData', json_encode($dayCountData));
+			$chartData = $this->getDashboardChartData((int)$convSD->id);
+			$this->set('schedCategoryData', json_encode($chartData['schedCategoryData']));
+			$this->set('totalScheduled', (int)$chartData['totalScheduled']);
+			$this->set('totalUnscheduled', (int)$chartData['totalUnscheduled']);
+			$this->set('dayNames', json_encode($chartData['dayNames']));
+			$this->set('dayCountData', json_encode($chartData['dayCountData']));
+			$this->set('topEventLabels', json_encode($chartData['topEventLabels']));
+			$this->set('topEventCounts', json_encode($chartData['topEventCounts']));
+			$this->set('unregisteredEventLabels', json_encode($chartData['unregisteredEventLabels']));
+			$this->set('unregisteredEventFlags', json_encode($chartData['unregisteredEventFlags']));
 			
 		}
 		else
@@ -323,6 +300,317 @@ class AdminsController extends AppController {
 		
 		}
 
+    }
+
+    public function chartview($chartKey = null) {
+        $this->set('title', ADMIN_TITLE . 'Dashboard Chart');
+        $this->viewBuilder()->setLayout('admin');
+        $this->set('dashboard', '1');
+
+        $sessAdminHeaderSeasonId = (int)$this->request->getSession()->read("sess_admin_header_season_id");
+        $this->set('sess_admin_header_season_id', $sessAdminHeaderSeasonId);
+        if ($sessAdminHeaderSeasonId <= 0) {
+            $this->Flash->error('Please select a convention season first.');
+            return $this->redirect(['action' => 'dashboard']);
+        }
+
+        $convSD = $this->Conventionseasons->find()->where(["Conventionseasons.id" => $sessAdminHeaderSeasonId])->first();
+        if (empty($convSD)) {
+            $this->Flash->error('Selected convention season was not found.');
+            return $this->redirect(['action' => 'dashboard']);
+        }
+
+        $chartData = $this->getDashboardChartData((int)$convSD->id);
+        $participantData = $this->getSeasonParticipantBreakdown($convSD);
+
+        $chartKey = strtolower(trim((string)$chartKey));
+        $chartOptions = [];
+        $chartTitle = '';
+        $chartSubtitle = 'Convention Season: ' . $convSD->slug;
+        $emptyMessage = '';
+
+        switch ($chartKey) {
+            case 'scheduled-by-category':
+                $chartTitle = 'Scheduled Events by Category';
+                $chartOptions = [
+                    'chart' => ['type' => 'column'],
+                    'title' => ['text' => $chartTitle],
+                    'subtitle' => ['text' => $chartSubtitle],
+                    'xAxis' => ['categories' => ['Group Sequential', 'Individual Elimination', 'Group Elimination', 'Individual Sequential']],
+                    'yAxis' => ['min' => 0, 'title' => ['text' => 'Scheduled Entries']],
+                    'legend' => ['enabled' => false],
+                    'series' => [[
+                        'name' => 'Entries',
+                        'data' => $chartData['schedCategoryData'],
+                        'colorByPoint' => true,
+                    ]],
+                    'credits' => ['enabled' => false],
+                ];
+                break;
+
+            case 'schedule-status':
+                $chartTitle = 'Schedule Status';
+                $chartOptions = [
+                    'chart' => ['type' => 'pie'],
+                    'title' => ['text' => $chartTitle],
+                    'subtitle' => ['text' => $chartSubtitle],
+                    'plotOptions' => ['pie' => ['innerSize' => '55%', 'dataLabels' => ['enabled' => true]]],
+                    'series' => [[
+                        'name' => 'Entries',
+                        'data' => [
+                            ['name' => 'Scheduled', 'y' => (int)$chartData['totalScheduled'], 'color' => '#00a65a'],
+                            ['name' => 'Unscheduled', 'y' => (int)$chartData['totalUnscheduled'], 'color' => '#dd4b39'],
+                        ],
+                    ]],
+                    'credits' => ['enabled' => false],
+                ];
+                break;
+
+            case 'participants-breakdown':
+                $chartTitle = 'Participants Breakdown';
+                $chartOptions = [
+                    'chart' => ['type' => 'bar'],
+                    'title' => ['text' => $chartTitle],
+                    'subtitle' => ['text' => $chartSubtitle],
+                    'xAxis' => ['categories' => ['Students', 'Supervisors', 'Schools', 'Judges']],
+                    'yAxis' => ['min' => 0, 'title' => ['text' => 'Count']],
+                    'legend' => ['enabled' => false],
+                    'series' => [[
+                        'name' => 'Count',
+                        'colorByPoint' => true,
+                        'data' => [
+                            (int)$participantData['total_students'],
+                            (int)$participantData['total_teachers_parents'],
+                            (int)$participantData['total_schools'],
+                            (int)$participantData['total_judges'],
+                        ],
+                    ]],
+                    'credits' => ['enabled' => false],
+                ];
+                break;
+
+            case 'events-per-day':
+                $chartTitle = 'Events per Convention Day';
+                $chartOptions = [
+                    'chart' => ['type' => 'column'],
+                    'title' => ['text' => $chartTitle],
+                    'subtitle' => ['text' => $chartSubtitle],
+                    'xAxis' => ['categories' => $chartData['dayNames']],
+                    'yAxis' => ['min' => 0, 'title' => ['text' => 'Scheduled Entries']],
+                    'legend' => ['enabled' => false],
+                    'series' => [[
+                        'name' => 'Entries',
+                        'data' => $chartData['dayCountData'],
+                        'color' => '#3c8dbc',
+                    ]],
+                    'credits' => ['enabled' => false],
+                ];
+                break;
+
+            case 'most-entered-events':
+                $chartTitle = 'Most Entered Events';
+                if (empty($chartData['topEventLabels'])) {
+                    $emptyMessage = 'No event registrations found yet.';
+                }
+                $chartOptions = [
+                    'chart' => ['type' => 'bar'],
+                    'title' => ['text' => $chartTitle],
+                    'subtitle' => ['text' => $chartSubtitle],
+                    'xAxis' => ['categories' => $chartData['topEventLabels'], 'title' => ['text' => null]],
+                    'yAxis' => ['min' => 0, 'title' => ['text' => 'Registrations']],
+                    'legend' => ['enabled' => false],
+                    'series' => [[
+                        'name' => 'Registrations',
+                        'data' => $chartData['topEventCounts'],
+                        'color' => '#00a65a',
+                    ]],
+                    'credits' => ['enabled' => false],
+                ];
+                break;
+
+            case 'events-with-no-registrations':
+                $chartTitle = 'Events With No Registrations';
+                if (empty($chartData['unregisteredEventLabels'])) {
+                    $emptyMessage = 'All configured events have registrations.';
+                }
+                $chartOptions = [
+                    'chart' => ['type' => 'bar'],
+                    'title' => ['text' => $chartTitle],
+                    'subtitle' => ['text' => $chartSubtitle],
+                    'xAxis' => ['categories' => $chartData['unregisteredEventLabels'], 'title' => ['text' => null]],
+                    'yAxis' => ['min' => 0, 'max' => 1, 'tickInterval' => 1, 'title' => ['text' => 'No Registration Flag']],
+                    'legend' => ['enabled' => false],
+                    'plotOptions' => ['bar' => ['dataLabels' => ['enabled' => true]]],
+                    'series' => [[
+                        'name' => 'No registrations',
+                        'data' => $chartData['unregisteredEventFlags'],
+                        'color' => '#dd4b39',
+                    ]],
+                    'credits' => ['enabled' => false],
+                ];
+                break;
+
+            default:
+                $this->Flash->error('Invalid chart selection.');
+                return $this->redirect(['action' => 'dashboard']);
+        }
+
+        $this->set('chartKey', $chartKey);
+        $this->set('chartTitle', $chartTitle);
+        $this->set('chartSubtitle', $chartSubtitle);
+        $this->set('emptyMessage', $emptyMessage);
+        $this->set('chartOptionsJson', json_encode($chartOptions));
+    }
+
+    private function getSeasonParticipantBreakdown($convSD) {
+        $totalStudents = $this->Conventionregistrationstudents->find()->where([
+            "convention_id" => $convSD->convention_id,
+            "season_id" => $convSD->season_id,
+            "season_year" => $convSD->season_year,
+        ])->count();
+
+        $totalTeachersParents = $this->Conventionregistrationteachers->find()->where([
+            "convention_id" => $convSD->convention_id,
+            "season_id" => $convSD->season_id,
+            "season_year" => $convSD->season_year,
+        ])->count();
+
+        $totalSchools = 0;
+        $listSchools = $this->Conventionregistrations->find()->where([
+            "convention_id" => $convSD->convention_id,
+            "season_id" => $convSD->season_id,
+            "season_year" => $convSD->season_year,
+        ])->contain(['Users'])->all();
+        foreach ($listSchools as $schoolcntr) {
+            if ($schoolcntr->Users['user_type'] == "School") {
+                $totalSchools++;
+            }
+        }
+
+        $totalJudges = 0;
+        $listCR = $this->Conventionregistrations->find()->where([
+            "convention_id" => $convSD->convention_id,
+            "season_id" => $convSD->season_id,
+            "season_year" => $convSD->season_year,
+        ])->contain(['Users'])->all();
+        foreach ($listCR as $judgcntr) {
+            if (($judgcntr->Users['user_type'] == "Judge" || $judgcntr->Users['user_type'] == "Teacher_Parent") && $judgcntr->Users['is_judge'] == 1) {
+                $totalJudges++;
+            }
+        }
+
+        return [
+            'total_students' => (int)$totalStudents,
+            'total_teachers_parents' => (int)$totalTeachersParents,
+            'total_schools' => (int)$totalSchools,
+            'total_judges' => (int)$totalJudges,
+        ];
+    }
+
+    private function getDashboardChartData($conventionSeasonId) {
+        $schedCategoryData = [];
+        for ($cat = 1; $cat <= 4; $cat++) {
+            $schedCategoryData[] = $this->Schedulingtimings->find()->where([
+                "conventionseasons_id" => $conventionSeasonId,
+                "schedule_category" => $cat,
+                "day IS NOT" => null,
+            ])->count();
+        }
+
+        $totalScheduled = $this->Schedulingtimings->find()->where([
+            "conventionseasons_id" => $conventionSeasonId,
+            "day IS NOT" => null,
+        ])->count();
+        $totalUnscheduled = $this->Schedulingtimings->find()->where([
+            "conventionseasons_id" => $conventionSeasonId,
+            "day" => null,
+        ])->count();
+
+        $dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday'];
+        $dayCountData = [];
+        foreach ($dayNames as $d) {
+            $dayCountData[] = $this->Schedulingtimings->find()->where([
+                "conventionseasons_id" => $conventionSeasonId,
+                "day" => $d,
+            ])->count();
+        }
+
+        $seasonEventRows = $this->Conventionseasonevents->find()
+            ->select(['event_id'])
+            ->where(['Conventionseasonevents.conventionseasons_id' => $conventionSeasonId])
+            ->all();
+
+        $seasonEventIds = [];
+        foreach ($seasonEventRows as $seasonEventRow) {
+            $seasonEventIds[] = (int)$seasonEventRow->event_id;
+        }
+        $seasonEventIds = array_values(array_unique(array_filter($seasonEventIds)));
+
+        $eventNameMap = [];
+        $eventCountMap = [];
+        if (!empty($seasonEventIds)) {
+            $seasonEvents = $this->Events->find()
+                ->select(['id', 'event_name', 'event_id_number'])
+                ->where(['Events.id IN' => $seasonEventIds])
+                ->all();
+
+            foreach ($seasonEvents as $seasonEvent) {
+                $eventNameMap[(int)$seasonEvent->id] = (string)$seasonEvent->event_name . ' (' . (string)$seasonEvent->event_id_number . ')';
+                $eventCountMap[(int)$seasonEvent->id] = 0;
+            }
+
+            $entryRows = $this->Crstudentevents->find()
+                ->select(['event_id', 'cnt' => 'COUNT(*)'])
+                ->where([
+                    'Crstudentevents.conventionseason_id' => $conventionSeasonId,
+                    'Crstudentevents.event_id IN' => $seasonEventIds,
+                ])
+                ->group(['Crstudentevents.event_id'])
+                ->all();
+
+            foreach ($entryRows as $entryRow) {
+                $eventId = (int)$entryRow->event_id;
+                $eventCountMap[$eventId] = (int)$entryRow->cnt;
+            }
+        }
+
+        arsort($eventCountMap);
+        $topEventLabels = [];
+        $topEventCounts = [];
+        $topLimit = 10;
+        $topCounter = 0;
+        foreach ($eventCountMap as $eventId => $entryCount) {
+            if ($entryCount <= 0) {
+                continue;
+            }
+            $topEventLabels[] = isset($eventNameMap[$eventId]) ? $eventNameMap[$eventId] : ('Event #' . $eventId);
+            $topEventCounts[] = (int)$entryCount;
+            $topCounter++;
+            if ($topCounter >= $topLimit) {
+                break;
+            }
+        }
+
+        $unregisteredEventLabels = [];
+        $unregisteredEventFlags = [];
+        foreach ($eventCountMap as $eventId => $entryCount) {
+            if ((int)$entryCount === 0) {
+                $unregisteredEventLabels[] = isset($eventNameMap[$eventId]) ? $eventNameMap[$eventId] : ('Event #' . $eventId);
+                $unregisteredEventFlags[] = 1;
+            }
+        }
+
+        return [
+            'schedCategoryData' => $schedCategoryData,
+            'totalScheduled' => (int)$totalScheduled,
+            'totalUnscheduled' => (int)$totalUnscheduled,
+            'dayNames' => $dayNames,
+            'dayCountData' => $dayCountData,
+            'topEventLabels' => $topEventLabels,
+            'topEventCounts' => $topEventCounts,
+            'unregisteredEventLabels' => $unregisteredEventLabels,
+            'unregisteredEventFlags' => $unregisteredEventFlags,
+        ];
     }
 
     public function changeEmail() {

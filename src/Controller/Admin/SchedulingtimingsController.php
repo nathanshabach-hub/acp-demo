@@ -120,24 +120,23 @@ class SchedulingtimingsController extends AppController {
 		return true;
 	}
 
-	private function isSchedulableConventionDay($day) {
-		// Allow spillover onto any week day; unresolved records should retain a concrete slot.
-		return in_array($day, ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'], true);
+	private function isSchedulableConventionDay($day, $firstDay = 'Monday', $numberOfDays = 4) {
+		$allowedDays = $this->getConventionBalancingDays($firstDay, $numberOfDays);
+		return in_array($day, $allowedDays, true);
 	}
 
 	private function getConventionBalancingDays($firstDay, $windowDays = 4) {
-		$week = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+		$week = ["Monday", "Tuesday", "Wednesday", "Thursday"];
 		$startIndex = array_search($firstDay, $week, true);
 		if ($startIndex === false) {
 			$startIndex = 0;
 		}
 
-		$days = [];
-		for ($i = 0; $i < $windowDays; $i++) {
-			$days[] = $week[($startIndex + $i) % 7];
-		}
+		$windowDays = max(1, (int)$windowDays);
+		$maxFromStart = count($week) - $startIndex;
+		$windowDays = min($windowDays, $maxFromStart);
 
-		return $days;
+		return array_slice($week, $startIndex, $windowDays);
 	}
 
 	private function getDateForDayFromStart($startDate, $firstDay, $targetDay) {
@@ -190,7 +189,7 @@ class SchedulingtimingsController extends AppController {
 	}
 
 	private function moveToNextRoomOrDay($cntrRoomCSEvent, $totalRoomsForThisEvent, $schDay, $schStartDate,
-		$cntrDays, $schedulingsD, $eventDuration, $firstDay = null, $startDate = null, $conventionSeasonId = null) {
+		$cntrDays, $schedulingsD, $eventDuration, $firstDay = null, $startDate = null, $conventionSeasonId = null, $numberOfDays = 4) {
 		if ($cntrRoomCSEvent < ($totalRoomsForThisEvent - 1)) {
 			$cntrRoomCSEvent++;
 			$normalStartingTime = date("H:i:s", strtotime($schedulingsD->normal_starting_time));
@@ -210,7 +209,7 @@ class SchedulingtimingsController extends AppController {
 
 		$cntrRoomCSEvent = 0;
 		if ($conventionSeasonId !== null && $firstDay !== null && $startDate !== null) {
-			$balancingDays = $this->getConventionBalancingDays($firstDay, 4);
+			$balancingDays = $this->getConventionBalancingDays($firstDay, $numberOfDays);
 			$balancedStartDay = $this->pickLeastLoadedStartDay($conventionSeasonId, $balancingDays);
 			if (!empty($balancedStartDay)) {
 				$schDay = $balancedStartDay;
@@ -244,11 +243,13 @@ class SchedulingtimingsController extends AppController {
 	 * Advance to the next scheduling day, optionally using load balancing.
 	 * Pass $conventionSeasonId, $firstDay, $startDate for balanced day picking.
 	 */
-	private function advanceDay($day, $dateStr, $cntrDays, $schedulingsD, $conventionSeasonId = null, $firstDay = null, $startDate = null) {
+	private function advanceDay($day, $dateStr, $cntrDays, $schedulingsD, $conventionSeasonId = null, $firstDay = null, $startDate = null, $numberOfDays = 4) {
 		if ($conventionSeasonId !== null && $firstDay !== null && $startDate !== null) {
-			$balancingDays = $this->getConventionBalancingDays($firstDay, 4);
+			$balancingDays = $this->getConventionBalancingDays($firstDay, $numberOfDays);
 			$balancedStartDay = $this->pickLeastLoadedStartDay($conventionSeasonId, $balancingDays);
-			if (!empty($balancedStartDay)) {
+			// Only jump to a load-balanced day if it is actually different from today;
+			// otherwise always move forward, preventing the same day being picked again.
+			if (!empty($balancedStartDay) && $balancedStartDay !== $day) {
 				$day = $balancedStartDay;
 				$dateStr = $this->getDateForDayFromStart($startDate, $firstDay, $day);
 			} else {
@@ -276,7 +277,7 @@ class SchedulingtimingsController extends AppController {
 	 */
 	private function applyTimeConstraints($schedulingsD, $eventDuration, $roomID,
 		$startTime, $finishTime, $day, $dateStr, $cntrDays,
-		$conventionSeasonId = null, $firstDay = null, $startDate = null) {
+		$conventionSeasonId = null, $firstDay = null, $startDate = null, $numberOfDays = 4) {
 
 		$normalStart = date("H:i:s", strtotime($schedulingsD->normal_starting_time));
 		$normalFinish = date("H:i:s", strtotime($schedulingsD->normal_finish_time));
@@ -294,7 +295,7 @@ class SchedulingtimingsController extends AppController {
 				$startTime = $lunchEnd;
 				$finishTime = date("H:i:s", strtotime('+ '.$eventDuration.' minutes', strtotime($lunchEnd)));
 				if (strtotime($finishTime) > strtotime($normalFinish)) {
-					$adv = $this->advanceDay($day, $dateStr, $cntrDays, $schedulingsD, $conventionSeasonId, $firstDay, $startDate);
+					$adv = $this->advanceDay($day, $dateStr, $cntrDays, $schedulingsD, $conventionSeasonId, $firstDay, $startDate, $numberOfDays);
 					$day = $adv['day']; $dateStr = $adv['date']; $cntrDays = $adv['cntrDays'];
 					$normalStart = $adv['normalStart']; $normalFinish = $adv['normalFinish'];
 					$startTime = $normalStart;
@@ -313,7 +314,7 @@ class SchedulingtimingsController extends AppController {
 					$finishTime = date("H:i:s", strtotime('+ '.$eventDuration.' minutes', strtotime($mbFinish)));
 				}
 				if (strtotime($finishTime) > strtotime($normalFinish)) {
-					$adv = $this->advanceDay($day, $dateStr, $cntrDays, $schedulingsD, $conventionSeasonId, $firstDay, $startDate);
+					$adv = $this->advanceDay($day, $dateStr, $cntrDays, $schedulingsD, $conventionSeasonId, $firstDay, $startDate, $numberOfDays);
 					$day = $adv['day']; $dateStr = $adv['date']; $cntrDays = $adv['cntrDays'];
 					$normalStart = $adv['normalStart']; $normalFinish = $adv['normalFinish'];
 					$startTime = $normalStart;
@@ -329,7 +330,7 @@ class SchedulingtimingsController extends AppController {
 					$finishTime = date("H:i:s", strtotime('+ '.$eventDuration.' minutes', strtotime($abFinish)));
 				}
 				if (strtotime($finishTime) > strtotime($normalFinish)) {
-					$adv = $this->advanceDay($day, $dateStr, $cntrDays, $schedulingsD, $conventionSeasonId, $firstDay, $startDate);
+					$adv = $this->advanceDay($day, $dateStr, $cntrDays, $schedulingsD, $conventionSeasonId, $firstDay, $startDate, $numberOfDays);
 					$day = $adv['day']; $dateStr = $adv['date']; $cntrDays = $adv['cntrDays'];
 					$normalStart = $adv['normalStart']; $normalFinish = $adv['normalFinish'];
 					$startTime = $normalStart;
@@ -348,7 +349,7 @@ class SchedulingtimingsController extends AppController {
 						$finishTime = date("H:i:s", strtotime('+ '.$eventDuration.' minutes', strtotime($sdFinish)));
 					}
 					if (strtotime($finishTime) >= strtotime($normalFinish)) {
-						$adv = $this->advanceDay($day, $dateStr, $cntrDays, $schedulingsD);
+						$adv = $this->advanceDay($day, $dateStr, $cntrDays, $schedulingsD, $conventionSeasonId, $firstDay, $startDate, $numberOfDays);
 						$day = $adv['day']; $dateStr = $adv['date']; $cntrDays = $adv['cntrDays'];
 						$normalStart = $adv['normalStart']; $normalFinish = $adv['normalFinish'];
 						$startTime = $normalStart;
@@ -368,7 +369,7 @@ class SchedulingtimingsController extends AppController {
 						$finishTime = date("H:i:s", strtotime('+ '.$eventDuration.' minutes', strtotime($soStart)));
 					}
 					if (strtotime($finishTime) > strtotime($soFinish)) {
-						$adv = $this->advanceDay($day, $dateStr, $cntrDays, $schedulingsD);
+						$adv = $this->advanceDay($day, $dateStr, $cntrDays, $schedulingsD, $conventionSeasonId, $firstDay, $startDate, $numberOfDays);
 						$day = $adv['day']; $dateStr = $adv['date']; $cntrDays = $adv['cntrDays'];
 						$normalStart = $adv['normalStart']; $normalFinish = $adv['normalFinish'];
 						$startTime = $normalStart;
@@ -384,7 +385,7 @@ class SchedulingtimingsController extends AppController {
 				$startTime = date("H:i:s", strtotime('+30 minutes', strtotime($startTime)));
 				$finishTime = date("H:i:s", strtotime('+ '.$eventDuration.' minutes', strtotime($startTime)));
 				if (strtotime($finishTime) > strtotime($normalFinish)) {
-					$adv = $this->advanceDay($day, $dateStr, $cntrDays, $schedulingsD);
+					$adv = $this->advanceDay($day, $dateStr, $cntrDays, $schedulingsD, $conventionSeasonId, $firstDay, $startDate, $numberOfDays);
 					$day = $adv['day']; $dateStr = $adv['date']; $cntrDays = $adv['cntrDays'];
 					$normalStart = $adv['normalStart']; $normalFinish = $adv['normalFinish'];
 					$startTime = $normalStart;
@@ -442,6 +443,24 @@ class SchedulingtimingsController extends AppController {
 		return ['rooms' => $roomIds, 'spb' => $spbValue];
 	}
 
+	private function resolveEventBlockSize($eventD, $defaultBlockSize = 1) {
+		$defaultBlockSize = (int)$defaultBlockSize > 0 ? (int)$defaultBlockSize : 1;
+		if (empty($eventD)) {
+			return $defaultBlockSize;
+		}
+
+		$judgingType = !empty($eventD->event_judging_type) ? strtolower((string)$eventD->event_judging_type) : '';
+		$eventName = !empty($eventD->event_name) ? strtolower((string)$eventD->event_name) : '';
+		if ($judgingType === 'spellings' || strpos($eventName, 'spelling') !== false) {
+			$perRound = !empty($eventD->competitors_per_round) ? (int)$eventD->competitors_per_round : 0;
+			if ($perRound > 0) {
+				return $perRound;
+			}
+		}
+
+		return $defaultBlockSize;
+	}
+
 	/**
 	 * Load scheduling configuration for a convention season.
 	 * Returns associative array with all timing settings.
@@ -461,6 +480,9 @@ class SchedulingtimingsController extends AppController {
 		if (!in_array($firstDay, $allowedStartDays, true)) {
 			$firstDay = 'Monday';
 		}
+		$numberOfDays = !empty($schedulingsD->number_of_days) ? (int)$schedulingsD->number_of_days : 4;
+		$numberOfDays = max(1, min(4, $numberOfDays));
+		$numberOfDays = min($numberOfDays, 4 - array_search($firstDay, $allowedStartDays, true));
 
 		$normalStartingTime = !empty($schedulingsD->normal_starting_time)
 			? date("H:i:s", strtotime($schedulingsD->normal_starting_time))
@@ -483,6 +505,8 @@ class SchedulingtimingsController extends AppController {
 		$cfg['schedulingsD'] = $schedulingsD;
 		$cfg['start_date'] = $startDate;
 		$cfg['first_day'] = $firstDay;
+		$cfg['number_of_days'] = $numberOfDays;
+		$cfg['allowed_days'] = $this->getConventionBalancingDays($firstDay, $numberOfDays);
 		$cfg['normal_starting_time'] = $normalStartingTime;
 		$cfg['normal_finish_time'] = $normalFinishTime;
 		$cfg['lunch_time_start'] = $lunchTimeStart;
@@ -621,7 +645,507 @@ class SchedulingtimingsController extends AppController {
 		// to list all schedulings
 		$schedulingTimingsList = $this->Schedulingtimings->find()->where(['Schedulingtimings.conventionseasons_id' => $conventionSD->id,'Schedulingtimings.convention_id' => $conventionSD->convention_id,'Schedulingtimings.season_id' => $conventionSD->season_id,'Schedulingtimings.season_year' => $conventionSD->season_year,'Schedulingtimings.schedule_category' => $scheduling_category])->contain(["Events","Users","Conventionrooms","Opponentuser"])->order(["Schedulingtimings.id" => "ASC"])->all();
 		$this->set('schedulingTimingsList', $schedulingTimingsList);
+
+		$schedulingD = $this->Schedulings->find()->where([
+			'Schedulings.conventionseasons_id' => $conventionSD->id,
+			'Schedulings.convention_id' => $conventionSD->convention_id,
+			'Schedulings.season_id' => $conventionSD->season_id,
+			'Schedulings.season_year' => $conventionSD->season_year,
+		])->first();
+
+		$bulkAllowedDays = [
+			'Monday' => 'Monday',
+			'Tuesday' => 'Tuesday',
+			'Wednesday' => 'Wednesday',
+			'Thursday' => 'Thursday',
+		];
+
+		if (!empty($schedulingD)) {
+			$firstDay = !empty($schedulingD->first_day) ? (string)$schedulingD->first_day : 'Monday';
+			$numberOfDays = !empty($schedulingD->number_of_days) ? (int)$schedulingD->number_of_days : 4;
+			$allowedDays = $this->getConventionBalancingDays($firstDay, $numberOfDays);
+			$bulkAllowedDays = [];
+			foreach ($allowedDays as $dayName) {
+				$bulkAllowedDays[$dayName] = $dayName;
+			}
+		}
+
+		$bulkRooms = $this->Conventionrooms->find()
+			->where(['Conventionrooms.convention_id' => $conventionSD->convention_id])
+			->order(['Conventionrooms.room_name' => 'ASC'])
+			->all();
+		$bulkRoomOptions = [];
+		foreach ($bulkRooms as $bulkRoom) {
+			$bulkRoomOptions[(int)$bulkRoom->id] = (string)$bulkRoom->room_name;
+		}
+
+		$eventRows = $this->Schedulingtimings->find()
+			->select(['event_id'])
+			->where([
+				'Schedulingtimings.conventionseasons_id' => $conventionSD->id,
+				'Schedulingtimings.schedule_category' => (int)$scheduling_category,
+				'Schedulingtimings.event_id IS NOT' => null,
+			])
+			->group(['event_id'])
+			->all();
+		$eventIds = [];
+		foreach ($eventRows as $eventRow) {
+			$eventIds[] = (int)$eventRow->event_id;
+		}
+		$bulkEventOptions = [];
+		if (!empty($eventIds)) {
+			$events = $this->Events->find()
+				->select(['id', 'event_name', 'event_id_number'])
+				->where(['Events.id IN' => $eventIds])
+				->order(['Events.event_name' => 'ASC'])
+				->all();
+
+			foreach ($events as $eventRow) {
+				$bulkEventOptions[(int)$eventRow->id] = (string)$eventRow->event_name . ' (' . (string)$eventRow->event_id_number . ')';
+			}
+		}
+
+		$this->set('bulkAllowedDays', $bulkAllowedDays);
+		$this->set('bulkRoomOptions', $bulkRoomOptions);
+		$this->set('bulkEventOptions', $bulkEventOptions);
+		$this->set('bulkDefaultStartTime', !empty($schedulingD) ? date('H:i', strtotime($schedulingD->normal_starting_time)) : '08:30');
+
+		$bulkPreview = $this->request->getSession()->read('bulk_move_preview');
+		if (
+			empty($bulkPreview) ||
+			(int)$bulkPreview['conventionseason_id'] !== (int)$conventionSD->id ||
+			(int)$bulkPreview['schedule_category'] !== (int)$scheduling_category
+		) {
+			$bulkPreview = null;
+		}
+		$this->set('bulkPreview', $bulkPreview);
     }
+
+	private function getDayWindowForScheduleDay($schedulingsD, $day, $firstDay) {
+		$startTime = date('H:i:s', strtotime($schedulingsD->normal_starting_time));
+		$finishTime = date('H:i:s', strtotime($schedulingsD->normal_finish_time));
+
+		if ((int)$schedulingsD->starting_different_time_first_day_yes_no === 1 && $day === $firstDay) {
+			$startTime = date('H:i:s', strtotime($schedulingsD->different_first_day_start_time));
+			$finishTime = date('H:i:s', strtotime($schedulingsD->different_first_day_end_time));
+		}
+
+		return ['start' => $startTime, 'finish' => $finishTime];
+	}
+
+	private function getNextAllowedConventionDay($day, $allowedDays) {
+		if (empty($allowedDays)) {
+			return $day;
+		}
+
+		$nextDay = $day;
+		for ($i = 0; $i < 7; $i++) {
+			$nextDay = $this->getNextWeekDay($nextDay);
+			if (in_array($nextDay, $allowedDays, true)) {
+				return $nextDay;
+			}
+		}
+
+		return $allowedDays[0];
+	}
+
+	public function bulkreschedule($convention_season_slug=null, $scheduling_category=null) {
+		if (!$this->request->is('post')) {
+			return $this->redirect(['controller' => 'schedulingtimings', 'action' => 'viewscheduling', $convention_season_slug, $scheduling_category]);
+		}
+
+		$conventionSD = $this->Conventionseasons->find()
+			->where(['Conventionseasons.slug' => $convention_season_slug])
+			->contain(['Conventions'])
+			->first();
+		if (!$conventionSD) {
+			$this->Flash->error('Convention season not found.');
+			return $this->redirect(['controller' => 'schedulings', 'action' => 'precheck', $convention_season_slug]);
+		}
+
+		$schedulingD = $this->Schedulings->find()->where([
+			'Schedulings.conventionseasons_id' => $conventionSD->id,
+			'Schedulings.convention_id' => $conventionSD->convention_id,
+			'Schedulings.season_id' => $conventionSD->season_id,
+			'Schedulings.season_year' => $conventionSD->season_year,
+		])->first();
+		if (!$schedulingD) {
+			$this->Flash->error('Scheduling setup not found.');
+			return $this->redirect(['controller' => 'schedulingtimings', 'action' => 'viewscheduling', $convention_season_slug, $scheduling_category]);
+		}
+
+		$data = (array)$this->request->getData('BulkMove');
+		$moveType = !empty($data['move_type']) ? (string)$data['move_type'] : '';
+		$strategy = !empty($data['strategy']) ? (string)$data['strategy'] : 'compact';
+		$isPreview = !empty($data['preview_only']) && (string)$data['preview_only'] === '1';
+		$targetRoomId = !empty($data['room_id']) ? (int)$data['room_id'] : 0;
+		$targetEventId = !empty($data['event_id']) ? (int)$data['event_id'] : 0;
+		$targetDay = !empty($data['day']) ? (string)$data['day'] : '';
+		$targetStart = !empty($data['start_time']) ? (string)$data['start_time'] : '';
+
+		$firstDay = !empty($schedulingD->first_day) ? (string)$schedulingD->first_day : 'Monday';
+		$numberOfDays = !empty($schedulingD->number_of_days) ? (int)$schedulingD->number_of_days : 4;
+		$allowedDays = $this->getConventionBalancingDays($firstDay, $numberOfDays);
+
+		if (!in_array($moveType, ['room', 'event'], true)) {
+			$this->Flash->error('Choose a valid move type.');
+			return $this->redirect(['controller' => 'schedulingtimings', 'action' => 'viewscheduling', $convention_season_slug, $scheduling_category]);
+		}
+		if (!in_array($strategy, ['compact', 'strict'], true)) {
+			$this->Flash->error('Choose a valid placement strategy.');
+			return $this->redirect(['controller' => 'schedulingtimings', 'action' => 'viewscheduling', $convention_season_slug, $scheduling_category]);
+		}
+		if (!in_array($targetDay, $allowedDays, true)) {
+			$this->Flash->error('Choose a valid target day within the convention window.');
+			return $this->redirect(['controller' => 'schedulingtimings', 'action' => 'viewscheduling', $convention_season_slug, $scheduling_category]);
+		}
+		if (strtotime($targetStart) === false) {
+			$this->Flash->error('Choose a valid start time.');
+			return $this->redirect(['controller' => 'schedulingtimings', 'action' => 'viewscheduling', $convention_season_slug, $scheduling_category]);
+		}
+		$targetStart = date('H:i:s', strtotime($targetStart));
+
+		$conditions = [
+			'Schedulingtimings.conventionseasons_id' => $conventionSD->id,
+			'Schedulingtimings.schedule_category' => (int)$scheduling_category,
+			'Schedulingtimings.is_bye !=' => 1,
+		];
+		if ($moveType === 'room') {
+			if ($targetRoomId <= 0) {
+				$this->Flash->error('Choose a room to move.');
+				return $this->redirect(['controller' => 'schedulingtimings', 'action' => 'viewscheduling', $convention_season_slug, $scheduling_category]);
+			}
+			$conditions['Schedulingtimings.room_id'] = $targetRoomId;
+		} else {
+			if ($targetEventId <= 0) {
+				$this->Flash->error('Choose an event to move.');
+				return $this->redirect(['controller' => 'schedulingtimings', 'action' => 'viewscheduling', $convention_season_slug, $scheduling_category]);
+			}
+			$conditions['Schedulingtimings.event_id'] = $targetEventId;
+		}
+
+		$rowsToMove = $this->Schedulingtimings->find()
+			->where($conditions)
+			->contain(['Events'])
+			->order(['Schedulingtimings.sch_date_time' => 'ASC', 'Schedulingtimings.id' => 'ASC'])
+			->all()
+			->toArray();
+
+		if (empty($rowsToMove)) {
+			$this->Flash->warning('No schedule rows found for the selected move request.');
+			return $this->redirect(['controller' => 'schedulingtimings', 'action' => 'viewscheduling', $convention_season_slug, $scheduling_category]);
+		}
+
+		$rowIds = [];
+		foreach ($rowsToMove as $row) {
+			$rowIds[] = (int)$row->id;
+		}
+
+		$cursorDay = $targetDay;
+		$cursorStart = $targetStart;
+		$bufferMinutes = isset($schedulingD->buffer_minutes) && $schedulingD->buffer_minutes !== null ? (int)$schedulingD->buffer_minutes : 5;
+		$startDate = date('Y-m-d', strtotime($schedulingD->start_date));
+
+		$assignedCount = 0;
+		$failedCount = 0;
+		$previewRows = [];
+
+		foreach ($rowsToMove as $timingRow) {
+			$roomId = 0;
+			if ($moveType === 'room') {
+				$roomId = $targetRoomId;
+			} else {
+				$roomId = !empty($timingRow->room_id) ? (int)$timingRow->room_id : 0;
+				if ($roomId <= 0) {
+					$roomResult = $this->findRoomsForEvent($conventionSD, (int)$timingRow->event_id);
+					if (!empty($roomResult['rooms'])) {
+						$roomId = (int)$roomResult['rooms'][0];
+					}
+				}
+			}
+
+			if ($roomId <= 0 || empty($timingRow->Events)) {
+				$failedCount++;
+				continue;
+			}
+
+			$duration = $this->calculateEventDurationMinutes($timingRow->Events);
+			$candidateDay = $cursorDay;
+			$candidateStart = $cursorStart;
+			$placed = false;
+
+			$attemptLimit = ($strategy === 'strict') ? 1 : 300;
+			$failureReason = 'No valid slot found under current constraints.';
+			for ($attempt = 0; $attempt < $attemptLimit; $attempt++) {
+				$window = $this->getDayWindowForScheduleDay($schedulingD, $candidateDay, $firstDay);
+
+				if (strtotime($candidateStart) < strtotime($window['start'])) {
+					$candidateStart = $window['start'];
+				}
+
+				$candidateFinish = date('H:i:s', strtotime('+ '.$duration.' minutes', strtotime($candidateStart)));
+
+				if (strtotime($candidateFinish) <= strtotime($candidateStart) || strtotime($candidateFinish) > strtotime($window['finish'])) {
+					$failureReason = 'Slot exceeded day window.';
+					if ($strategy === 'strict') {
+						break;
+					}
+					$candidateDay = $this->getNextAllowedConventionDay($candidateDay, $allowedDays);
+					$nextWindow = $this->getDayWindowForScheduleDay($schedulingD, $candidateDay, $firstDay);
+					$candidateStart = $nextWindow['start'];
+					continue;
+				}
+
+				if (!$this->isRoomTimeAllowed($roomId, $candidateDay, $candidateStart, $candidateFinish)) {
+					$failureReason = 'Room restrictions block this slot.';
+					if ($strategy === 'strict') {
+						break;
+					}
+					$candidateStart = date('H:i:s', strtotime('+30 minutes', strtotime($candidateStart)));
+					if (strtotime($candidateStart) >= strtotime($window['finish'])) {
+						$candidateDay = $this->getNextAllowedConventionDay($candidateDay, $allowedDays);
+						$nextWindow = $this->getDayWindowForScheduleDay($schedulingD, $candidateDay, $firstDay);
+						$candidateStart = $nextWindow['start'];
+					}
+					continue;
+				}
+
+				if ($this->hasRoomConflictForSlotExcludingIds($conventionSD->id, $rowIds, $roomId, $candidateDay, $candidateStart, $candidateFinish)) {
+					$failureReason = 'Room conflict at candidate slot.';
+					if ($strategy === 'strict') {
+						break;
+					}
+					$candidateStart = date('H:i:s', strtotime('+'.$duration.' minutes', strtotime($candidateStart)));
+					if (strtotime($candidateStart) >= strtotime($window['finish'])) {
+						$candidateDay = $this->getNextAllowedConventionDay($candidateDay, $allowedDays);
+						$nextWindow = $this->getDayWindowForScheduleDay($schedulingD, $candidateDay, $firstDay);
+						$candidateStart = $nextWindow['start'];
+					}
+					continue;
+				}
+
+				if ($this->hasUserConflictForSlotExcludingIds($conventionSD->id, $rowIds, $timingRow, $candidateDay, $candidateStart, $candidateFinish, $bufferMinutes)) {
+					$failureReason = 'Participant conflict at candidate slot.';
+					if ($strategy === 'strict') {
+						break;
+					}
+					$candidateStart = date('H:i:s', strtotime('+'.$duration.' minutes', strtotime($candidateStart)));
+					if (strtotime($candidateStart) >= strtotime($window['finish'])) {
+						$candidateDay = $this->getNextAllowedConventionDay($candidateDay, $allowedDays);
+						$nextWindow = $this->getDayWindowForScheduleDay($schedulingD, $candidateDay, $firstDay);
+						$candidateStart = $nextWindow['start'];
+					}
+					continue;
+				}
+
+				$slotDate = $this->getDateForDayFromStart($startDate, $firstDay, $candidateDay);
+				if (!$isPreview) {
+					$this->Schedulingtimings->updateAll(
+					[
+						'room_id' => $roomId,
+						'day' => $candidateDay,
+						'start_time' => $candidateStart,
+						'finish_time' => $candidateFinish,
+						'sch_date_time' => $slotDate . ' ' . $candidateStart,
+						'modified' => date('Y-m-d H:i:s'),
+					],
+					['id' => (int)$timingRow->id]
+					);
+				}
+
+				$assignedCount++;
+				$placed = true;
+				$previewRows[] = [
+					'id' => (int)$timingRow->id,
+					'room_id' => (int)$roomId,
+					'event' => !empty($timingRow->Events->event_name) ? (string)$timingRow->Events->event_name : 'Event',
+					'from_day' => (string)$timingRow->day,
+					'from_start' => (string)$timingRow->start_time,
+					'from_finish' => (string)$timingRow->finish_time,
+					'to_day' => $candidateDay,
+					'to_start' => $candidateStart,
+					'to_finish' => $candidateFinish,
+					'status' => 'will-move',
+					'reason' => '',
+				];
+				$cursorDay = $candidateDay;
+				$cursorStart = date('H:i:s', strtotime('+'.$bufferMinutes.' minutes', strtotime($candidateFinish)));
+				$cursorWindow = $this->getDayWindowForScheduleDay($schedulingD, $cursorDay, $firstDay);
+				if (strtotime($cursorStart) >= strtotime($cursorWindow['finish'])) {
+					$cursorDay = $this->getNextAllowedConventionDay($cursorDay, $allowedDays);
+					$nextWindow = $this->getDayWindowForScheduleDay($schedulingD, $cursorDay, $firstDay);
+					$cursorStart = $nextWindow['start'];
+				}
+				break;
+			}
+
+			if (!$placed) {
+				$failedCount++;
+				$previewRows[] = [
+					'id' => (int)$timingRow->id,
+					'room_id' => (int)$roomId,
+					'event' => !empty($timingRow->Events->event_name) ? (string)$timingRow->Events->event_name : 'Event',
+					'from_day' => (string)$timingRow->day,
+					'from_start' => (string)$timingRow->start_time,
+					'from_finish' => (string)$timingRow->finish_time,
+					'to_day' => '',
+					'to_start' => '',
+					'to_finish' => '',
+					'status' => 'unchanged',
+					'reason' => $failureReason,
+				];
+			}
+		}
+
+		if ($isPreview) {
+			$this->request->getSession()->write('bulk_move_preview', [
+				'conventionseason_id' => (int)$conventionSD->id,
+				'schedule_category' => (int)$scheduling_category,
+				'move_type' => $moveType,
+				'strategy' => $strategy,
+				'rows' => $previewRows,
+				'moved' => $assignedCount,
+				'unchanged' => $failedCount,
+				'created' => date('Y-m-d H:i:s'),
+			]);
+			$this->saveBulkMoveAudit((int)$conventionSD->id, (int)$scheduling_category, 'preview', $moveType, $strategy, $assignedCount, $failedCount, 'Bulk move preview generated');
+			$this->Flash->success('Preview generated. Will move: ' . $assignedCount . ', unchanged: ' . $failedCount . '.');
+			return $this->redirect(['controller' => 'schedulingtimings', 'action' => 'viewscheduling', $convention_season_slug, $scheduling_category]);
+		}
+
+		$this->request->getSession()->delete('bulk_move_preview');
+		$this->saveBulkMoveAudit((int)$conventionSD->id, (int)$scheduling_category, 'apply-direct', $moveType, $strategy, $assignedCount, $failedCount, 'Bulk move applied without preview');
+		$this->Flash->success('Bulk move completed. Moved: ' . $assignedCount . ', Not moved: ' . $failedCount . '.');
+		return $this->redirect(['controller' => 'schedulingtimings', 'action' => 'viewscheduling', $convention_season_slug, $scheduling_category]);
+	}
+
+	public function applybulkpreview($convention_season_slug=null, $scheduling_category=null) {
+		if (!$this->request->is('post')) {
+			return $this->redirect(['controller' => 'schedulingtimings', 'action' => 'viewscheduling', $convention_season_slug, $scheduling_category]);
+		}
+
+		$conventionSD = $this->Conventionseasons->find()
+			->where(['Conventionseasons.slug' => $convention_season_slug])
+			->contain(['Conventions'])
+			->first();
+		if (!$conventionSD) {
+			$this->Flash->error('Convention season not found.');
+			return $this->redirect(['controller' => 'schedulings', 'action' => 'precheck', $convention_season_slug]);
+		}
+
+		$preview = $this->request->getSession()->read('bulk_move_preview');
+		if (
+			empty($preview) ||
+			(int)$preview['conventionseason_id'] !== (int)$conventionSD->id ||
+			(int)$preview['schedule_category'] !== (int)$scheduling_category ||
+			empty($preview['rows'])
+		) {
+			$this->Flash->error('No matching preview is available to apply.');
+			return $this->redirect(['controller' => 'schedulingtimings', 'action' => 'viewscheduling', $convention_season_slug, $scheduling_category]);
+		}
+
+		$schedulingD = $this->Schedulings->find()->where([
+			'Schedulings.conventionseasons_id' => $conventionSD->id,
+			'Schedulings.convention_id' => $conventionSD->convention_id,
+			'Schedulings.season_id' => $conventionSD->season_id,
+			'Schedulings.season_year' => $conventionSD->season_year,
+		])->first();
+		if (!$schedulingD) {
+			$this->Flash->error('Scheduling setup not found.');
+			return $this->redirect(['controller' => 'schedulingtimings', 'action' => 'viewscheduling', $convention_season_slug, $scheduling_category]);
+		}
+
+		$rowsToApply = [];
+		$rowIds = [];
+		foreach ((array)$preview['rows'] as $previewRow) {
+			if (!empty($previewRow['status']) && $previewRow['status'] === 'will-move') {
+				$rowsToApply[] = $previewRow;
+				$rowIds[] = (int)$previewRow['id'];
+			}
+		}
+
+		if (empty($rowsToApply)) {
+			$this->Flash->warning('Preview does not contain any moveable rows.');
+			return $this->redirect(['controller' => 'schedulingtimings', 'action' => 'viewscheduling', $convention_season_slug, $scheduling_category]);
+		}
+
+		$firstDay = !empty($schedulingD->first_day) ? (string)$schedulingD->first_day : 'Monday';
+		$startDate = date('Y-m-d', strtotime($schedulingD->start_date));
+		$bufferMinutes = isset($schedulingD->buffer_minutes) && $schedulingD->buffer_minutes !== null ? (int)$schedulingD->buffer_minutes : 5;
+
+		$timingRows = $this->Schedulingtimings->find()
+			->where([
+				'Schedulingtimings.id IN' => $rowIds,
+				'Schedulingtimings.conventionseasons_id' => $conventionSD->id,
+			])
+			->contain(['Events'])
+			->all()
+			->toArray();
+		$timingMap = [];
+		foreach ($timingRows as $timingRow) {
+			$timingMap[(int)$timingRow->id] = $timingRow;
+		}
+
+		foreach ($rowsToApply as $planRow) {
+			$timingId = (int)$planRow['id'];
+			if (empty($timingMap[$timingId])) {
+				$this->Flash->error('Preview is stale. One or more schedule rows no longer exist.');
+				return $this->redirect(['controller' => 'schedulingtimings', 'action' => 'viewscheduling', $convention_season_slug, $scheduling_category]);
+			}
+
+			$timingRow = $timingMap[$timingId];
+			$roomId = (int)$planRow['room_id'];
+			$day = (string)$planRow['to_day'];
+			$startTime = (string)$planRow['to_start'];
+			$finishTime = (string)$planRow['to_finish'];
+
+			if (!$this->isRoomTimeAllowed($roomId, $day, $startTime, $finishTime)) {
+				$this->Flash->error('Preview can no longer be applied because a room restriction blocks row #' . $timingId . '.');
+				return $this->redirect(['controller' => 'schedulingtimings', 'action' => 'viewscheduling', $convention_season_slug, $scheduling_category]);
+			}
+
+			if ($this->hasRoomConflictForSlotExcludingIds($conventionSD->id, $rowIds, $roomId, $day, $startTime, $finishTime)) {
+				$this->Flash->error('Preview can no longer be applied because a room conflict appeared for row #' . $timingId . '.');
+				return $this->redirect(['controller' => 'schedulingtimings', 'action' => 'viewscheduling', $convention_season_slug, $scheduling_category]);
+			}
+
+			if ($this->hasUserConflictForSlotExcludingIds($conventionSD->id, $rowIds, $timingRow, $day, $startTime, $finishTime, $bufferMinutes)) {
+				$this->Flash->error('Preview can no longer be applied because a participant conflict appeared for row #' . $timingId . '.');
+				return $this->redirect(['controller' => 'schedulingtimings', 'action' => 'viewscheduling', $convention_season_slug, $scheduling_category]);
+			}
+		}
+
+		foreach ($rowsToApply as $planRow) {
+			$slotDate = $this->getDateForDayFromStart($startDate, $firstDay, (string)$planRow['to_day']);
+			$this->Schedulingtimings->updateAll(
+			[
+				'room_id' => (int)$planRow['room_id'],
+				'day' => (string)$planRow['to_day'],
+				'start_time' => (string)$planRow['to_start'],
+				'finish_time' => (string)$planRow['to_finish'],
+				'sch_date_time' => $slotDate . ' ' . (string)$planRow['to_start'],
+				'modified' => date('Y-m-d H:i:s'),
+			],
+			['id' => (int)$planRow['id']]
+			);
+		}
+
+		$this->request->getSession()->delete('bulk_move_preview');
+		$this->saveBulkMoveAudit((int)$conventionSD->id, (int)$scheduling_category, 'apply-preview', (string)$preview['move_type'], (string)$preview['strategy'], count($rowsToApply), 0, 'Applied exact preview plan');
+		$this->Flash->success('Preview applied exactly as shown. Rows moved: ' . count($rowsToApply) . '.');
+		return $this->redirect(['controller' => 'schedulingtimings', 'action' => 'viewscheduling', $convention_season_slug, $scheduling_category]);
+	}
+
+	public function clearbulkpreview($convention_season_slug=null, $scheduling_category=null) {
+		$conventionSD = $this->Conventionseasons->find()->where(['Conventionseasons.slug' => $convention_season_slug])->first();
+		if (!empty($conventionSD->id)) {
+			$this->saveBulkMoveAudit((int)$conventionSD->id, (int)$scheduling_category, 'clear-preview', null, null, 0, 0, 'Preview cleared by user');
+		}
+
+		$this->request->getSession()->delete('bulk_move_preview');
+		$this->Flash->success('Bulk move preview cleared.');
+		return $this->redirect(['controller' => 'schedulingtimings', 'action' => 'viewscheduling', $convention_season_slug, $scheduling_category]);
+	}
 
 	private function minutesBetweenTimes($startTime, $finishTime) {
 		return (int) floor((strtotime($finishTime) - strtotime($startTime)) / 60);
@@ -693,6 +1217,24 @@ class SchedulingtimingsController extends AppController {
 		return (bool)$this->Schedulingtimings->find()->where($cond)->first();
 	}
 
+	private function hasRoomConflictForSlotExcludingIds($conventionSeasonId, $excludedTimingIds, $roomId, $day, $startTime, $finishTime) {
+		$excludedTimingIds = array_filter(array_map('intval', (array)$excludedTimingIds));
+
+		$query = $this->Schedulingtimings->find()->where([
+			'Schedulingtimings.conventionseasons_id' => (int)$conventionSeasonId,
+			'Schedulingtimings.room_id' => (int)$roomId,
+			'Schedulingtimings.day' => (string)$day,
+		]);
+
+		if (!empty($excludedTimingIds)) {
+			$query->where(['Schedulingtimings.id NOT IN' => $excludedTimingIds]);
+		}
+
+		$query->andWhere("('".$startTime."' < Schedulingtimings.finish_time AND '".$finishTime."' > Schedulingtimings.start_time)");
+
+		return (bool)$query->first();
+	}
+
 	private function hasUserConflictForSlot($conventionSeasonId, $excludeTimingId, $timingRecord, $day, $startTime, $finishTime, $bufferMinutes = 5) {
 		$userChecks = $this->getTimingParticipantIds($timingRecord, $conventionSeasonId);
 
@@ -713,6 +1255,34 @@ class SchedulingtimingsController extends AppController {
 		$cond[] = '('.implode(' OR ', $checkConds).')';
 
 		return $this->Schedulingtimings->find()->where($cond)->count() > 0;
+	}
+
+	private function hasUserConflictForSlotExcludingIds($conventionSeasonId, $excludedTimingIds, $timingRecord, $day, $startTime, $finishTime, $bufferMinutes = 5) {
+		$userChecks = $this->getTimingParticipantIds($timingRecord, $conventionSeasonId);
+
+		if (empty($userChecks)) {
+			return false;
+		}
+
+		$checkConds = [];
+		foreach ($userChecks as $uid) {
+			$checkConds[] = "(Schedulingtimings.user_id = '".$uid."' OR Schedulingtimings.user_id_opponent = '".$uid."' OR FIND_IN_SET('".$uid."', Schedulingtimings.group_name_user_ids) OR FIND_IN_SET('".$uid."', Schedulingtimings.group_name_opponent_user_ids))";
+		}
+
+		$query = $this->Schedulingtimings->find()->where([
+			'Schedulingtimings.conventionseasons_id' => (int)$conventionSeasonId,
+			'Schedulingtimings.day' => (string)$day,
+		]);
+
+		$excludedTimingIds = array_filter(array_map('intval', (array)$excludedTimingIds));
+		if (!empty($excludedTimingIds)) {
+			$query->where(['Schedulingtimings.id NOT IN' => $excludedTimingIds]);
+		}
+
+		$query->andWhere("('".$startTime."' < ADDTIME(Schedulingtimings.finish_time, '00:".str_pad($bufferMinutes,2,'0',STR_PAD_LEFT).":00') AND '".$finishTime."' > SUBTIME(Schedulingtimings.start_time, '00:".str_pad($bufferMinutes,2,'0',STR_PAD_LEFT).":00'))");
+		$query->andWhere('('.implode(' OR ', $checkConds).')');
+
+		return $query->count() > 0;
 	}
 
 	private function getGroupParticipantIds($conventionSeasonId, $userId, $eventId, $groupName) {
@@ -860,8 +1430,11 @@ class SchedulingtimingsController extends AppController {
 			$startTime = date("H:i:s", strtotime('+'.$durationMinutes.' minutes', strtotime($startTime)));
 			$finishTime = date("H:i:s", strtotime('+'.$durationMinutes.' minutes', strtotime($startTime)));
 
-			// If past end of day, advance to next day
-			if (strtotime($finishTime) > strtotime($normalFinishTime)) {
+			// If past end of day, advance to next day.
+			// Also detect midnight wrap: if finishTime < startTime the computation
+			// rolled past 23:59 — treat that as overflow too.
+			$finishWrapped = (strtotime($finishTime) < strtotime($startTime));
+			if ($finishWrapped || strtotime($finishTime) > strtotime($normalFinishTime)) {
 				$day = $this->getNextWeekDay($day);
 				$cntrDays++;
 
@@ -877,6 +1450,7 @@ class SchedulingtimingsController extends AppController {
 	}
 
 	private function retryUnscheduledRows($conventionSD, $schedulingsD, $startDate, $firstDay) {
+		$numberOfDays = !empty($schedulingsD->number_of_days) ? (int)$schedulingsD->number_of_days : 4;
 		$unscheduledRows = $this->Schedulingtimings->find()
 			->where([
 				'Schedulingtimings.conventionseasons_id' => $conventionSD->id,
@@ -922,7 +1496,7 @@ class SchedulingtimingsController extends AppController {
 					$bufferMin = isset($schedulingsD->buffer_minutes) && $schedulingsD->buffer_minutes !== null ? (int)$schedulingsD->buffer_minutes : 5;
 					$candidateStart = date("H:i:s", strtotime('+'.$bufferMin.' minutes', strtotime($lastRoomBooking->finish_time)));
 				} else {
-					$balancedStartDay = $this->pickLeastLoadedStartDay($conventionSD->id, $this->getConventionBalancingDays($firstDay, 4));
+					$balancedStartDay = $this->pickLeastLoadedStartDay($conventionSD->id, $this->getConventionBalancingDays($firstDay, $numberOfDays));
 					$candidateDay = !empty($balancedStartDay) ? $balancedStartDay : $firstDay;
 					$candidateDate = $this->getDateForDayFromStart($startDate, $firstDay, $candidateDay);
 					$candidateStart = date("H:i:s", strtotime($schedulingsD->normal_starting_time));
@@ -941,7 +1515,8 @@ class SchedulingtimingsController extends AppController {
 					$cntrDays,
 					$conventionSD->id,
 					$firstDay,
-					$startDate
+					$startDate,
+					$numberOfDays
 				);
 
 				$candidateStart = $tc['start_time'];
@@ -949,7 +1524,7 @@ class SchedulingtimingsController extends AppController {
 				$candidateDay = $tc['day'];
 				$candidateDate = $tc['date'];
 
-				if (!$this->isSchedulableConventionDay($candidateDay)) {
+				if (!$this->isSchedulableConventionDay($candidateDay, $firstDay, $numberOfDays)) {
 					continue;
 				}
 
@@ -979,7 +1554,7 @@ class SchedulingtimingsController extends AppController {
 					$candidateDay = $userSlot['day'];
 					$candidateDate = $this->getDateForDayFromStart($startDate, $firstDay, $candidateDay);
 
-					if (!$this->isSchedulableConventionDay($candidateDay) || $this->hasRoomConflictForSlot($conventionSD->id, $timing->id, $roomId, $candidateDay, $candidateStart, $candidateFinish)) {
+					if (!$this->isSchedulableConventionDay($candidateDay, $firstDay, $numberOfDays) || $this->hasRoomConflictForSlot($conventionSD->id, $timing->id, $roomId, $candidateDay, $candidateStart, $candidateFinish)) {
 						continue;
 					}
 				}
@@ -1217,6 +1792,67 @@ class SchedulingtimingsController extends AppController {
 		}
 	}
 
+	private function ensureSchedulingBulkMoveAuditsTable() {
+		try {
+			$conn = ConnectionManager::get('default');
+			$conn->execute(
+				"CREATE TABLE IF NOT EXISTS scheduling_bulk_move_audits (
+					id INT AUTO_INCREMENT PRIMARY KEY,
+					conventionseason_id INT NOT NULL,
+					schedule_category INT NOT NULL,
+					action_type VARCHAR(32) NOT NULL,
+					move_type VARCHAR(32) NULL,
+					strategy VARCHAR(32) NULL,
+					moved_count INT NOT NULL DEFAULT 0,
+					unchanged_count INT NOT NULL DEFAULT 0,
+					notes VARCHAR(255) NULL,
+					created DATETIME NOT NULL,
+					INDEX idx_sbma_csid_created (conventionseason_id, created),
+					INDEX idx_sbma_csid_category (conventionseason_id, schedule_category)
+				) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
+			);
+		} catch (\Exception $e) {
+			// Keep feature resilient if audit table creation fails.
+		}
+	}
+
+	private function saveBulkMoveAudit($conventionSeasonId, $scheduleCategory, $actionType, $moveType = null, $strategy = null, $movedCount = 0, $unchangedCount = 0, $notes = '') {
+		$this->ensureSchedulingBulkMoveAuditsTable();
+		try {
+			$conn = ConnectionManager::get('default');
+			$conn->execute(
+				"INSERT INTO scheduling_bulk_move_audits
+				(conventionseason_id, schedule_category, action_type, move_type, strategy, moved_count, unchanged_count, notes, created)
+				VALUES
+				(:conventionseason_id, :schedule_category, :action_type, :move_type, :strategy, :moved_count, :unchanged_count, :notes, :created)",
+				[
+					'conventionseason_id' => (int)$conventionSeasonId,
+					'schedule_category' => (int)$scheduleCategory,
+					'action_type' => (string)$actionType,
+					'move_type' => $moveType === null ? null : (string)$moveType,
+					'strategy' => $strategy === null ? null : (string)$strategy,
+					'moved_count' => (int)$movedCount,
+					'unchanged_count' => (int)$unchangedCount,
+					'notes' => (string)$notes,
+					'created' => date('Y-m-d H:i:s'),
+				],
+				[
+					'conventionseason_id' => 'integer',
+					'schedule_category' => 'integer',
+					'action_type' => 'string',
+					'move_type' => 'string',
+					'strategy' => 'string',
+					'moved_count' => 'integer',
+					'unchanged_count' => 'integer',
+					'notes' => 'string',
+					'created' => 'string',
+				]
+			);
+		} catch (\Exception $e) {
+			// Keep feature resilient if audit insert fails.
+		}
+	}
+
 	public function exportautoassignruns($convention_season_slug=null) {
 		$conventionSD = $this->Conventionseasons->find()
 			->where(['Conventionseasons.slug' => $convention_season_slug])
@@ -1326,6 +1962,87 @@ class SchedulingtimingsController extends AppController {
 				isset($row['conflict_user_count']) ? (int)$row['conflict_user_count'] : 0,
 				isset($row['conflict_group_row_count']) ? (int)$row['conflict_group_row_count'] : 0,
 				isset($row['conflict_timing_row_count']) ? (int)$row['conflict_timing_row_count'] : 0,
+				isset($row['notes']) ? $row['notes'] : '',
+			]);
+		}
+		rewind($stream);
+		$csv = stream_get_contents($stream);
+		fclose($stream);
+
+		$this->autoRender = false;
+		return $this->response
+			->withType('csv')
+			->withDownload($filename)
+			->withStringBody($csv === false ? '' : $csv);
+	}
+
+	private function getBulkMoveAuditRows($conventionSeasonId, $limit = 200) {
+		$this->ensureSchedulingBulkMoveAuditsTable();
+		try {
+			$conn = ConnectionManager::get('default');
+			$rows = $conn->execute(
+				"SELECT id, conventionseason_id, schedule_category, action_type, move_type, strategy, moved_count, unchanged_count, notes, created
+				 FROM scheduling_bulk_move_audits
+				 WHERE conventionseason_id = :csid
+				 ORDER BY id DESC
+				 LIMIT :row_limit",
+				['csid' => (int)$conventionSeasonId, 'row_limit' => (int)$limit],
+				['csid' => 'integer', 'row_limit' => 'integer']
+			)->fetchAll('assoc');
+
+			return is_array($rows) ? $rows : [];
+		} catch (\Exception $e) {
+			return [];
+		}
+	}
+
+	public function bulkmoveaudits($convention_season_slug = null) {
+		$conventionSD = $this->Conventionseasons->find()
+			->where(['Conventionseasons.slug' => $convention_season_slug])
+			->contain(['Conventions'])
+			->first();
+
+		if (!$conventionSD) {
+			$this->Flash->error('Convention season not found.');
+			return $this->redirect(['controller' => 'schedulings', 'action' => 'precheck', $convention_season_slug]);
+		}
+
+		$rows = $this->getBulkMoveAuditRows((int)$conventionSD->id, 500);
+
+		$this->set('title', ADMIN_TITLE . 'Bulk Move Audit Trail');
+		$this->set('conventionSD', $conventionSD);
+		$this->set('convention_slug', $conventionSD->convention->slug);
+		$this->set('convention_season_slug', $convention_season_slug);
+		$this->set('bulkMoveAuditRows', $rows);
+	}
+
+	public function exportbulkmoveaudits($convention_season_slug = null) {
+		$conventionSD = $this->Conventionseasons->find()
+			->where(['Conventionseasons.slug' => $convention_season_slug])
+			->contain(['Conventions'])
+			->first();
+
+		if (!$conventionSD) {
+			$this->Flash->error('Convention season not found.');
+			return $this->redirect(['controller' => 'schedulings', 'action' => 'precheck', $convention_season_slug]);
+		}
+
+		$rows = $this->getBulkMoveAuditRows((int)$conventionSD->id, 3000);
+		$filename = 'bulk-move-audits-' . $convention_season_slug . '-' . date('Ymd-His') . '.csv';
+
+		$stream = fopen('php://temp', 'w+');
+		fputcsv($stream, ['run_id', 'created', 'conventionseason_id', 'schedule_category', 'action_type', 'move_type', 'strategy', 'moved_count', 'unchanged_count', 'notes']);
+		foreach ($rows as $row) {
+			fputcsv($stream, [
+				isset($row['id']) ? (int)$row['id'] : '',
+				isset($row['created']) ? $row['created'] : '',
+				isset($row['conventionseason_id']) ? (int)$row['conventionseason_id'] : '',
+				isset($row['schedule_category']) ? (int)$row['schedule_category'] : '',
+				isset($row['action_type']) ? $row['action_type'] : '',
+				isset($row['move_type']) ? $row['move_type'] : '',
+				isset($row['strategy']) ? $row['strategy'] : '',
+				isset($row['moved_count']) ? (int)$row['moved_count'] : 0,
+				isset($row['unchanged_count']) ? (int)$row['unchanged_count'] : 0,
 				isset($row['notes']) ? $row['notes'] : '',
 			]);
 		}
@@ -1962,6 +2679,7 @@ class SchedulingtimingsController extends AppController {
 		$schedulingsD = $cfg['schedulingsD'];
 		$start_date = $cfg['start_date'];
 		$first_day = $cfg['first_day'];
+		$number_of_days = $cfg['number_of_days'];
 		$normal_starting_time = $cfg['normal_starting_time'];
 		$normal_finish_time = $cfg['normal_finish_time'];
 		$lunch_time_start = $cfg['lunch_time_start'];
@@ -1987,7 +2705,7 @@ class SchedulingtimingsController extends AppController {
 			// now check that if any room is allocated for this event
 			$roomResult = $this->findRoomsForEvent($conventionSD, $eventIDCS);
 			$roomArrCSEvent = $roomResult['rooms'];
-			$eventSpbValue = $roomResult['spb'];
+			$eventSpbValue = $this->resolveEventBlockSize($eventD, $roomResult['spb']);
 			//$this->prx($roomArrCSEvent);
 
 			// Check if there's only one room, then duplicate
@@ -2015,7 +2733,7 @@ class SchedulingtimingsController extends AppController {
 				{
 					$cntrDays = 1;
 					$resetTime = 1;
-					$balancingDays = $this->getConventionBalancingDays($first_day, 4);
+					$balancingDays = $this->getConventionBalancingDays($first_day, $number_of_days);
 					// Initial day assignment
 					$schDay = $first_day;
 					$schStartDate = $this->getDateForDayFromStart($start_date, $first_day, $schDay);
@@ -2165,7 +2883,7 @@ class SchedulingtimingsController extends AppController {
 						/* Apply time constraints (lunch, breaks, sports, room restrictions) — with load balancing */
 						$tc = $this->applyTimeConstraints($schedulingsD, $eventSetupRoundJudTime, $roomID,
 							$start_time, $finish_time, $schDay, $schStartDate, $cntrDays,
-							$conventionSD->id, $first_day, $start_date);
+							$conventionSD->id, $first_day, $start_date, $number_of_days);
 						$start_time = $tc['start_time'];
 						$finish_time = $tc['finish_time'];
 						$schDay = $tc['day'];
@@ -2266,6 +2984,7 @@ class SchedulingtimingsController extends AppController {
 		$schedulingsD = $cfg['schedulingsD'];
 		$start_date = $cfg['start_date'];
 		$first_day = $cfg['first_day'];
+		$number_of_days = $cfg['number_of_days'];
 		$normal_starting_time = $cfg['normal_starting_time'];
 		$normal_finish_time = $cfg['normal_finish_time'];
 		$lunch_time_start = $cfg['lunch_time_start'];
@@ -2579,7 +3298,7 @@ class SchedulingtimingsController extends AppController {
 			// now check that if any room is allocated for this event
 			$roomResult = $this->findRoomsForEvent($conventionSD, $event_id);
 			$roomArrCSEvent = $roomResult['rooms'];
-			$eventSpbValue = $roomResult['spb'];
+			$eventSpbValue = $this->resolveEventBlockSize($eventD, $roomResult['spb']);
 
 			//$this->prx($roomArrCSEvent);
 
@@ -2596,7 +3315,7 @@ class SchedulingtimingsController extends AppController {
 
 				$cntrDays 		= 1;
 				$resetTime 		= 1;
-				$balancingDays = $this->getConventionBalancingDays($first_day, 4);
+				$balancingDays = $this->getConventionBalancingDays($first_day, $number_of_days);
 				$balancedStartDay = $this->pickLeastLoadedStartDay($conventionSD->id, $balancingDays);
 				$schDay 		= !empty($balancedStartDay) ? $balancedStartDay : $first_day;
 				$schStartDate = $this->getDateForDayFromStart($start_date, $first_day, $schDay);
@@ -2708,7 +3427,11 @@ class SchedulingtimingsController extends AppController {
 								$schStartDate,
 								$cntrDays,
 								$schedulingsD,
-								$eventSetupRoundJudTime
+								$eventSetupRoundJudTime,
+								$first_day,
+								$start_date,
+								$conventionSD->id,
+								$number_of_days
 							);
 							$cntrRoomCSEvent = $slotShift['cntrRoomCSEvent'];
 							$schDay = $slotShift['day'];
@@ -2734,7 +3457,8 @@ class SchedulingtimingsController extends AppController {
 
 					/* Apply time constraints (lunch, breaks, sports, room restrictions) */
 					$tc = $this->applyTimeConstraints($schedulingsD, $eventSetupRoundJudTime, $roomID,
-						$start_time, $finish_time, $schDay, $schStartDate, $cntrDays);
+						$start_time, $finish_time, $schDay, $schStartDate, $cntrDays,
+						$conventionSD->id, $first_day, $start_date, $number_of_days);
 					$start_time = $tc['start_time'];
 					$finish_time = $tc['finish_time'];
 					$schDay = $tc['day'];
@@ -2745,7 +3469,7 @@ class SchedulingtimingsController extends AppController {
 
 					/* here we calculate root, day, start time and end time - ends */
 
-					if (!$this->isSchedulableConventionDay($schDay)) {
+					if (!$this->isSchedulableConventionDay($schDay, $first_day, $number_of_days)) {
 						$this->Schedulingtimings->updateAll(
 						[
 						'room_id' 		=> NULL,
@@ -2827,7 +3551,7 @@ class SchedulingtimingsController extends AppController {
 					//$this->pr($arrPP);
 					//echo '<hr>';
 
-					if (!$this->isSchedulableConventionDay($schDay)) {
+					if (!$this->isSchedulableConventionDay($schDay, $first_day, $number_of_days)) {
 						$this->Schedulingtimings->updateAll(
 						[
 						'room_id' 		=> NULL,
@@ -2885,6 +3609,7 @@ class SchedulingtimingsController extends AppController {
 		$schedulingsD = $cfg['schedulingsD'];
 		$start_date = $cfg['start_date'];
 		$first_day = $cfg['first_day'];
+		$number_of_days = $cfg['number_of_days'];
 		$normal_starting_time = $cfg['normal_starting_time'];
 		$normal_finish_time = $cfg['normal_finish_time'];
 		$lunch_time_start = $cfg['lunch_time_start'];
@@ -2913,7 +3638,7 @@ class SchedulingtimingsController extends AppController {
 			// now check that if any room is allocated for this event
 			$roomResult = $this->findRoomsForEvent($conventionSD, $event_id_c3);
 			$roomArrCSEvent = $roomResult['rooms'];
-			$eventSpbValue = $roomResult['spb'];
+			$eventSpbValue = $this->resolveEventBlockSize($eventD, $roomResult['spb']);
 			//$this->prx($roomArrCSEvent);
 
 			// now get groups for this event from convention registration
@@ -3188,7 +3913,7 @@ class SchedulingtimingsController extends AppController {
 
 				$cntrDays 		= 1;
 				$resetTime 		= 1;
-				$balancingDays = $this->getConventionBalancingDays($first_day, 4);
+				$balancingDays = $this->getConventionBalancingDays($first_day, $number_of_days);
 				$balancedStartDay = $this->pickLeastLoadedStartDay($conventionSD->id, $balancingDays);
 				$schDay 		= !empty($balancedStartDay) ? $balancedStartDay : $first_day;
 				$schStartDate = $this->getDateForDayFromStart($start_date, $first_day, $schDay);
@@ -3251,7 +3976,8 @@ class SchedulingtimingsController extends AppController {
 							$eventSetupRoundJudTime,
 							$first_day,
 							$start_date,
-							$conventionSD->id
+							$conventionSD->id,
+							$number_of_days
 						);
 						$cntrRoomCSEvent = $slotShift['cntrRoomCSEvent'];
 						$schDay = $slotShift['day'];
@@ -3305,15 +4031,10 @@ class SchedulingtimingsController extends AppController {
 						// suppose in this case, finish time reach to day end time, then shift to next day
 						if(strtotime($finish_time)>=strtotime($normal_finish_time))
 						{
-							$balancingDays = $this->getConventionBalancingDays($first_day, 4);
-							$balancedStartDay = $this->pickLeastLoadedStartDay($conventionSD->id, $balancingDays);
-							if (!empty($balancedStartDay)) {
-								$schDay = $balancedStartDay;
-								$schStartDate = $this->getDateForDayFromStart($start_date, $first_day, $schDay);
-							} else {
-								$schDay = $this->getNextWeekDay($schDay);
-								$schStartDate = date('Y-m-d', strtotime($schStartDate . ' +1 day'));
-							}
+							// Always advance to the next day — do NOT use pickLeastLoadedStartDay
+							// here because it can return the same day and cause infinite loops.
+							$schDay = $this->getNextWeekDay($schDay);
+							$schStartDate = date('Y-m-d', strtotime($schStartDate . ' +1 day'));
 							$cntrDays++;
 
 							$normal_starting_time 	= date("H:i:s",strtotime($schedulingsD->normal_starting_time));
@@ -3338,7 +4059,8 @@ class SchedulingtimingsController extends AppController {
 
 					/* Apply time constraints (lunch, breaks, sports, room restrictions) */
 					$tc = $this->applyTimeConstraints($schedulingsD, $eventSetupRoundJudTime, $roomID,
-						$start_time, $finish_time, $schDay, $schStartDate, $cntrDays);
+						$start_time, $finish_time, $schDay, $schStartDate, $cntrDays,
+						$conventionSD->id, $first_day, $start_date, $number_of_days);
 					$start_time = $tc['start_time'];
 					$finish_time = $tc['finish_time'];
 					$schDay = $tc['day'];
@@ -3350,7 +4072,7 @@ class SchedulingtimingsController extends AppController {
 
 
 
-					if (!$this->isSchedulableConventionDay($schDay)) {
+					if (!$this->isSchedulableConventionDay($schDay, $first_day, $number_of_days)) {
 						$this->Schedulingtimings->updateAll(
 						[
 						'room_id' 		=> NULL,
@@ -3465,6 +4187,7 @@ class SchedulingtimingsController extends AppController {
 		$schedulingsD = $cfg['schedulingsD'];
 		$start_date = $cfg['start_date'];
 		$first_day = $cfg['first_day'];
+		$number_of_days = $cfg['number_of_days'];
 		$normal_starting_time = $cfg['normal_starting_time'];
 		$normal_finish_time = $cfg['normal_finish_time'];
 		$lunch_time_start = $cfg['lunch_time_start'];
@@ -3557,7 +4280,10 @@ class SchedulingtimingsController extends AppController {
 			// now check that if any room is allocated for this event
 			$roomResult = $this->findRoomsForEvent($conventionSD, $event_id);
 			$roomArrCSEvent = $roomResult['rooms'];
-			$eventSpbValue = $roomResult['spb'];
+			$eventSpbValue = $this->resolveEventBlockSize($eventD, $roomResult['spb']);
+			$eventJudgingType = !empty($eventD->event_judging_type) ? strtolower((string)$eventD->event_judging_type) : '';
+			$eventNameLc = !empty($eventD->event_name) ? strtolower((string)$eventD->event_name) : '';
+			$isSpellingEvent = ($eventJudgingType === 'spellings' || strpos($eventNameLc, 'spelling') !== false);
 			//$this->prx($roomArrCSEvent);
 
 
@@ -3573,9 +4299,9 @@ class SchedulingtimingsController extends AppController {
 
 				$cntrDays 		= 1;
 				$resetTime 		= 1;
-				$balancingDays = $this->getConventionBalancingDays($first_day, 4);
-				$balancedStartDay = $this->pickLeastLoadedStartDay($conventionSD->id, $balancingDays);
-				$schDay 		= !empty($balancedStartDay) ? $balancedStartDay : $first_day;
+				// Always start from first_day so the room fills Mon→Tue→Wed→Thu sequentially.
+				// findUserConflictFreeSlot handles spreading individual students across days.
+				$schDay 		= $first_day;
 				$schStartDate = $this->getDateForDayFromStart($start_date, $first_day, $schDay);
 
 				$totalRoomsForThisEvent = count((array)$roomArrCSEvent);
@@ -3694,7 +4420,11 @@ class SchedulingtimingsController extends AppController {
 								$schStartDate,
 								$cntrDays,
 								$schedulingsD,
-								$eventSetupRoundJudTime
+								$eventSetupRoundJudTime,
+								$first_day,
+								$start_date,
+								$conventionSD->id,
+								$number_of_days
 							);
 							$cntrRoomCSEvent = $slotShift['cntrRoomCSEvent'];
 							$schDay = $slotShift['day'];
@@ -3714,7 +4444,8 @@ class SchedulingtimingsController extends AppController {
 					/* Apply time constraints (lunch, breaks, sports, room restrictions) */
 					$room_id_tocheck = $roomArrCSEvent[$cntrRoomCSEvent];
 					$tc = $this->applyTimeConstraints($schedulingsD, $eventSetupRoundJudTime, $room_id_tocheck,
-						$start_time, $finish_time, $schDay, $schStartDate, $cntrDays);
+						$start_time, $finish_time, $schDay, $schStartDate, $cntrDays,
+						$conventionSD->id, $first_day, $start_date, $number_of_days);
 					$start_time = $tc['start_time'];
 					$finish_time = $tc['finish_time'];
 					$schDay = $tc['day'];
@@ -3730,7 +4461,7 @@ class SchedulingtimingsController extends AppController {
 					} // end of else (new block time determination)
 
 
-					if (!$this->isSchedulableConventionDay($schDay)) {
+					if (!$this->isSchedulableConventionDay($schDay, $first_day, $number_of_days)) {
 						$this->Schedulingtimings->updateAll(
 						[
 						'room_id' 		=> NULL,
@@ -3747,10 +4478,11 @@ class SchedulingtimingsController extends AppController {
 
 					// True when this row is reusing an already chosen block slot.
 					$reuseBlockSlot = ($eventSpbValue > 1 && $blockCounter > 1 && $blockStartTime !== null);
+					$strictRoundGrouping = ($isSpellingEvent && $eventSpbValue > 1);
 
 					/* USER CONFLICT CHECK for Category 4 (individual events):
 					   Ensure this student is not already scheduled at this time */
-					if (!empty($schdata->user_id)) {
+					if (!empty($schdata->user_id) && !($strictRoundGrouping && $reuseBlockSlot)) {
 						$userConflictSlot = $this->findUserConflictFreeSlot(
 							$conventionSD->id,
 							[$schdata->user_id],
