@@ -17,7 +17,7 @@ class UsersController extends AppController {
     
 	public function beforeFilter(EventInterface $event) {
         parent::beforeFilter($event);
-		$publicActions = ['login','registration','registerprevdetails','forgotpassword','resetpassword','teachersetpassword','dashboard','editprofile','changepassword','teachers','editteacher','addteacher','archiveteacher','restoreteacher','students','addstudent','editstudent','archivestudent','restorestudent','judgesregistration','logout','judgesconfirmation','judgeeditprofile','applyforjudge','switchprofile','judgeexperience','judgingform','logintotest'];
+				$publicActions = ['login','registration','registerprevdetails','forgotpassword','resetpassword','teachersetpassword','dashboard','editprofile','changepassword','teachers','editteacher','addteacher','archiveteacher','restoreteacher','students','addstudent','editstudent','archivestudent','restorestudent','conference','judgesregistration','logout','judgesconfirmation','judgeeditprofile','applyforjudge','switchprofile','judgeexperience','judgingform','logintotest'];
 
 		// Keep CakePHP 3 Auth behavior while supporting Authentication plugin migration.
 		if (isset($this->Auth) && $this->Auth && method_exists($this->Auth, 'allow')) {
@@ -43,6 +43,7 @@ class UsersController extends AppController {
 		
 		$this->loadModel("Evaluationforms");
 		$this->loadModel("Settings");
+		$this->loadModel("Conferenceregistrations");
     }
 	
 	public function login($convention_slug=null,$season_id=null) {
@@ -914,10 +915,155 @@ class UsersController extends AppController {
             $this->viewBuilder()->templatePath('Element' . DS . 'Users');
             $this->render('students');
         }
+	}
 		
-		//$this->prx($this->paginate($this->Users));
 
-    }
+	public function conference() {
+
+		$this->userLoginCheck();
+		$this->schoolAdminLoginCheck();
+
+		$this->viewBuilder()->setLayout('home');
+		$this->set('title_for_layout', 'Conference ' . TITLE_FOR_PAGES);
+		$this->set('active_conference', 'active');
+
+		$user_id = $this->request->getSession()->read('user_id');
+
+		$userDetails = $this->Users->find()->where(['Users.id' => $user_id])->first();
+		$this->set('userDetails', $userDetails);
+
+		$condition = [];
+		$condition[] = "(Users.school_id = '" . $user_id . "')";
+		$condition[] = "(Users.user_type = 'Teacher_Parent')";
+		$condition[] = "(Users.status = '1')";
+
+		$supervisors = $this->Users->find()->where($condition)->order(['Users.first_name' => 'ASC', 'Users.last_name' => 'ASC'])->all();
+
+		$supervisorDropDown = [];
+		foreach ($supervisors as $sup) {
+			$supervisorDropDown[$sup->id] = trim($sup->first_name . ' ' . $sup->last_name);
+		}
+
+		// Get all active conference years
+		$this->loadModel("Conferenceyears");
+		$allConferenceYears = $this->Conferenceyears->find()
+			->where(['status' => 1])
+			->order(['year' => 'DESC'])
+			->all();
+		$this->set('allConferenceYears', $allConferenceYears);
+
+		// Determine selected conference year (from query string, post data, or default to latest)
+		$selectedYearId = $this->request->getQuery('year_id');
+		if ($this->request->is('post') && $this->request->getData('conference_year_id')) {
+			$selectedYearId = $this->request->getData('conference_year_id');
+		}
+
+		$activeYear = null;
+		if ($selectedYearId) {
+			$activeYear = $this->Conferenceyears->find()->where(['id' => (int)$selectedYearId, 'status' => 1])->first();
+		}
+		if (!$activeYear) {
+			$activeYear = $allConferenceYears->first();
+		}
+
+		$conferenceYearId = $activeYear ? $activeYear->id : null;
+		$this->set('activeYear', $activeYear);
+
+		// Load existing registrations for this school + year
+		$regCondition = ['school_id' => $user_id];
+		if ($conferenceYearId) {
+			$regCondition['conference_year_id'] = $conferenceYearId;
+		}
+		$existingRegs = $this->Conferenceregistrations->find()
+			->where($regCondition)
+			->all();
+		$selectedSupervisorIds = [];
+		foreach ($existingRegs as $reg) {
+			$selectedSupervisorIds[] = (string)$reg->supervisor_id;
+		}
+
+		if ($this->request->is('post')) {
+			$selectedSupervisorIds = isset($this->request->getData()['Conference']['supervisor_ids']) ? (array)$this->request->getData()['Conference']['supervisor_ids'] : [];
+			$selectedSupervisorIds = array_values(array_filter($selectedSupervisorIds, function ($value) {
+				return (string)$value !== '';
+			}));
+
+			// Handle new supervisors added via the form
+			$newSupervisors = $this->request->getData('NewSupervisors');
+			$newNames = [];
+			if (!empty($newSupervisors) && is_array($newSupervisors)) {
+				foreach ($newSupervisors as $ns) {
+					$firstName = isset($ns['first_name']) ? trim($ns['first_name']) : '';
+					$lastName = isset($ns['last_name']) ? trim($ns['last_name']) : '';
+					$email = isset($ns['email']) ? trim($ns['email']) : '';
+					if ($firstName !== '' && $lastName !== '' && $email !== '') {
+						// Check if a user with this email already exists
+						$existingUser = $this->Users->find()->where(['Users.email_address' => $email])->first();
+						if ($existingUser) {
+							$newSupId = $existingUser->id;
+						} else {
+							$slug = $this->getSlug($firstName . ' ' . time(), 'Users');
+							$newUser = $this->Users->newEntity([
+								'first_name' => $firstName,
+								'last_name' => $lastName,
+								'email_address' => $email,
+								'user_type' => 'Teacher_Parent',
+								'school_id' => $user_id,
+								'status' => 1,
+								'activation_status' => 1,
+								'slug' => $slug,
+							]);
+							$this->Users->save($newUser);
+							$newSupId = $newUser->id;
+						}
+						if ($newSupId) {
+							$selectedSupervisorIds[] = (string)$newSupId;
+							$newNames[] = $firstName . ' ' . $lastName;
+						}
+					}
+				}
+			}
+
+			// Delete old registrations for this school + year
+			$delCondition = ['school_id' => $user_id];
+			if ($conferenceYearId) {
+				$delCondition['conference_year_id'] = $conferenceYearId;
+			}
+			$this->Conferenceregistrations->deleteAll($delCondition);
+
+			// Insert new registrations
+			foreach ($selectedSupervisorIds as $supId) {
+				$entity = $this->Conferenceregistrations->newEntity([
+					'school_id' => $user_id,
+					'supervisor_id' => (int)$supId,
+					'registered_by' => $user_id,
+					'conference_year_id' => $conferenceYearId,
+				]);
+				$this->Conferenceregistrations->save($entity);
+			}
+
+			$selectedNames = [];
+			foreach ($selectedSupervisorIds as $selectedId) {
+				if (isset($supervisorDropDown[$selectedId])) {
+					$selectedNames[] = $supervisorDropDown[$selectedId];
+				}
+			}
+			$selectedNames = array_merge($selectedNames, $newNames);
+
+			if (!empty($selectedNames)) {
+				$this->Flash->success('Registered supervisors: ' . implode(', ', $selectedNames));
+			} else {
+				$this->Flash->error('Please select at least one supervisor.');
+			}
+			return $this->redirect(['action' => 'conference', '?' => ['year_id' => $conferenceYearId]]);
+		}
+
+		$this->set('supervisorDropDown', $supervisorDropDown);
+		$this->set('supervisorCount', count($supervisorDropDown));
+		$this->set('selectedSupervisorIds', $selectedSupervisorIds);
+		$this->set('selectedSupervisorCount', count($selectedSupervisorIds));
+	}
+		//$this->prx($this->paginate($this->Users));
 	
 	public function addstudent() {
 		

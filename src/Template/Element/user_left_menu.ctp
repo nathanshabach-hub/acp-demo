@@ -3,6 +3,7 @@ $menuStateDefaults = [
 	'active_dashboard',
 	'active_teachers',
 	'active_students',
+	'active_conference',
 	'active_convention_registrations',
 	'active_cr_price_structure',
 	'active_cr_teachers',
@@ -50,6 +51,9 @@ if ($currentUserId > 0 && $currentUserType == "School")
 				</li>
 				<li class="nav-item dash-item ">
 					<?php echo $this->Html->link('Global Student List', ['controller' => 'users', 'action' => 'students'], ['escape' => false, 'class' => 'nav-link ' . $active_students]); ?>
+				</li>
+				<li class="nav-item dash-item ">
+					<?php echo $this->Html->link('Conference', ['controller' => 'users', 'action' => 'conference'], ['escape' => false, 'class' => 'nav-link ' . $active_conference]); ?>
 				</li>
 				<li class="nav-item dash-item ">
 					<?php echo $this->Html->link('Convention Registrations', ['controller' => 'conventionregistrations', 'action' => 'myregistrations'], ['escape' => false, 'class' => 'nav-link ' . $active_convention_registrations]); ?>

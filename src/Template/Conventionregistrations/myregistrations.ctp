@@ -2,8 +2,8 @@
 
 <?php
 $currentSessionProfileType = isset($currentSessionProfileType) ? $currentSessionProfileType : null;
-$hasRemainingConventions = method_exists($remainingconventions, 'isEmpty') ? !$remainingconventions->isEmpty() : !empty($remainingconventions);
-$hasPastRegistrations = method_exists($pastRegistrations, 'isEmpty') ? !$pastRegistrations->isEmpty() : !empty($pastRegistrations);
+$hasRemainingConventions = is_object($remainingconventions) && method_exists($remainingconventions, 'isEmpty') ? !$remainingconventions->isEmpty() : !empty($remainingconventions);
+$hasPastRegistrations = is_object($pastRegistrations) && method_exists($pastRegistrations, 'isEmpty') ? !$pastRegistrations->isEmpty() : !empty($pastRegistrations);
 
 if($userDetails->user_type == 'School')
 {

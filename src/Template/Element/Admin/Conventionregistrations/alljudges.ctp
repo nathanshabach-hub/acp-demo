@@ -192,9 +192,7 @@ $latestRegistration = $latestCreatedTs > 0 ? date('M d, Y', $latestCreatedTs) : 
 .judge-manage-modal .modal-header {
     background: #f6f8fb;
 }
-.judge-results-modal .modal-header {
-    background: #f7fbf7;
-}
+
 .judge-manage-modal .current-event-list {
     margin-bottom: 12px;
 }
@@ -234,45 +232,42 @@ $latestRegistration = $latestCreatedTs > 0 ? date('M d, Y', $latestCreatedTs) : 
 .judge-toast.error {
     background: #dd4b39;
 }
-.judge-results-summary {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-}
-.judge-results-item {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-}
-.judge-results-item-main {
-    flex: 1;
-    min-width: 0;
-}
-.judge-results-item-quick {
-    white-space: nowrap;
-}
-.judge-results-modal-toolbar {
-    display: flex;
-    justify-content: flex-end;
-    margin-bottom: 10px;
-}
-body.judge-modal-fallback-open {
-    overflow: hidden;
-}
-#judgeResultsModal.judge-modal-fallback {
-    display: block;
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    z-index: 1050;
+
+
     background: rgba(0, 0, 0, 0.45);
     overflow-y: auto;
 }
-#judgeResultsModal.judge-modal-fallback .modal-dialog {
-    margin-top: 60px;
+.close-event-list {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    min-width: 170px;
+}
+.close-event-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    padding: 4px 8px;
+    border-radius: 4px;
+    background: #f9fafb;
+    border: 1px solid #e8ecf1;
+}
+.close-event-row.closed {
+    background: #fdf5f5;
+    border-color: #f1dede;
+}
+.close-event-name {
+    font-size: 11px;
+    font-weight: 600;
+    color: #3c4858;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 120px;
+}
+.close-event-row .btn {
+    flex-shrink: 0;
 }
 .table > thead > tr > th {
     background: #f6f8fb;
@@ -309,18 +304,6 @@ body.judge-modal-fallback-open {
     <?php if ($totalJudges > 0) { ?>
         <div id="judge-toast" class="judge-toast"></div>
 
-        <div class="modal fade judge-results-modal" id="judgeResultsModal" tabindex="-1" role="dialog" aria-hidden="true">
-            <div class="modal-dialog modal-md" role="document">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-                        <h4 class="modal-title" id="judgeResultsModalTitle">Event Results</h4>
-                    </div>
-                    <div class="modal-body" id="judgeResultsModalBody"></div>
-                </div>
-            </div>
-        </div>
-
         <div class="judge-toolbar">
             <div class="judge-toolbar-left">
                 <input type="text" id="judge-search-input" class="form-control" placeholder="Search by name, email or ID">
@@ -354,8 +337,8 @@ body.judge-modal-fallback-open {
                         <th>Status</th>
                         <th>Judging Events</th>
                         <th>Registration Date</th>
-                        <th>Results</th>
                         <th>Actions</th>
+                        <th>Close Event</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -417,53 +400,6 @@ body.judge-modal-fallback-open {
                                 <?php } ?>
                             </td>
                             <td><?php echo date('M d, Y', strtotime($row['created'])); ?></td>
-                            <td class="judge-results-cell">
-                                <?php if (!empty($row['result_routes']) && $slugConventionSeason !== '' && $slugConvention !== '') { ?>
-                                    <?php
-                                    $closedResults = 0;
-                                    $openResults = 0;
-                                    $firstClosedHref = '';
-                                    foreach ($row['result_routes'] as $route) {
-                                        if (!is_array($route)) {
-                                            continue;
-                                        }
-                                        $routeJudgingEnds = isset($route['judging_ends']) ? (int)$route['judging_ends'] : 0;
-                                        if ($routeJudgingEnds === 1 && $firstClosedHref === '' && !empty($route['event_slug']) && !empty($route['action_results'])) {
-                                            $firstClosedHref = $this->Url->build([
-                                                'controller' => 'Results',
-                                                'action' => (string)$route['action_results'],
-                                                $slugConventionSeason,
-                                                $slugConvention,
-                                                (string)$route['event_slug'],
-                                            ]);
-                                        }
-                                        if ($routeJudgingEnds === 1) {
-                                            $closedResults++;
-                                        } else {
-                                            $openResults++;
-                                        }
-                                    }
-                                    ?>
-                                    <a
-                                        href="<?php echo $firstClosedHref !== '' ? h($firstClosedHref) : '#'; ?>"
-                                        class="btn btn-primary btn-xs js-open-results-modal"
-                                        data-judge-name="<?php echo h($row['name']); ?>"
-                                        data-result-routes="<?php echo h(json_encode($row['result_routes'])); ?>"
-                                        data-slug-convention-season="<?php echo h($slugConventionSeason); ?>"
-                                        data-slug-convention="<?php echo h($slugConvention); ?>"
-                                    >
-                                        <span class="judge-results-summary">
-                                            <i class="fa fa-list"></i>
-                                            Results (<?php echo (int)$closedResults; ?>)
-                                            <?php if ($openResults > 0) { ?>
-                                                <span class="badge" style="background:#dd4b39;"><?php echo (int)$openResults; ?> open</span>
-                                            <?php } ?>
-                                        </span>
-                                    </a>
-                                <?php } else { ?>
-                                    <span style="color:#999;">No result links</span>
-                                <?php } ?>
-                            </td>
                             <td>
                                 <div class="judge-action-btns">
                                     <button type="button" class="btn btn-primary btn-xs" data-toggle="modal" data-target="#manageEventsModal-<?php echo (int)$row['id']; ?>">Manage Events</button>
@@ -511,6 +447,31 @@ body.judge-modal-fallback-open {
                                     </div>
                                 </div>
                             </td>
+                            <td>
+                                <?php if (!empty($row['result_routes'])) { ?>
+                                    <div class="close-event-list">
+                                    <?php foreach ($row['result_routes'] as $route) {
+                                        if (!is_array($route)) continue;
+                                        $eventLabel = isset($route['event_label']) ? $route['event_label'] : 'Event';
+                                        $eventId = isset($route['event_id']) ? (int)$route['event_id'] : 0;
+                                        $resultsReleased = isset($route['results_released']) ? (int)$route['results_released'] : 0;
+                                        if ($resultsReleased == 1) {
+                                            echo '<div class="close-event-row closed">';
+                                            echo '<span class="close-event-name" title="' . h($eventLabel) . '">' . h($eventLabel) . '</span>';
+                                            echo $this->Html->link('<i class="fa fa-undo"></i> Open', ['controller' => 'conventions', 'action' => 'openresults', $slugConventionSeason, $slugConvention, $eventId], ['escape' => false, 'class' => 'btn btn-success btn-xs', 'confirm' => 'Re-open results for ' . h($eventLabel) . '?']);
+                                            echo '</div>';
+                                        } else {
+                                            echo '<div class="close-event-row">';
+                                            echo '<span class="close-event-name" title="' . h($eventLabel) . '">' . h($eventLabel) . '</span>';
+                                            echo $this->Html->link('<i class="fa fa-close"></i> Close', ['controller' => 'conventions', 'action' => 'closeresults', $slugConventionSeason, $slugConvention, $eventId], ['escape' => false, 'class' => 'btn btn-warning btn-xs', 'confirm' => 'Close results for ' . h($eventLabel) . '?']);
+                                            echo '</div>';
+                                        }
+                                    } ?>
+                                    </div>
+                                <?php } else { ?>
+                                    <span style="color:#999;">No events</span>
+                                <?php } ?>
+                            </td>
                         </tr>
                     <?php } ?>
                 </tbody>
@@ -533,7 +494,7 @@ $(document).ready(function() {
             order: [[0, 'desc']],
             dom: 'tip',
             columnDefs: [
-                { orderable: false, searchable: false, targets: [9] }
+                { orderable: false, searchable: false, targets: [8, 9] }
             ],
             language: {
                 paginate: {
@@ -700,89 +661,6 @@ $(document).ready(function() {
         return '<span class="judge-status-badge all-open">All Open</span>';
     }
 
-    function buildResultLinksHtml(resultRoutes, slugConventionSeasonVal, slugConventionVal, judgeName) {
-        if (!resultRoutes || !resultRoutes.length || !slugConventionSeasonVal || !slugConventionVal) {
-            return '<span style="color:#999;">No result links</span>';
-        }
-
-        var closedCount = 0;
-        var openCount = 0;
-        var firstClosedHref = '';
-        resultRoutes.forEach(function (route) {
-            if (parseInt(route.judging_ends, 10) === 1) {
-                closedCount += 1;
-                if (!firstClosedHref && route.event_slug && route.action_results) {
-                    firstClosedHref = '/admin/results/' + encodeURIComponent(route.action_results) + '/' + encodeURIComponent(slugConventionSeasonVal) + '/' + encodeURIComponent(slugConventionVal) + '/' + encodeURIComponent(route.event_slug);
-                }
-            } else {
-                openCount += 1;
-            }
-        });
-
-        return '<a href="' + (firstClosedHref ? escapeHtml(firstClosedHref) : '#') + '" class="btn btn-primary btn-xs js-open-results-modal" data-judge-name="' + escapeHtml(judgeName || 'Judge') + '" data-result-routes="' + escapeHtml(JSON.stringify(resultRoutes)) + '" data-slug-convention-season="' + escapeHtml(slugConventionSeasonVal) + '" data-slug-convention="' + escapeHtml(slugConventionVal) + '"><span class="judge-results-summary"><i class="fa fa-list"></i> Results (' + closedCount + ')' + (openCount > 0 ? '<span class="badge" style="background:#dd4b39;">' + openCount + ' open</span>' : '') + '</span></a>';
-    }
-
-    function renderResultsModal(resultRoutes, slugConventionSeasonVal, slugConventionVal, judgeName) {
-        var modalTitle = $('#judgeResultsModalTitle');
-        var modalBody = $('#judgeResultsModalBody');
-        if (!modalTitle.length || !modalBody.length) {
-            return;
-        }
-
-        modalTitle.text('Event Results: ' + (judgeName || 'Judge'));
-        if (!resultRoutes || !resultRoutes.length || !slugConventionSeasonVal || !slugConventionVal) {
-            modalBody.html('<span style="color:#999;">No result links available.</span>');
-            return;
-        }
-
-        var closedLinks = [];
-        var html = '<div class="list-group">';
-        resultRoutes.forEach(function (route) {
-            if (!route || typeof route !== 'object') {
-                return;
-            }
-            var label = route.event_label || 'Event';
-            var judgingEnds = parseInt(route.judging_ends, 10) === 1;
-            if (judgingEnds && route.event_slug && route.action_results) {
-                var href = '/admin/results/' + encodeURIComponent(route.action_results) + '/' + encodeURIComponent(slugConventionSeasonVal) + '/' + encodeURIComponent(slugConventionVal) + '/' + encodeURIComponent(route.event_slug);
-                closedLinks.push(href);
-                html += '<div class="list-group-item judge-results-item">';
-                html += '<a class="judge-results-item-main" href="' + href + '"><i class="fa fa-pencil text-primary"></i> ' + escapeHtml(label) + '</a>';
-                html += '<a class="btn btn-default btn-xs judge-results-item-quick" href="' + href + '" target="_blank" rel="noopener"><i class="fa fa-external-link"></i></a>';
-                html += '</div>';
-            } else {
-                html += '<div class="list-group-item"><span class="judge-event-tag" style="background:#f9f2f2; border-color:#f1cccc; color:#b94a48;">' + escapeHtml(label) + ' (Open)</span></div>';
-            }
-        });
-        html += '</div>';
-
-        var linksJson = encodeURIComponent(JSON.stringify(closedLinks));
-        var openAllBtnClass = closedLinks.length > 0 ? 'btn-success' : 'btn-default';
-        var openAllBtnDisabled = closedLinks.length > 0 ? '' : ' disabled="disabled"';
-        var openAllBtnTitle = closedLinks.length > 0 ? '' : ' title="No closed results available yet"';
-        html = '<div class="judge-results-modal-toolbar"><button type="button" class="btn ' + openAllBtnClass + ' btn-xs js-open-all-results" data-links="' + linksJson + '"' + openAllBtnDisabled + openAllBtnTitle + '><i class="fa fa-external-link"></i> Open all closed results (' + closedLinks.length + ')</button></div>' + html;
-
-        modalBody.html(html);
-    }
-
-    function showResultsModalFallback() {
-        var modal = $('#judgeResultsModal');
-        if (!modal.length) {
-            return;
-        }
-        modal.addClass('judge-modal-fallback').show();
-        $('body').addClass('judge-modal-fallback-open');
-    }
-
-    function hideResultsModalFallback() {
-        var modal = $('#judgeResultsModal');
-        if (!modal.length) {
-            return;
-        }
-        modal.removeClass('judge-modal-fallback').hide();
-        $('body').removeClass('judge-modal-fallback-open');
-    }
-
     function buildModalEventListHtml(assignedEvents) {
         var html = '<div class="judge-table-meta" style="margin-bottom:6px;">Currently assigned events</div>';
         if (!assignedEvents || !assignedEvents.length) {
@@ -810,8 +688,6 @@ $(document).ready(function() {
         row.find('.judge-event-count-cell').text(payload.event_count || 0);
         row.find('.judge-status-cell').html(buildJudgingStatusHtml(payload.result_routes || []));
         row.find('.judge-events-display-cell').html(buildEventChipsHtml(payload.assigned_events || [], judgeId));
-        var judgeName = row.find('td:eq(1) > div:first').text().trim();
-        row.find('.judge-results-cell').html(buildResultLinksHtml(payload.result_routes || [], payload.slug_convention_season || '', payload.slug_convention || '', judgeName));
 
         var modal = $('#manageEventsModal-' + judgeId);
         if (modal.length) {
@@ -911,86 +787,6 @@ $(document).ready(function() {
             showToast(message, false);
         }).always(function () {
             submitBtn.prop('disabled', false);
-        });
-    });
-
-    $(document).on('click', '.js-open-results-modal', function (e) {
-        var button = $(this);
-        var href = button.attr('href') || '';
-
-        // Always allow direct navigation when a real link exists.
-        if (href && href !== '#') {
-            return;
-        }
-
-        e.preventDefault();
-        e.stopPropagation();
-
-        var slugConventionSeasonVal = button.attr('data-slug-convention-season') || '';
-        var slugConventionVal = button.attr('data-slug-convention') || '';
-        var judgeName = button.attr('data-judge-name') || 'Judge';
-        var routesJson = button.attr('data-result-routes') || '[]';
-        var resultRoutes = [];
-
-        try {
-            resultRoutes = JSON.parse(routesJson);
-        } catch (err) {
-            resultRoutes = [];
-        }
-
-        renderResultsModal(resultRoutes, slugConventionSeasonVal, slugConventionVal, judgeName);
-        if ($.fn.modal && $('#judgeResultsModal').length) {
-            $('#judgeResultsModal').modal('show');
-        } else {
-            showResultsModalFallback();
-        }
-    });
-
-    $(document).on('click', '#judgeResultsModal .close, #judgeResultsModal [data-dismiss="modal"]', function (e) {
-        if ($.fn.modal) {
-            return;
-        }
-        e.preventDefault();
-        hideResultsModalFallback();
-    });
-
-    $(document).on('click', '#judgeResultsModal', function (e) {
-        if ($.fn.modal) {
-            return;
-        }
-        if ($(e.target).is('#judgeResultsModal')) {
-            hideResultsModalFallback();
-        }
-    });
-
-    $(document).on('click', '.js-open-all-results', function () {
-        if ($(this).is(':disabled')) {
-            return;
-        }
-
-        var linksRaw = $(this).attr('data-links') || '[]';
-        var links = [];
-        try {
-            links = JSON.parse(decodeURIComponent(linksRaw));
-        } catch (err) {
-            links = [];
-        }
-
-        if (!Array.isArray(links) || links.length === 0) {
-            return;
-        }
-
-        if (links.length > 5) {
-            var proceedBulkOpen = confirm('This will open ' + links.length + ' result pages in new tabs. Continue?');
-            if (!proceedBulkOpen) {
-                return;
-            }
-        }
-
-        links.forEach(function (href, idx) {
-            setTimeout(function () {
-                window.open(href, '_blank');
-            }, idx * 120);
         });
     });
 });

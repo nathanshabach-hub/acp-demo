@@ -1,6 +1,6 @@
 <!-- To show remaining conventions -->
 <?php
-$hasRemainingConventions = method_exists($remainingconventions, 'isEmpty') ? !$remainingconventions->isEmpty() : !empty($remainingconventions);
+$hasRemainingConventions = is_object($remainingconventions) && method_exists($remainingconventions, 'isEmpty') ? !$remainingconventions->isEmpty() : !empty($remainingconventions);
 if ($hasRemainingConventions) {
 ?> 
     <div class="panel-body">

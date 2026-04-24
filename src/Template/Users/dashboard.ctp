@@ -33,31 +33,27 @@
 					</p>
 					
 					<p>
-						<iframe width="560" height="315" src="https://www.youtube.com/embed/bT-KQAlpMOI" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
-						
-						<iframe width="560" height="315" src="https://www.youtube.com/embed/yGAzDK7xHrs" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+					    <iframe width="560" height="315" src="https://www.youtube.com/embed/r398Y2db2nc?list=PL4xufnmI4bVnF63e3fYwzF-gGUO6incFX" title="ACP 1: Introduction and Registration" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+					    
+					    <iframe width="560" height="315" src="https://www.youtube.com/embed/dcBTlI2_w20?list=PL4xufnmI4bVnF63e3fYwzF-gGUO6incFX" title="ACP 2: Global List Information" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
 					</p>
 						
 					<p>
-						<iframe width="560" height="315" src="https://www.youtube.com/embed/I9kG75X_obA" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
-						
-						<iframe width="560" height="315" src="https://www.youtube.com/embed/VUX7n29uqfo" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+					    <iframe width="560" height="315" src="https://www.youtube.com/embed/Zk2dhRuNsDo?list=PL4xufnmI4bVnF63e3fYwzF-gGUO6incFX" title="ACP 3: Price Structure, Supervisor and Student Registration" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+
+						<iframe width="560" height="315" src="https://www.youtube.com/embed/Cyn9-uJKeuY?list=PL4xufnmI4bVnF63e3fYwzF-gGUO6incFX" title="ACP 4: Student Event Registration" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
 					</p>
 					
 					<p>
-						<iframe width="560" height="315" src="https://www.youtube.com/embed/JDG3Uxcow_c" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
-						
-						<iframe width="560" height="315" src="https://www.youtube.com/embed/GZ3vINjZ7sY" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+						<iframe width="560" height="315" src="https://www.youtube.com/embed/6G-03VkSMdY?list=PL4xufnmI4bVnF63e3fYwzF-gGUO6incFX" title="ACP 5: Events of the Heart" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+
+						<iframe width="560" height="315" src="https://www.youtube.com/embed/G4vxpK0kzPQ?list=PL4xufnmI4bVnF63e3fYwzF-gGUO6incFX" title="ACP 6: Judges Portal Tutorial" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
 					</p>
 					
 					<p>
 						<iframe width="560" height="315" src="https://www.youtube.com/embed/X-MUFvvQNCQ" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
 						
-						<iframe width="560" height="315" src="https://www.youtube.com/embed/G4vxpK0kzPQ" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
-					</p>
-					
-					<p>
-						<iframe width="560" height="315" src="https://www.youtube.com/embed/uysBVmzqGXU" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+						<iframe width="560" height="315" src="https://www.youtube.com/embed/uysBVmzqGXU?list=PL4xufnmI4bVnF63e3fYwzF-gGUO6incFX" title="ACP 8: Results List and Judges Forms" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
 					</p>
 					
 					<p>&nbsp;</p>
@@ -71,3 +67,4 @@
 		</main>
 	</div>
 </div>
+

@@ -2,8 +2,13 @@
     <section class="sidebar">
         <ul class="sidebar-menu">
             <li class="treeview <?php if(isset($dashboard)){ echo 'active';} ?>">
-                <a href="<?php echo HTTP_PATH;?>/admin/admins/dashboard">
+                <a href="/admin/admins/dashboard">
                     <i class="fa fa-dashboard"></i> <span>Dashboard</span> <i class="fa fa-angle-left pull-right"></i>
+                </a>
+            </li>
+            <li class="treeview <?php if(isset($conferenceMenu)){ echo 'active';} ?>">
+                <a href="/admin/admins/conference">
+                    <i class="fa fa-calendar"></i> <span>Conference</span> <i class="fa fa-angle-left pull-right"></i>
                 </a>
             </li>
             <li class="treeview <?php if(isset($manageConfig)){ echo 'active';} ?>">

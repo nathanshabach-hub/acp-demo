@@ -302,6 +302,93 @@ class AdminsController extends AppController {
 
     }
 
+    public function conference() {
+        $this->set('title', ADMIN_TITLE . 'Conference Registrations');
+        $this->viewBuilder()->setLayout('admin');
+        $this->set('conferenceMenu', '1');
+
+        $this->loadModel("Conferenceregistrations");
+        $this->loadModel("Conferenceyears");
+
+        // Handle deleting a conference year
+        $deleteYearId = $this->request->getQuery('delete_year');
+        if ($deleteYearId) {
+            $yearToDelete = $this->Conferenceyears->find()->where(['id' => (int)$deleteYearId])->first();
+            if ($yearToDelete) {
+                $this->Conferenceregistrations->deleteAll(['conference_year_id' => $yearToDelete->id]);
+                $this->Conferenceyears->delete($yearToDelete);
+                $this->Flash->success('Conference year "' . h($yearToDelete->year) . '" and its registrations have been deleted.');
+            }
+            return $this->redirect(['action' => 'conference']);
+        }
+
+        // Handle creating a new conference year
+        if ($this->request->is('post')) {
+            $yearValue = trim($this->request->getData('year'));
+            if (!empty($yearValue)) {
+                $existing = $this->Conferenceyears->find()->where(['year' => $yearValue])->first();
+                if ($existing) {
+                    $this->Flash->error('Conference year "' . h($yearValue) . '" already exists.');
+                } else {
+                    $entity = $this->Conferenceyears->newEntity(['year' => $yearValue, 'status' => 1]);
+                    if ($this->Conferenceyears->save($entity)) {
+                        $this->Flash->success('Conference year "' . h($yearValue) . '" created.');
+                    } else {
+                        $this->Flash->error('Could not create conference year.');
+                    }
+                }
+            }
+        }
+
+        // Get all conference years
+        $conferenceYears = $this->Conferenceyears->find()
+            ->order(['Conferenceyears.year' => 'ASC'])
+            ->all();
+
+        // Build registrations grouped by year
+        $yearData = [];
+        foreach ($conferenceYears as $cy) {
+            $regs = $this->Conferenceregistrations->find()
+                ->contain(['Schools', 'Supervisors'])
+                ->where(['Conferenceregistrations.conference_year_id' => $cy->id])
+                ->order(['Conferenceregistrations.created' => 'DESC'])
+                ->all();
+            $yearData[] = [
+                'year' => $cy,
+                'registrations' => $regs,
+                'count' => $regs->count(),
+            ];
+        }
+
+        $total_registrations = $this->Conferenceregistrations->find()->count();
+        $this->set('total_registrations', $total_registrations);
+        $this->set('conferenceYears', $conferenceYears);
+        $this->set('yearData', $yearData);
+    }
+
+    public function printconferencetags($yearId = null) {
+        $this->viewBuilder()->setLayout('');
+
+        $this->loadModel("Conferenceregistrations");
+        $this->loadModel("Conferenceyears");
+
+        $condition = [];
+        $conferenceYear = null;
+        if ($yearId) {
+            $conferenceYear = $this->Conferenceyears->find()->where(['id' => (int)$yearId])->first();
+            $condition['Conferenceregistrations.conference_year_id'] = (int)$yearId;
+        }
+
+        $nametags = $this->Conferenceregistrations->find()
+            ->contain(['Schools', 'Supervisors'])
+            ->where($condition)
+            ->order(['Conferenceregistrations.created' => 'ASC'])
+            ->all();
+
+        $this->set('nametags', $nametags);
+        $this->set('conferenceYear', $conferenceYear);
+    }
+
     public function chartview($chartKey = null) {
         $this->set('title', ADMIN_TITLE . 'Dashboard Chart');
         $this->viewBuilder()->setLayout('admin');

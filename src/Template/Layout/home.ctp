@@ -4,7 +4,10 @@
 <head>
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta name="theme-color" content="#2c3e6b">
 	<link rel="shortcut icon" type="image/x-icon" href="<?php echo HTTP_PATH; ?>/img/favicon.ico" />
+	<link rel="manifest" href="/manifest.json">
+	<link rel="apple-touch-icon" href="/img/pwa/icon-192.png">
 	<title>
 		<?php echo isset($title_for_layout) ? $title_for_layout : SITE_TITLE; ?>
 	</title>
@@ -38,6 +41,14 @@
 		integrity="sha384-kenU1KFdBIe4zVF0s0G1M5b4hcpxyD9F7jL+jjXkk+Q2h455rYXK/7HAuoJl+0I4"
 		crossorigin="anonymous"></script>
 
+	<script src="/js/offline/db.js"></script>
+	<script src="/js/offline/sync.js"></script>
+	<script src="/js/offline/ui.js"></script>
+	<script>
+		if ('serviceWorker' in navigator) {
+			navigator.serviceWorker.register('/sw.js');
+		}
+	</script>
 	<script type="text/javascript">
 		window.onload = function () {
 			setTimeout("hideSessionMessage()", 8000);

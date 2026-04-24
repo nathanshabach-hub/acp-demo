@@ -867,6 +867,7 @@ class ConventionregistrationsController extends AppController {
                 'event_label' => (string)$seasonEvent->Events['event_name'] . ' (' . (string)$seasonEvent->Events['event_id_number'] . ')',
                 'judging_type' => (string)$seasonEvent->Events['event_judging_type'],
                 'judging_ends' => (int)$seasonEvent->judging_ends,
+                'results_released' => (int)$seasonEvent->results_released,
                 'action_results' => $this->getResultActionByJudgingType((string)$seasonEvent->Events['event_judging_type']),
             ];
         }

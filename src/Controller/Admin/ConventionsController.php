@@ -564,6 +564,42 @@ class ConventionsController extends AppController {
 		$this->set('conventionseasonevents', $conventionseasonevents);
     }
 
+	public function closeresults($slug_convention_season = null, $slug_convention = null, $eventId = null)
+	{
+		$this->loadModel('Conventionseasonevents');
+
+		if ($slug_convention_season && $eventId) {
+			$conventionSD = $this->Conventionseasons->find()->where(['Conventionseasons.slug' => $slug_convention_season])->first();
+			if ($conventionSD) {
+				$this->Conventionseasonevents->updateAll(
+					['results_released' => 1],
+					['conventionseasons_id' => $conventionSD->id, 'event_id' => (int)$eventId]
+				);
+				$this->Flash->success('Results have been closed/released for this event.');
+			}
+		}
+
+		$this->redirect(['controller' => 'conventions', 'action' => 'events', $slug_convention_season, $slug_convention]);
+	}
+
+	public function openresults($slug_convention_season = null, $slug_convention = null, $eventId = null)
+	{
+		$this->loadModel('Conventionseasonevents');
+
+		if ($slug_convention_season && $eventId) {
+			$conventionSD = $this->Conventionseasons->find()->where(['Conventionseasons.slug' => $slug_convention_season])->first();
+			if ($conventionSD) {
+				$this->Conventionseasonevents->updateAll(
+					['results_released' => 0],
+					['conventionseasons_id' => $conventionSD->id, 'event_id' => (int)$eventId]
+				);
+				$this->Flash->success('Results have been re-opened for this event.');
+			}
+		}
+
+		$this->redirect(['controller' => 'conventions', 'action' => 'events', $slug_convention_season, $slug_convention]);
+	}
+
 	public function judges($slug_convention_season = null,$slug_convention = null) {
 
         $this->viewBuilder()->setLayout('admin');
